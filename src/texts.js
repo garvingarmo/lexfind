@@ -68,7 +68,7 @@ export const TEXT_GROUPS = {
   'Members only': {
     'members.pill': 'Members only',
     'members.title': 'For registered lawyers',
-    'members.text': 'Search the directory, view full lawyer profiles and use the AI lawyer match. Membership is free for licensed lawyers and approved by our team.',
+    'members.text': 'Search the directory, view full lawyer profiles and use the AI lawyer match. Membership is for licensed lawyers and approved by our team.',
     'members.signin': 'Member sign in',
     'members.register': 'Apply for membership',
     'members.pendingTitle': 'Your membership is awaiting approval',
