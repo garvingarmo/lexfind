@@ -1,0 +1,19 @@
+{
+  "name": "LexFind",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "containerEnv": {
+    "ADMIN_EMAIL": "admin@example.com",
+    "ADMIN_PASSWORD": "admin-demo-123"
+  },
+  "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "description": "Optional. Your Claude API key, to turn on the AI assistant and AI profile research."
+    }
+  },
+  "postCreateCommand": "npm install && npm run seed",
+  "postAttachCommand": "npm start",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "LexFind", "onAutoForward": "openBrowser" }
+  }
+}

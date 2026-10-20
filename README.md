@@ -12,6 +12,10 @@ An online directory of lawyers with:
 
 Stack: Node.js 22+, Express, EJS, SQLite (built-in `node:sqlite`, so there are no native modules), and the Anthropic SDK.
 
+## Try it in GitHub Codespaces
+
+On the repository page, click **Code → Codespaces → Create codespace**. The app installs, loads sample data and opens in a browser tab. Sign in with `admin@example.com` / `admin-demo-123` or `lawyer@example.com` / `lawyer-demo-123`. To turn on the AI features, add `ANTHROPIC_API_KEY` as a Codespaces secret before you create the codespace.
+
 ## Quick start
 
 ```bash
