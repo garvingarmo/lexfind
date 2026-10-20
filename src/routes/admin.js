@@ -573,7 +573,12 @@ const mask = (v) => (v ? `••••${String(v).slice(-4)}` : '');
 
 router.get('/integrations', (req, res) => {
   const mail = mailConfig();
+  // Suggest the usual mailbox for this domain until something is saved.
+  const domain = (() => { try { return new URL(getSettings().site_url).hostname.replace(/^www\./, ''); } catch { return ''; } })();
+  const suggest = { user: domain ? `noreply@${domain}` : '', from: domain ? `${getSettings().site_name} <noreply@${domain}>` : '' };
+  const missing = [!mail.host && 'mail server', !mail.from && '"send emails as" address', mail.user && !mail.pass && 'password'].filter(Boolean);
   res.render('admin/integrations', {
+    suggest, missing,
     title: 'Integrations',
     ai: { on: aiEnabled(), fromEnv: Boolean(process.env.ANTHROPIC_API_KEY), masked: mask(apiKey()), model: MODEL },
     mail: { ...mail, pass: undefined, passMasked: mask(mail.pass), on: smtpEnabled(), fromEnv: Boolean(process.env.SMTP_HOST) },
@@ -610,12 +615,17 @@ router.post('/integrations/mail', (req, res) => {
     flash(req, 'success', 'Email settings removed.');
     return res.redirect('/admin/integrations');
   }
-  setSecret('smtp_host', (b.smtp_host || '').trim());
+  const host = (b.smtp_host || '').trim();
+  const user = (b.smtp_user || '').trim();
+  const from = (b.mail_from || '').trim();
+  setSecret('smtp_host', host);
   setSecret('smtp_port', String(parseInt(b.smtp_port, 10) || 465));
-  setSecret('smtp_user', (b.smtp_user || '').trim());
+  setSecret('smtp_user', user);
   if (b.smtp_pass) setSecret('smtp_pass', b.smtp_pass);
-  setSecret('mail_from', (b.mail_from || '').trim());
-  flash(req, 'success', 'Email settings saved. Click "Send test email" to check them.');
+  setSecret('mail_from', from);
+  const missing = [!host && 'Mail server', !from && 'Send emails as', user && !mailConfig().pass && 'Password'].filter(Boolean);
+  if (missing.length) flash(req, 'error', `Saved, but email is still off. Please fill in: ${missing.join(', ')}.`);
+  else flash(req, 'success', 'Email settings saved. Email is on. Click "Send test email" to check them.');
   res.redirect('/admin/integrations');
 });
 
