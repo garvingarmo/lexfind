@@ -1,0 +1,31 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head"><h1>Lawyers</h1><a class="btn btn-primary btn-sm" href="/admin/lawyers/new">+ Add lawyer</a></div>
+    <form class="toolbar" method="get">
+      <input name="q" value="<%= q %>" placeholder="Search name, firm, email">
+      <select name="status"><option value="">All statuses</option><% ['pending','active','suspended'].forEach(s => { %><option <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+      <button class="btn btn-outline btn-sm">Filter</button>
+    </form>
+    <div class="card table-wrap">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Location</th><th>Areas</th><th>Status</th><th>Flags</th><th></th></tr></thead>
+        <tbody>
+        <% rows.forEach(l => { %>
+          <tr>
+            <td><a href="/admin/lawyers/<%= l.id %>"><%= l.name %></a><div class="tiny muted"><%= l.firm || '' %></div></td>
+            <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
+            <td class="tiny"><%= l.areas.map(a => a.name).join(', ') %></td>
+            <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
+            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %><%= l.user_id ? ' · Login' : '' %></td>
+            <td class="right nowrap"><a href="/lawyers/<%= l.slug %>" target="_blank">View</a> · <a href="/admin/lawyers/<%= l.id %>/research">AI</a></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+      <% if (!rows.length) { %><p class="muted">No lawyers found.</p><% } %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

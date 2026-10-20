@@ -1,0 +1,19 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head"><h1>Blog posts</h1><a class="btn btn-primary btn-sm" href="/admin/posts/new">+ New post</a></div>
+    <div class="card table-wrap">
+      <table class="table">
+        <thead><tr><th>Title</th><th>Status</th><th>Published</th><th></th></tr></thead>
+        <tbody>
+        <% rows.forEach(p => { %>
+          <tr><td><a href="/admin/posts/<%= p.id %>"><%= p.title %></a></td><td><span class="status status-<%= p.status %>"><%= p.status %></span></td><td class="small"><%= p.published_at || '—' %></td><td><a href="/blog/<%= p.slug %>" target="_blank">View</a></td></tr>
+        <% }) %>
+        </tbody>
+      </table>
+      <% if (!rows.length) { %><p class="muted">No posts yet.</p><% } %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

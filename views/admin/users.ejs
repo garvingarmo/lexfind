@@ -1,0 +1,20 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Admin users</h1>
+    <div class="card">
+      <table class="table"><tbody>
+        <% rows.forEach(u => { %><tr><td><%= u.email %></td><td class="tiny muted"><%= u.created_at %></td>
+          <td class="right"><% if (u.id !== user.id) { %><form method="post" action="/admin/users/<%= u.id %>/delete" data-confirm="Remove admin <%= u.email %>?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Remove</button></form><% } else { %><span class="tiny muted">you</span><% } %></td></tr><% }) %>
+      </tbody></table>
+    </div>
+    <form method="post" action="/admin/users" class="card form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Email <input name="email" type="email" required></label>
+      <label>Password <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+      <button class="btn btn-primary span-2">Add admin</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

@@ -1,0 +1,31 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head">
+      <h1><%= title %></h1>
+      <% if (l.id) { %><div><a class="btn btn-ghost btn-sm" href="/lawyers/<%= l.slug %>" target="_blank">View ↗</a> <a class="btn btn-accent btn-sm" href="/admin/lawyers/<%= l.id %>/research">✦ AI research</a></div><% } %>
+    </div>
+    <form method="post" action="/admin/lawyers/<%= l.id || 'new' %>" enctype="multipart/form-data" class="card form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <fieldset class="span-2 admin-box"><legend>Listing controls</legend>
+        <div class="form-grid">
+          <label>Status <select name="status"><% ['pending','active','suspended'].forEach(s => { %><option <%= l.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select></label>
+          <% if (l.id) { %><label>URL slug <input name="slug" value="<%= l.slug %>"></label><% } else { %><span></span><% } %>
+          <label class="check"><input type="checkbox" name="featured" <%= l.featured ? 'checked' : '' %>> Sponsored / featured (shown first in search)</label>
+          <label class="check"><input type="checkbox" name="verified" <%= l.verified ? 'checked' : '' %>> Verified (bar status checked)</label>
+          <label>Login email <input name="login_email" type="email" value="<%= login ? login.email : '' %>" placeholder="Lets the lawyer sign in"></label>
+          <label><%= login ? 'Reset password' : 'Login password' %> <input name="login_password" type="password" minlength="8" autocomplete="new-password" placeholder="<%= login ? 'Leave blank to keep' : 'Min 8 characters' %>"></label>
+        </div>
+      </fieldset>
+      <%- include('../partials/profile-fields', { l, areas, selected }) %>
+      <button class="btn btn-primary span-2">Save</button>
+    </form>
+    <% if (l.id) { %>
+      <form method="post" action="/admin/lawyers/<%= l.id %>/delete" class="danger-zone" data-confirm="Delete this lawyer and their login permanently?">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Delete lawyer</button>
+      </form>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

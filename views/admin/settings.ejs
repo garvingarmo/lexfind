@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Site content</h1>
+    <form method="post" action="/admin/settings" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% const labels = { site_name: 'Site name', tagline: 'Tagline', hero_title: 'Home page headline', hero_subtitle: 'Home page subheading', disclaimer: 'Legal disclaimer (footer and AI assistant)', about_body: 'About page (Markdown)', footer_text: 'Footer text' };
+         keys.forEach(k => { const long = ['hero_subtitle','disclaimer','about_body'].includes(k); %>
+        <label><%= labels[k] || k %>
+          <% if (long) { %><textarea name="<%= k %>" rows="<%= k === 'about_body' ? 10 : 3 %>"><%= settings[k] %></textarea><% } else { %><input name="<%= k %>" value="<%= settings[k] %>"><% } %>
+        </label>
+      <% }) %>
+      <button class="btn btn-primary">Save content</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

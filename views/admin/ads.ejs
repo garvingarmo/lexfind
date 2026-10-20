@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head"><h1>Sponsored ads</h1><a class="btn btn-primary btn-sm" href="/admin/ads/new">+ New ad</a></div>
+    <p class="muted small">Ads rotate by weight within each placement. To promote a lawyer inside search results instead, mark their listing as <em>Sponsored / featured</em>.</p>
+    <div class="card table-wrap">
+      <table class="table">
+        <thead><tr><th>Ad</th><th>Placement</th><th>Schedule</th><th>Views</th><th>Clicks</th><th>CTR</th><th></th></tr></thead>
+        <tbody>
+        <% rows.forEach(a => { %>
+          <tr class="<%= a.active ? '' : 'dim' %>">
+            <td><a href="/admin/ads/<%= a.id %>"><%= a.title %></a><div class="tiny muted"><%= a.lawyer_name ? 'Lawyer: ' + a.lawyer_name : a.link_url %></div></td>
+            <td class="small"><%= PLACEMENTS[a.placement] %></td>
+            <td class="tiny"><%= a.active ? (a.starts_at || 'now') + ' → ' + (a.ends_at || 'open') : 'paused' %></td>
+            <td><%= a.impressions %></td><td><%= a.clicks %></td>
+            <td><%= a.impressions ? ((a.clicks / a.impressions) * 100).toFixed(1) + '%' : '—' %></td>
+            <td><form method="post" action="/admin/ads/<%= a.id %>/delete" data-confirm="Delete this ad?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Delete</button></form></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

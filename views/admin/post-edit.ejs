@@ -1,0 +1,24 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head"><h1><%= title %></h1><% if (post.id) { %><a class="btn btn-ghost btn-sm" href="/blog/<%= post.slug %>" target="_blank">Preview ↗</a><% } %></div>
+    <form method="post" action="/admin/posts/<%= post.id || 'new' %>" enctype="multipart/form-data" class="card form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="span-2">Title* <input name="title" required value="<%= post.title || '' %>"></label>
+      <label>URL slug <input name="slug" value="<%= post.slug || '' %>" placeholder="auto from title"></label>
+      <label>Author <input name="author" value="<%= post.author || '' %>"></label>
+      <label class="span-2">Excerpt <textarea name="excerpt" rows="2"><%= post.excerpt || '' %></textarea></label>
+      <label class="span-2">Body <span class="tiny muted">(Markdown: ## headings, **bold**, - lists, [links](https://…))</span><textarea name="body" rows="18" class="mono"><%= post.body || '' %></textarea></label>
+      <div class="span-2">
+        <% if (post.cover_image) { %><img src="<%= post.cover_image %>" alt="" class="thumb"> <label class="check"><input type="checkbox" name="remove_cover"> Remove cover</label><% } %>
+        <label>Cover image <input type="file" name="cover_image" accept="image/*"></label>
+      </div>
+      <label>Status <select name="status"><option value="draft" <%= post.status === 'draft' ? 'selected' : '' %>>Draft</option><option value="published" <%= post.status === 'published' ? 'selected' : '' %>>Published</option></select></label>
+      <span></span>
+      <button class="btn btn-primary span-2">Save post</button>
+    </form>
+    <% if (post.id) { %><form method="post" action="/admin/posts/<%= post.id %>/delete" class="danger-zone" data-confirm="Delete this post?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Delete post</button></form><% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

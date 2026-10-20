@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<section class="container page-pad">
+  <h1>Legal guides &amp; news</h1>
+  <% if (!posts.length) { %><p class="muted">No posts yet.</p><% } %>
+  <div class="card-grid three">
+    <% posts.forEach(p => { %>
+      <a class="card post-card" href="/blog/<%= p.slug %>">
+        <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt=""><% } %>
+        <div class="tiny muted"><%= (p.published_at || '').slice(0, 10) %></div>
+        <h3><%= p.title %></h3>
+        <p class="muted small"><%= p.excerpt %></p>
+      </a>
+    <% }) %>
+  </div>
+  <% if (pages > 1) { %><nav class="pager"><% for (let i = 1; i <= pages; i++) { %><a class="<%= i === page ? 'current' : '' %>" href="/blog?page=<%= i %>"><%= i %></a><% } %></nav><% } %>
+</section>
+<%- include('partials/footer') %>

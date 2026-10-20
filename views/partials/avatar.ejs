@@ -1,0 +1,1 @@
+<% if (l.photo) { %><img class="avatar <%= typeof size !== 'undefined' ? size : '' %>" src="<%= l.photo %>" alt="<%= l.name %>"><% } else { %><div class="avatar avatar-initials <%= typeof size !== 'undefined' ? size : '' %>" aria-hidden="true"><%= l.name.split(' ').map(s => s[0]).slice(0, 2).join('') %></div><% } %>

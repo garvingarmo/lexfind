@@ -1,0 +1,36 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Overview</h1>
+    <% if (!aiOn) { %><div class="flash flash-info">AI features are in offline mode. Set <code>ANTHROPIC_API_KEY</code> to enable Claude for the matching assistant and profile research.</div><% } %>
+    <div class="stat-grid">
+      <a class="card stat" href="/admin/lawyers?status=active"><span class="stat-n"><%= stats.active %></span><span class="muted small">Active listings</span></a>
+      <a class="card stat" href="/admin/lawyers?status=pending"><span class="stat-n"><%= stats.pending %></span><span class="muted small">Pending review</span></a>
+      <a class="card stat" href="/admin/inquiries"><span class="stat-n"><%= stats.inquiries30 %></span><span class="muted small">Inquiries (30 days)</span></a>
+      <a class="card stat" href="/admin/ads"><span class="stat-n"><%= stats.ads %></span><span class="muted small">Active ads · <%= stats.adClicks %> clicks / <%= stats.adImpr %> views</span></a>
+    </div>
+    <div class="card">
+      <h2>Awaiting verification</h2>
+      <% if (!pending.length) { %><p class="muted">Nothing to review.</p><% } else { %>
+      <table class="table"><tbody>
+        <% pending.forEach(l => { %><tr>
+          <td><a href="/admin/lawyers/<%= l.id %>"><%= l.name %></a><div class="tiny muted"><%= l.firm || '' %> · <%= [l.city, l.state].filter(Boolean).join(', ') %> · Bar # <%= l.bar_number || '—' %></div></td>
+          <td class="right">
+            <a class="btn btn-ghost btn-sm" href="/admin/lawyers/<%= l.id %>/research">AI research</a>
+            <form method="post" action="/admin/lawyers/<%= l.id %>/status" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="active"><button class="btn btn-primary btn-sm">Approve</button></form>
+          </td>
+        </tr><% }) %>
+      </tbody></table><% } %>
+    </div>
+    <% if (jobs.length) { %>
+    <div class="card">
+      <h2>AI research jobs</h2>
+      <table class="table"><tbody>
+        <% jobs.forEach(j => { %><tr><td><%= j.name %></td><td><span class="status status-<%= j.status %>"><%= j.status %></span></td><td class="tiny muted"><%= j.created_at %></td><td><a href="/admin/lawyers/<%= j.lawyer_id %>/research/<%= j.id %>">Review</a></td></tr><% }) %>
+      </tbody></table>
+    </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

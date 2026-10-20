@@ -1,0 +1,22 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1><%= title %></h1>
+    <div class="card">
+      <p>The AI searches the web for public information about <strong><%= l.name %></strong><%= l.firm ? ' of ' + l.firm : '' %> — firm websites, state bar records and legal directories — and proposes updates to the listing.</p>
+      <p class="muted small">Nothing changes until you review and approve each field. Web sources can be wrong or out of date, and people with similar names can be mixed up, so check suggestions carefully.</p>
+      <% if (!aiOn) { %><div class="flash flash-info">AI research is unavailable: the server needs an <code>ANTHROPIC_API_KEY</code>.</div><% } %>
+      <form method="post" action="<%= base %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent" <%= aiOn ? '' : 'disabled' %>>✦ Research and suggest updates</button></form>
+    </div>
+    <% if (jobs.length) { %>
+    <div class="card">
+      <h2>Previous runs</h2>
+      <table class="table"><thead><tr><th>Started</th><th>Status</th><th></th></tr></thead><tbody>
+      <% jobs.forEach(j => { %><tr><td><%= j.created_at %></td><td><span class="status status-<%= j.status %>"><%= j.status %></span></td><td><a href="<%= base %>/<%= j.id %>">Open</a></td></tr><% }) %>
+      </tbody></table>
+    </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

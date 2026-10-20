@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title ? `${title} · ${settings.site_name}` : `${settings.site_name} — ${settings.tagline}` %></title>
+<meta name="description" content="<%= settings.tagline %>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="csrf-token" content="<%= csrf %>">
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="/"><span class="brand-mark">§</span><%= settings.site_name %></a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Menu">
+    <label for="nav-toggle" class="nav-burger" aria-hidden="true"><span></span></label>
+    <nav class="nav-links">
+      <a href="/lawyers" class="<%= path.startsWith('/lawyers') ? 'active' : '' %>">Find a lawyer</a>
+      <a href="/assistant" class="<%= path === '/assistant' ? 'active' : '' %>">AI match</a>
+      <a href="/blog" class="<%= path.startsWith('/blog') ? 'active' : '' %>">Guides</a>
+      <% if (user && user.role === 'admin') { %>
+        <a href="/admin" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Admin</a>
+      <% } else if (user) { %>
+        <a href="/dashboard">My listing</a>
+      <% } %>
+      <% if (user) { %>
+        <form method="post" action="/logout" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Sign out</button></form>
+      <% } else { %>
+        <a href="/login">Lawyer sign in</a>
+        <a class="btn btn-primary btn-sm" href="/register">List your practice</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main>
+<% if (flash && flash.length) { %>
+  <div class="container flashes">
+    <% flash.forEach(f => { %><div class="flash flash-<%= f.type %>" role="status"><%= f.msg %></div><% }) %>
+  </div>
+<% } %>

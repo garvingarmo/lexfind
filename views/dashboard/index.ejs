@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Welcome, <%= l.name.split(' ')[0] %></h1>
+    <% if (l.status === 'pending') { %><div class="flash flash-info">Your listing is awaiting verification. Complete your profile so our team can approve it quickly.</div><% } %>
+    <% if (l.status === 'suspended') { %><div class="flash flash-error">Your listing is suspended. Please contact support.</div><% } %>
+    <div class="stat-grid">
+      <div class="card stat"><span class="stat-n"><%= l.status %></span><span class="muted small">Listing status</span></div>
+      <div class="card stat"><span class="stat-n"><%= completeness %>%</span><span class="muted small">Profile complete</span><div class="meter"><span style="width:<%= completeness %>%"></span></div></div>
+      <div class="card stat"><span class="stat-n"><%= stats.unread %></span><span class="muted small">Unread inquiries</span></div>
+      <div class="card stat"><span class="stat-n"><%= stats.fromAssistant %></span><span class="muted small">Leads via AI match</span></div>
+    </div>
+    <div class="card">
+      <div class="section-head"><h2>Keep your profile current with AI</h2><a class="btn btn-accent btn-sm" href="/dashboard/research">Run AI profile update</a></div>
+      <p class="muted small">Our AI researches public sources (your firm website, bar records, directories) and suggests updates. You review every change before it's saved.
+      <% if (lastJob) { %> Last run: <%= lastJob.created_at %> (<%= lastJob.status %>).<% } %></p>
+    </div>
+    <div class="card">
+      <div class="section-head"><h2>Recent inquiries</h2><a href="/dashboard/inquiries">All inquiries →</a></div>
+      <% if (!recent.length) { %><p class="muted">No inquiries yet.</p><% } %>
+      <% recent.forEach(i => { %>
+        <div class="inquiry <%= i.is_read ? '' : 'unread' %>"><strong><%= i.name %></strong> <span class="muted small">· <%= i.created_at %></span><p class="small"><%= i.message.slice(0, 180) %><%= i.message.length > 180 ? '…' : '' %></p></div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

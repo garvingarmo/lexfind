@@ -1,0 +1,20 @@
+<article class="card lawyer-card <%= l.featured ? 'is-featured' : '' %>">
+  <% if (l.featured) { %><span class="badge badge-sponsored">Sponsored</span><% } %>
+  <div class="lawyer-card-head">
+    <%- include('avatar', { l }) %>
+    <div>
+      <h3><a href="/lawyers/<%= l.slug %>"><%= l.name %></a><% if (l.verified) { %> <span class="verified" title="Verified listing">✓</span><% } %></h3>
+      <div class="muted small"><%= l.firm || '' %></div>
+      <div class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></div>
+    </div>
+  </div>
+  <div class="tags">
+    <% (l.areas || []).forEach(a => { %><a class="tag" href="/lawyers?area=<%= a.slug %>"><%= a.name %></a><% }) %>
+  </div>
+  <ul class="facts small">
+    <% if (l.years_experience) { %><li><%= l.years_experience %> yrs experience</li><% } %>
+    <% if (l.languages) { %><li><%= l.languages %></li><% } %>
+    <% if (l.free_consultation) { %><li class="ok">Free consultation</li><% } %>
+  </ul>
+  <a class="btn btn-outline btn-block" href="/lawyers/<%= l.slug %>">View profile</a>
+</article>

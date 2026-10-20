@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1><%= title %></h1>
+    <form method="post" action="/admin/ads/<%= ad.id || 'new' %>" enctype="multipart/form-data" class="card form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="span-2">Headline* <input name="title" required maxlength="120" value="<%= ad.title || '' %>"></label>
+      <label class="span-2">Text <textarea name="body" rows="2" maxlength="400"><%= ad.body || '' %></textarea></label>
+      <label>Placement* <select name="placement"><% Object.entries(PLACEMENTS).forEach(([k, v]) => { %><option value="<%= k %>" <%= ad.placement === k ? 'selected' : '' %>><%= v %></option><% }) %></select></label>
+      <label>Button text <input name="cta" value="<%= ad.cta || '' %>" maxlength="40"></label>
+      <label>Advertiser (lawyer) <select name="lawyer_id"><option value="">— None / external —</option><% lawyers.forEach(l => { %><option value="<%= l.id %>" <%= ad.lawyer_id === l.id ? 'selected' : '' %>><%= l.name %></option><% }) %></select></label>
+      <label>Link URL <input name="link_url" value="<%= ad.link_url || '' %>" placeholder="https://… or leave blank to link to the lawyer"></label>
+      <label>Start date <input type="date" name="starts_at" value="<%= ad.starts_at || '' %>"></label>
+      <label>End date <input type="date" name="ends_at" value="<%= ad.ends_at || '' %>"></label>
+      <label>Rotation weight <input type="number" name="weight" min="1" max="100" value="<%= ad.weight %>"></label>
+      <label class="check"><input type="checkbox" name="active" <%= ad.active ? 'checked' : '' %>> Active</label>
+      <div class="span-2">
+        <% if (ad.image) { %><img src="<%= ad.image %>" alt="" class="thumb"> <label class="check"><input type="checkbox" name="remove_image"> Remove image</label><% } %>
+        <label>Image (optional) <input type="file" name="image" accept="image/*"></label>
+      </div>
+      <button class="btn btn-primary span-2">Save ad</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

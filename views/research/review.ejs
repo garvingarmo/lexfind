@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>AI suggestions for <%= l.name %></h1>
+    <% if (job.status === 'running') { %>
+      <div class="card center" id="research-wait" data-status-url="<%= base %>/<%= job.id %>/status">
+        <div class="spinner"></div>
+        <p><strong>Researching…</strong> This usually takes one to three minutes. This page will refresh when it's ready.</p>
+      </div>
+    <% } else if (job.status === 'error') { %>
+      <div class="flash flash-error">Research failed: <%= job.error %></div>
+      <a class="btn btn-outline" href="<%= base %>">Back</a>
+    <% } else { %>
+      <% if (job.proposed && job.proposed.confidence_notes) { %><div class="flash flash-info"><strong>Reviewer note:</strong> <%= job.proposed.confidence_notes %></div><% } %>
+      <% if (job.status !== 'ready') { %><div class="flash flash-info">These suggestions were <%= job.status %>.</div><% } %>
+      <form method="post" action="<%= base %>/<%= job.id %>/apply" class="card">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <table class="table diff">
+          <thead><tr><th></th><th>Field</th><th>Current</th><th>Suggested</th></tr></thead>
+          <tbody>
+          <% rows.forEach(r => { %>
+            <tr class="<%= r.changed ? 'changed' : 'same' %>">
+              <td><% if (r.changed && job.status === 'ready') { %><input type="checkbox" name="fields" value="<%= r.key %>" aria-label="Apply <%= r.label %>"><% } %></td>
+              <th><%= r.label %></th>
+              <td class="pre small"><%= r.current || '—' %></td>
+              <td class="pre small"><%= r.changed ? r.proposed : (r.proposed ? 'No change' : 'Not found') %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+        <% if (job.status === 'ready') { %>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost btn-sm" data-check-all="fields">Select all changes</button>
+            <button class="btn btn-primary">Apply selected</button>
+            <button class="btn btn-outline" formaction="<%= base %>/<%= job.id %>/reject">Dismiss all</button>
+          </div>
+        <% } %>
+      </form>
+      <% if (job.sources.length) { %>
+        <div class="card"><h2>Sources consulted</h2><ul class="sources small">
+          <% job.sources.slice(0, 30).forEach(s => { %><li><a href="<%= s.url %>" target="_blank" rel="noopener nofollow"><%= s.title %></a> <span class="muted"><%= s.url.replace(/^https?:\/\//, '').slice(0, 60) %></span></li><% }) %>
+        </ul></div>
+      <% } %>
+      <% if (job.notes) { %><details class="card"><summary>Research notes</summary><div class="pre small"><%= job.notes %></div></details><% } %>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

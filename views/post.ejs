@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+<section class="container page-pad post-layout">
+  <article>
+    <% if (post.status !== 'published') { %><div class="flash flash-info">Draft preview</div><% } %>
+    <a class="small" href="/blog">← All guides</a>
+    <h1><%= post.title %></h1>
+    <div class="muted small"><%= post.author || '' %><%= post.published_at ? ' · ' + post.published_at.slice(0, 10) : '' %></div>
+    <% if (post.cover_image) { %><img class="cover" src="<%= post.cover_image %>" alt=""><% } %>
+    <div class="prose"><%- html %></div>
+    <div class="card cta-inline">
+      <strong>Need a lawyer?</strong> <span class="muted">Describe your situation and we'll suggest lawyers who can help.</span>
+      <a class="btn btn-accent btn-sm" href="/assistant">Get matched</a>
+    </div>
+  </article>
+  <aside class="sidebar">
+    <% if (recent.length) { %><div class="card"><h3>More guides</h3><ul class="plain"><% recent.forEach(r => { %><li><a href="/blog/<%= r.slug %>"><%= r.title %></a></li><% }) %></ul></div><% } %>
+    <%- include('partials/ad', { ad }) %>
+  </aside>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,31 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Practice areas</h1>
+    <p class="muted small">The AI assistant uses these names and descriptions to understand which lawyers fit a visitor's matter, so keep descriptions specific.</p>
+    <form method="post" action="/admin/areas" class="card form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>New area name <input name="name" required></label>
+      <label>Description <input name="description"></label>
+      <button class="btn btn-primary span-2">Add practice area</button>
+    </form>
+    <div class="card">
+    <% rows.forEach(a => { %>
+      <div class="area-row">
+        <form method="post" action="/admin/areas" class="area-edit">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= a.id %>">
+          <input name="name" value="<%= a.name %>" aria-label="Name">
+          <input name="description" value="<%= a.description || '' %>" aria-label="Description">
+          <span class="tiny muted nowrap"><%= a.lawyer_count %> active</span>
+          <button class="btn btn-outline btn-sm">Save</button>
+        </form>
+        <form method="post" action="/admin/areas/<%= a.id %>/delete" data-confirm="Delete <%= a.name %>? Lawyers will be unlinked from it.">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Delete</button>
+        </form>
+      </div>
+    <% }) %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

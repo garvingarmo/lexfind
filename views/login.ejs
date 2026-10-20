@@ -1,0 +1,15 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card auth-card">
+    <h1>Sign in</h1>
+    <p class="muted">For lawyers and site administrators.</p>
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Email <input name="email" type="email" required autocomplete="username"></label>
+      <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
+      <button class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <p class="small">New here? <a href="/register">Create your listing</a></p>
+  </div>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,26 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card">
+    <h1>List your practice</h1>
+    <p class="muted">Create a free account to manage your listing. Our team verifies every lawyer before the profile goes live.</p>
+    <form method="post" action="/register" class="form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Full name* <input name="name" required value="<%= form.name || '' %>"></label>
+      <label>Firm <input name="firm" value="<%= form.firm || '' %>"></label>
+      <label>Email* <input name="email" type="email" required value="<%= form.email || '' %>" autocomplete="username"></label>
+      <label>Phone <input name="phone" value="<%= form.phone || '' %>"></label>
+      <label>City* <input name="city" required value="<%= form.city || '' %>"></label>
+      <label>State (2 letters)* <input name="state" required maxlength="2" value="<%= form.state || '' %>"></label>
+      <label class="span-2">Bar number* <input name="bar_number" required value="<%= form.bar_number || '' %>"></label>
+      <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
+        <% const sel = [].concat(form.areas || []).map(String); areas.forEach(a => { %>
+          <label class="check"><input type="checkbox" name="areas" value="<%= a.id %>" <%= sel.includes(String(a.id)) ? 'checked' : '' %>> <%= a.name %></label>
+        <% }) %>
+      </fieldset>
+      <label>Password* <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+      <label>Confirm password* <input name="password2" type="password" minlength="8" required autocomplete="new-password"></label>
+      <button class="btn btn-primary span-2">Create account</button>
+    </form>
+  </div>
+</section>
+<%- include('partials/footer') %>

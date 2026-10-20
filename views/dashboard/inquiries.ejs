@@ -1,0 +1,19 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Inquiries</h1>
+    <% if (!rows.length) { %><div class="card"><p class="muted">No inquiries yet. A complete profile helps you appear in more AI matches.</p></div><% } %>
+    <% rows.forEach(i => { %>
+      <div class="card inquiry <%= i.is_read ? '' : 'unread' %>">
+        <div class="section-head">
+          <div><strong><%= i.name %></strong> <span class="muted small">· <%= i.created_at %> · via <%= i.source === 'assistant' ? 'AI match' : 'profile' %></span></div>
+          <% if (!i.is_read) { %><form method="post" action="/dashboard/inquiries/<%= i.id %>/read"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Mark read</button></form><% } %>
+        </div>
+        <p class="small"><a href="mailto:<%= i.email %>"><%= i.email %></a><%= i.phone ? ' · ' + i.phone : '' %></p>
+        <p class="pre"><%= i.message %></p>
+      </div>
+    <% }) %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

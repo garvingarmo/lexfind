@@ -1,0 +1,13 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div class="card">
+    <div class="section-head"><h1>Edit profile</h1><a class="btn btn-ghost btn-sm" href="/dashboard/research">✦ Fill in with AI</a></div>
+    <form method="post" action="/dashboard/profile" enctype="multipart/form-data" class="form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <%- include('../partials/profile-fields', { l, areas, selected }) %>
+      <button class="btn btn-primary span-2">Save profile</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>
