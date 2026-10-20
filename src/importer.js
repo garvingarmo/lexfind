@@ -4,11 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { parse } from 'csv-parse/sync';
-import { db, tx, ROOT, uniqueSlug } from './db.js';
+import { db, tx, DATA_DIR, uniqueSlug } from './db.js';
 import { createLawyer, updateLawyer, setAreas, cleanLawyerInput, listAreas } from './models.js';
 import { STATES } from './ai/agent.js';
 
-const importDir = path.join(ROOT, 'data', 'imports');
+const importDir = path.join(DATA_DIR, 'imports');
 fs.mkdirSync(importDir, { recursive: true });
 
 /** Directory fields a spreadsheet column can be mapped to, with header names we recognise automatically. */

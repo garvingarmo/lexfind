@@ -1,36 +1,14 @@
 // Creates the admin account, practice areas and (unless --no-demo) sample data.
 // All sample lawyers are fictional.
 import crypto from 'node:crypto';
-import bcrypt from 'bcryptjs';
 import { db, slugify } from './db.js';
 import { createLawyer, setAreas } from './models.js';
+import { ensureAreas, ensureUser } from './bootstrap.js';
 
 const demo = !process.argv.includes('--no-demo');
 
-const AREAS = [
-  ['Family Law', 'Divorce, child custody and support, adoption, prenuptial agreements'],
-  ['Criminal Defense', 'DUI, misdemeanors, felonies, juvenile cases, expungement'],
-  ['Personal Injury', 'Car accidents, slip and fall, medical malpractice, wrongful death'],
-  ['Immigration', 'Visas, green cards, citizenship, asylum, deportation defense'],
-  ['Employment Law', 'Wrongful termination, discrimination, harassment, unpaid wages'],
-  ['Estate Planning', 'Wills, trusts, probate, powers of attorney, elder law'],
-  ['Real Estate', 'Purchases and sales, landlord-tenant disputes, evictions, title issues'],
-  ['Business Law', 'Business formation, contracts, partnerships, mergers, compliance'],
-  ['Bankruptcy', 'Chapter 7 and 13, debt relief, foreclosure defense, creditor harassment'],
-  ['Intellectual Property', 'Patents, trademarks, copyrights, licensing, infringement'],
-  ['Tax Law', 'IRS audits, tax debt, business tax planning, tax disputes'],
-];
-
-const ins = db.prepare('INSERT OR IGNORE INTO practice_areas (name, slug, description) VALUES (?, ?, ?)');
-for (const [name, desc] of AREAS) ins.run(name, slugify(name), desc);
+ensureAreas();
 const areaId = Object.fromEntries(db.prepare('SELECT id, name FROM practice_areas').all().map((a) => [a.name, a.id]));
-
-function ensureUser(email, role, password) {
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) return { id: existing.id, created: false };
-  const id = Number(db.prepare('INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)').run(email, bcrypt.hashSync(password, 10), role).lastInsertRowid);
-  return { id, created: true };
-}
 
 const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
 const adminPassword = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url');

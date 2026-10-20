@@ -4,16 +4,15 @@ import helmet from 'helmet';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { ROOT, db } from './db.js';
-import { SqliteStore, locals, csrfUnlessMultipart } from './middleware.js';
+import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
+import { bootstrapIfEmpty } from './bootstrap.js';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import adminRoutes from './routes/admin.js';
 import { aiEnabled, MODEL } from './ai/client.js';
 
-if (!db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
-  console.warn('No users yet. Run `npm run seed` to create an admin account and sample data.');
-}
+bootstrapIfEmpty();
 
 const app = express();
 const prod = process.env.NODE_ENV === 'production';
@@ -38,6 +37,7 @@ const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
 if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
+app.use('/uploads', express.static(uploadDir, { maxAge: prod ? '7d' : 0 }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '100kb' }));
 

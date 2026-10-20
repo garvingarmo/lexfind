@@ -73,6 +73,10 @@ To get the links to lawyers, any of these work:
 
 Set `PUBLIC_URL=https://chaldeanlaw.com` in production so links always use your domain.
 
+## First start without a terminal
+
+If the database has no users, the server creates the default practice areas and an admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` on start-up. Change the password after your first login. Set `DATA_DIR` to keep the database and uploads outside the code folder.
+
 ## Deploying on cPanel
 
 Use **Setup Node.js App**. Set the application startup file to `app.cjs`, choose Node.js 22 or newer, and add the environment variables from `.env.example` in that screen. Then run `npm install` and `node src/seed.js --no-demo` from the app's virtual environment.

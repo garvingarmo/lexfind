@@ -5,10 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '..');
-const dataDir = path.join(ROOT, 'data');
-fs.mkdirSync(dataDir, { recursive: true });
+// DATA_DIR keeps the database (and, by default, uploads) outside the code folder on hosts that redeploy it.
+export const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
+fs.mkdirSync(DATA_DIR, { recursive: true });
 
-export const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, 'directory.db'));
+export const db = new DatabaseSync(process.env.DB_PATH || path.join(DATA_DIR, 'directory.db'));
 db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
 
 db.exec(`

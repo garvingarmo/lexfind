@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import session from 'express-session';
 import multer from 'multer';
-import { db, ROOT, getSettings } from './db.js';
+import { db, ROOT, DATA_DIR, getSettings } from './db.js';
 import { getLawyer } from './models.js';
 
 /** express-session store backed by the app's SQLite database. */
@@ -109,7 +109,7 @@ export function rateLimit({ windowMs, max, message }) {
   };
 }
 
-const uploadDir = path.join(ROOT, 'public', 'uploads');
+export const uploadDir = path.resolve(process.env.UPLOAD_DIR || (process.env.DATA_DIR ? path.join(DATA_DIR, 'uploads') : path.join(ROOT, 'public', 'uploads')));
 fs.mkdirSync(uploadDir, { recursive: true });
 
 export const upload = multer({
