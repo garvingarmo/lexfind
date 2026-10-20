@@ -38,7 +38,61 @@ router.get('/', (req, res) => {
 router.get('/lawyers', (req, res) => {
   const status = ['pending', 'active', 'suspended'].includes(req.query.status) ? req.query.status : '';
   const q = (req.query.q || '').toString().slice(0, 100);
-  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses() });
+  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses(), areas: listAreas() });
+});
+
+// Bulk actions on the lawyers ticked in the list.
+const BULK = {
+  active: ["UPDATE lawyers SET status = 'active', verified = 1, updated_at = datetime('now') WHERE id = ?", 'set to active'],
+  pending: ["UPDATE lawyers SET status = 'pending', updated_at = datetime('now') WHERE id = ?", 'set to pending'],
+  suspended: ["UPDATE lawyers SET status = 'suspended', updated_at = datetime('now') WHERE id = ?", 'suspended'],
+  verify: ["UPDATE lawyers SET verified = 1 WHERE id = ?", 'marked verified'],
+  unverify: ["UPDATE lawyers SET verified = 0 WHERE id = ?", 'marked not verified'],
+  feature: ["UPDATE lawyers SET featured = 1 WHERE id = ?", 'marked sponsored'],
+  unfeature: ["UPDATE lawyers SET featured = 0 WHERE id = ?", 'no longer sponsored'],
+  free_on: ["UPDATE lawyers SET free_consultation = 1 WHERE id = ?", 'marked as offering a free consultation'],
+  free_off: ["UPDATE lawyers SET free_consultation = 0 WHERE id = ?", 'marked as not offering a free consultation'],
+  add_area: ['INSERT OR IGNORE INTO lawyer_practice_areas (lawyer_id, area_id) VALUES (?, ?)', 'given the practice area'],
+  remove_area: ['DELETE FROM lawyer_practice_areas WHERE lawyer_id = ? AND area_id = ?', 'removed from the practice area'],
+};
+
+router.post('/lawyers/bulk', (req, res) => {
+  const ids = [].concat(req.body.ids || []).map(Number).filter(Boolean);
+  const action = req.body.action;
+  const back = req.get('referer')?.includes('/admin/lawyers') ? req.get('referer') : '/admin/lawyers';
+  if (!ids.length) { flash(req, 'error', 'Tick at least one lawyer first.'); return res.redirect(back); }
+  const n = `${ids.length} lawyer${ids.length === 1 ? '' : 's'}`;
+
+  if (action === 'delete') {
+    tx(() => {
+      for (const id of ids) {
+        const l = db.prepare('SELECT user_id FROM lawyers WHERE id = ?').get(id);
+        db.prepare('DELETE FROM lawyers WHERE id = ?').run(id);
+        if (l?.user_id) db.prepare("DELETE FROM users WHERE id = ? AND role = 'lawyer'").run(l.user_id);
+      }
+    });
+    flash(req, 'success', `Deleted ${n}.`);
+    return res.redirect(back);
+  }
+  if (action === 'invite') {
+    const eligible = ids.filter((id) => !getLawyer('id', id)?.user_id);
+    for (const id of eligible) createInvite(id, req.user.id);
+    flash(req, 'success', `Created invitation links for ${eligible.length} of ${n}${eligible.length < ids.length ? ' (the others already have a login)' : ''}.`);
+    return res.redirect('/admin/invites?status=invited');
+  }
+  const op = BULK[action];
+  if (!op) { flash(req, 'error', 'Choose an action.'); return res.redirect(back); }
+  let area = null;
+  if (action === 'add_area' || action === 'remove_area') {
+    area = db.prepare('SELECT * FROM practice_areas WHERE id = ?').get(req.body.area_id);
+    if (!area) { flash(req, 'error', 'Choose a practice area.'); return res.redirect(back); }
+  }
+  tx(() => {
+    const stmt = db.prepare(op[0]);
+    for (const id of ids) area ? stmt.run(id, area.id) : stmt.run(id);
+  });
+  flash(req, 'success', `${n} ${op[1]}${area ? ` "${area.name}"` : ''}.`);
+  res.redirect(back);
 });
 
 router.get('/lawyers/new', (req, res) => {

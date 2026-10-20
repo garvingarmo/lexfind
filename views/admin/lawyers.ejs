@@ -8,25 +8,59 @@
       <select name="status"><option value="">All statuses</option><% ['pending','active','suspended'].forEach(s => { %><option <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
       <button class="btn btn-outline btn-sm">Filter</button>
     </form>
-    <div class="card table-wrap">
+    <form method="post" action="/admin/lawyers/bulk" class="card table-wrap" id="bulk-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="bulk-bar">
+        <span class="small"><strong id="bulk-count">0</strong> selected</span>
+        <select name="action" id="bulk-action" aria-label="Bulk action">
+          <option value="">Choose an action…</option>
+          <optgroup label="Status">
+            <option value="active">Set to active (publish)</option>
+            <option value="pending">Set to pending (hide)</option>
+            <option value="suspended">Suspend</option>
+          </optgroup>
+          <optgroup label="Badges">
+            <option value="verify">Mark verified</option>
+            <option value="unverify">Remove verified</option>
+            <option value="feature">Mark sponsored</option>
+            <option value="unfeature">Remove sponsored</option>
+            <option value="free_on">Offers free consultation</option>
+            <option value="free_off">No free consultation</option>
+          </optgroup>
+          <optgroup label="Practice areas">
+            <option value="add_area">Add practice area…</option>
+            <option value="remove_area">Remove practice area…</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option value="invite">Create invitation links</option>
+            <option value="delete">Delete selected lawyers</option>
+          </optgroup>
+        </select>
+        <select name="area_id" id="bulk-area" aria-label="Practice area" hidden>
+          <option value="">Choose practice area…</option>
+          <% areas.forEach(a => { %><option value="<%= a.id %>"><%= a.name %></option><% }) %>
+        </select>
+        <button class="btn btn-primary btn-sm" id="bulk-apply" disabled>Apply</button>
+      </div>
       <table class="table">
-        <thead><tr><th>Name</th><th>Location</th><th>Areas</th><th>Status</th><th>Flags</th><th>Login</th><th></th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all lawyers shown"></th><th>Name</th><th>Location</th><th>Areas</th><th>Status</th><th>Flags</th><th>Login</th><th></th></tr></thead>
         <tbody>
         <% rows.forEach(l => { %>
           <tr>
+            <td><input type="checkbox" name="ids" value="<%= l.id %>" class="bulk-item" aria-label="Select <%= l.name %>"></td>
             <td><a href="/admin/lawyers/<%= l.id %>"><%= l.name %></a><div class="tiny muted"><%= l.firm || '' %></div></td>
             <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
             <td class="tiny"><%= l.areas.map(a => a.name).join(', ') %></td>
             <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
-            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %></td>
+            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %><%= l.free_consultation ? ' Free consult' : '' %></td>
             <td class="tiny"><% const st = inv.get(l.id).status; %><a href="/admin/lawyers/<%= l.id %>#invite"><%= { none: 'Invite', invited: 'Invited', expired: 'Expired', login: 'Claimed' }[st] %></a></td>
             <td class="right nowrap"><a href="/lawyers/<%= l.slug %>" target="_blank">View</a> · <a href="/admin/lawyers/<%= l.id %>/research">AI</a></td>
           </tr>
         <% }) %>
         </tbody>
       </table>
-      <% if (!rows.length) { %><p class="muted">No lawyers found.</p><% } %>
-    </div>
+      <% if (!rows.length) { %><p class="muted">No lawyers found.</p><% } else { %><p class="tiny muted"><%= rows.length %> lawyer<%= rows.length === 1 ? '' : 's' %> shown. Use the search and status filter above to narrow the list, then tick the box in the header to select them all.</p><% } %>
+    </form>
   </div>
 </section>
 <%- include('../partials/footer') %>

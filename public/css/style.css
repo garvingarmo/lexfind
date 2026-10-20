@@ -294,3 +294,5 @@ div.card.inquiry { padding: 20px; }
 .area-merge select { width: 170px; padding: 6px 8px; font-size: .85rem; }
 .danger-card { border-color: #ecc0c0; }
 .danger-card h2 { color: var(--danger); }
+.bulk-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.bulk-bar select { width: auto; max-width: 260px; padding: 6px 8px; font-size: .88rem; }

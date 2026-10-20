@@ -25,6 +25,44 @@
     });
   });
 
+  // Bulk actions on the admin lawyers list.
+  const bulk = document.getElementById('bulk-form');
+  if (bulk) {
+    const items = [...bulk.querySelectorAll('.bulk-item')];
+    const all = document.getElementById('bulk-all');
+    const action = document.getElementById('bulk-action');
+    const area = document.getElementById('bulk-area');
+    const apply = document.getElementById('bulk-apply');
+    const count = document.getElementById('bulk-count');
+    const refresh = () => {
+      const n = items.filter((c) => c.checked).length;
+      count.textContent = n;
+      all.checked = n > 0 && n === items.length;
+      all.indeterminate = n > 0 && n < items.length;
+      const needsArea = action.value === 'add_area' || action.value === 'remove_area';
+      area.hidden = !needsArea;
+      apply.disabled = !n || !action.value || (needsArea && !area.value);
+      apply.classList.toggle('btn-danger', action.value === 'delete');
+    };
+    all.addEventListener('change', () => { items.forEach((c) => { c.checked = all.checked; }); refresh(); });
+    items.forEach((c) => c.addEventListener('change', refresh));
+    action.addEventListener('change', refresh);
+    area.addEventListener('change', refresh);
+    bulk.addEventListener('submit', (e) => {
+      const n = items.filter((c) => c.checked).length;
+      const label = action.options[action.selectedIndex].text;
+      const who = `${n} lawyer${n === 1 ? '' : 's'}`;
+      const areaName = area.value ? area.options[area.selectedIndex].text : '';
+      const msg = {
+        delete: `Permanently delete ${who}, with their logins and inquiries? This cannot be undone.`,
+        add_area: `Add "${areaName}" to ${who}?`,
+        remove_area: `Remove "${areaName}" from ${who}?`,
+      }[action.value] || `${label} for ${who}?`;
+      if (!confirm(msg)) e.preventDefault();
+    });
+    refresh();
+  }
+
   // Poll a running AI research job and reload when it finishes.
   const wait = document.getElementById('research-wait');
   if (wait) {
