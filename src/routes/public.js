@@ -9,7 +9,7 @@ import { aiEnabled } from '../ai/client.js';
 import { getSections } from '../homepage.js';
 import { lawyerSocial } from '../social.js';
 import { getLanguageOptions } from '../languages.js';
-import { getProfileSettings } from '../profileSettings.js';
+import { getProfileSettings, getSearchSettings } from '../profileSettings.js';
 import { mailEnabled, sendMail } from '../mailer.js';
 import { getSettings } from '../db.js';
 
@@ -36,23 +36,24 @@ router.get('/', (req, res) => {
 });
 
 router.get('/lawyers', (req, res) => {
+  const search = getSearchSettings();
   const f = {
     q: (req.query.q || '').toString().slice(0, 200),
     area: (req.query.area || '').toString(),
     city: (req.query.city || '').toString().slice(0, 80),
     state: (req.query.state || '').toString().slice(0, 2),
     language: (req.query.language || '').toString().slice(0, 40),
-    sort: (req.query.sort || 'relevance').toString(),
+    sort: (req.query.sort || search.defaultSort).toString(),
     page: Math.max(1, parseInt(req.query.page, 10) || 1),
   };
   const perPage = 12;
-  const { rows, total } = searchLawyers({ ...f, perPage });
+  const { rows, total } = searchLawyers({ ...f, sponsoredFirst: search.sponsoredFirst, perPage });
   const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   const languages = getLanguageOptions();
   const qs = (overrides) => {
     const p = new URLSearchParams();
     const merged = { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, sort: f.sort, page: f.page, ...overrides };
-    for (const [k, v] of Object.entries(merged)) if (v && !(k === 'sort' && v === 'relevance') && !(k === 'page' && v === 1)) p.set(k, v);
+    for (const [k, v] of Object.entries(merged)) if (v && !(k === 'sort' && v === search.defaultSort) && !(k === 'page' && v === 1)) p.set(k, v);
     return `/lawyers${p.toString() ? `?${p}` : ''}`;
   };
   res.render('search', {

@@ -22,7 +22,7 @@
       </label>
       <label><%- e('search.sortBy') %>
         <select name="sort">
-          <% [['relevance',t('search.sortBest')],['experience',t('search.sortExperience')],['name',t('search.sortName')],['newest',t('search.sortNewest')]].forEach(([v, t]) => { %>
+          <% [['last_name',t('search.sortLast')],['name',t('search.sortName')],['relevance',t('search.sortBest')],['experience',t('search.sortExperience')],['newest',t('search.sortNewest')]].forEach(([v, t]) => { %>
             <option value="<%= v %>" <%= f.sort === v ? 'selected' : '' %>><%= t %></option><% }) %>
         </select>
       </label>

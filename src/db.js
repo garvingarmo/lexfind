@@ -182,6 +182,7 @@ if (addColumn('lawyers', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
 if (addColumn('ads', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
   db.exec("UPDATE ads SET is_sample = 1 WHERE lawyer_id IN (SELECT id FROM lawyers WHERE is_sample = 1) OR title = 'Advertise your practice here'");
 }
+addColumn('lawyers', 'sort_name', 'TEXT'); // "last first", for sorting by surname
 for (const n of ['linkedin', 'facebook', 'instagram', 'x', 'youtube', 'tiktok']) addColumn('lawyers', `social_${n}`, 'TEXT');
 addColumn('posts', 'format', "TEXT NOT NULL DEFAULT 'markdown'");
 if (addColumn('posts', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {

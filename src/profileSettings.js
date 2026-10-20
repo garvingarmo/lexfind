@@ -26,6 +26,28 @@ export function getProfileSettings() {
   return out;
 }
 
+// Search results: default order and whether sponsored lawyers are listed first.
+export const SORT_LABELS = {
+  last_name: 'Last name (A–Z)',
+  name: 'First name (A–Z)',
+  relevance: 'Best match (verified, then most experience)',
+  experience: 'Most experience',
+  newest: 'Newest listings',
+};
+
+export function getSearchSettings() {
+  const s = getSettings();
+  return {
+    defaultSort: SORT_LABELS[s.search_default_sort] ? s.search_default_sort : 'last_name',
+    sponsoredFirst: s.search_sponsored_first !== '0',
+  };
+}
+
+export function saveSearchSettings(body) {
+  if (SORT_LABELS[body.default_sort]) setSetting('search_default_sort', body.default_sort);
+  setSetting('search_sponsored_first', body.sponsored_first ? '1' : '0');
+}
+
 export function saveProfileSettings(body) {
   for (const k of Object.keys(PROFILE_OPTIONS)) setSetting(`profile_${k}`, body[k] ? '1' : '0');
 }

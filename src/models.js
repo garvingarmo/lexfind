@@ -68,7 +68,16 @@ function attachAreas(rows) {
  * Search active lawyers. Every filter is optional.
  * Returns { rows, total } — featured (sponsored) listings sort first.
  */
-export function searchLawyers({ q, area, city, state, language, sort = 'relevance', page = 1, perPage = 12 } = {}) {
+// Search result orderings. "relevance" (best match) is also what the AI assistant uses.
+export const SORTS = {
+  relevance: 'l.verified DESC, l.years_experience IS NULL, l.years_experience DESC, l.sort_name',
+  last_name: 'l.sort_name, l.name',
+  name: 'l.name COLLATE NOCASE',
+  experience: 'l.years_experience IS NULL, l.years_experience DESC, l.sort_name',
+  newest: 'l.created_at DESC, l.sort_name',
+};
+
+export function searchLawyers({ q, area, city, state, language, sort = 'relevance', sponsoredFirst = true, page = 1, perPage = 12 } = {}) {
   const where = ["l.status = 'active'"];
   const params = [];
   if (q) {
@@ -90,12 +99,7 @@ export function searchLawyers({ q, area, city, state, language, sort = 'relevanc
   if (state) { where.push('UPPER(l.state) = UPPER(?)'); params.push(state); }
   if (language) { where.push('l.languages LIKE ?'); params.push(`%${language}%`); }
 
-  const order = {
-    relevance: 'l.featured DESC, l.verified DESC, l.years_experience DESC',
-    experience: 'l.featured DESC, l.years_experience DESC',
-    name: 'l.featured DESC, l.name ASC',
-    newest: 'l.featured DESC, l.created_at DESC',
-  }[sort] || 'l.featured DESC, l.verified DESC, l.years_experience DESC';
+  const order = `${sponsoredFirst ? 'l.featured DESC, ' : ''}${SORTS[sort] || SORTS.relevance}`;
 
   const whereSql = where.join(' AND ');
   const total = db.prepare(`SELECT COUNT(*) AS n FROM lawyers l WHERE ${whereSql}`).get(...params).n;
@@ -142,8 +146,8 @@ export function cleanLawyerInput(body) {
 
 const NAME_EXTRAS = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v', 'esq', 'esquire', 'jd', 'phd', 'llm', 'md', 'cpa', 'dr', 'mr', 'mrs', 'ms', 'miss', 'hon', 'atty', 'attorney']);
 
-/** Profile URL from a name: first and last name only ("Steven A. Elia, Esq." → "steven-elia"). */
-export function nameSlug(name) {
+/** The meaningful words of a name: no nicknames, credentials, titles, suffixes or middle initials. */
+function nameWords(name) {
   const words = String(name || '')
     .replace(/\([^)]*\)/g, ' ')        // (nicknames)
     .split(',')[0]                      // ", Esq." and other credentials after a comma
@@ -152,8 +156,28 @@ export function nameSlug(name) {
     .filter((w) => w && w !== 'item' && !NAME_EXTRAS.has(w.replace(/-/g, '')));
   const named = words.filter((w) => w.replace(/-/g, '').length > 1); // drop middle initials like "A."
   if (named.length) words.splice(0, words.length, ...named);
+  return words;
+}
+
+/** Profile URL from a name: first and last name only ("Steven A. Elia, Esq." → "steven-elia"). */
+export function nameSlug(name) {
+  const words = nameWords(name);
   if (!words.length) return slugify(name);
   return words.length === 1 ? words[0] : `${words[0]}-${words[words.length - 1]}`;
+}
+
+/** Sort key "last first" ("Steven A. Elia" → "elia steven"), for sorting by surname. */
+export function sortName(name) {
+  const words = nameWords(name);
+  if (!words.length) return String(name || '').toLowerCase();
+  return words.length === 1 ? words[0] : `${words[words.length - 1]} ${words[0]}`;
+}
+
+/** Fill in sort_name for lawyers saved before it existed. */
+export function backfillSortNames() {
+  const rows = db.prepare('SELECT id, name FROM lawyers WHERE sort_name IS NULL').all();
+  for (const r of rows) db.prepare('UPDATE lawyers SET sort_name = ? WHERE id = ?').run(sortName(r.name), r.id);
+  return rows.length;
 }
 /** Give a lawyer a new URL and keep the old one as a redirect. */
 export function setLawyerSlug(id, wanted) {
@@ -180,6 +204,7 @@ export function migrateSlugsToNames() {
 }
 
 export function createLawyer(data) {
+  data = { ...data, sort_name: sortName(data.name) };
   const slug = uniqueSlug('lawyers', nameSlug(data.name));
   const fields = Object.keys(data);
   const r = db.prepare(`INSERT INTO lawyers (slug, ${fields.join(', ')}) VALUES (?, ${fields.map(() => '?').join(', ')})`)
@@ -188,6 +213,7 @@ export function createLawyer(data) {
 }
 
 export function updateLawyer(id, data) {
+  if (data.name) data = { ...data, sort_name: sortName(data.name) };
   const fields = Object.keys(data);
   if (!fields.length) return;
   db.prepare(`UPDATE lawyers SET ${fields.map((f) => `${f} = ?`).join(', ')}, updated_at = datetime('now') WHERE id = ?`)

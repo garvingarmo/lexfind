@@ -13,7 +13,7 @@ import { TEXT_GROUPS, TEXT_DEFAULTS, loadTexts, saveTexts } from '../texts.js';
 import { FONTS, THEME_DEFAULTS, getTheme, saveTheme, allFontsUrl } from '../theme.js';
 import { SECTIONS, getSections, saveSections } from '../homepage.js';
 import { NETWORKS, SOCIAL_KEYS, saveSiteSocial, socialIcon } from '../social.js';
-import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings } from '../profileSettings.js';
+import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings, SORT_LABELS, getSearchSettings, saveSearchSettings } from '../profileSettings.js';
 import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -720,7 +720,13 @@ router.post('/social', (req, res) => {
 });
 
 router.get('/profile-settings', (req, res) => {
-  res.render('admin/profile-settings', { title: 'Lawyer profiles', options: PROFILE_OPTIONS, pf: getProfileSettings(), mailOn: smtpEnabled(), languages: getLanguageOptions(), unlisted: unlistedLanguages() });
+  res.render('admin/profile-settings', { title: 'Lawyer profiles', options: PROFILE_OPTIONS, pf: getProfileSettings(), mailOn: smtpEnabled(), languages: getLanguageOptions(), unlisted: unlistedLanguages(), SORT_LABELS, search: getSearchSettings() });
+});
+
+router.post('/search-settings', (req, res) => {
+  saveSearchSettings(req.body);
+  flash(req, 'success', 'Search result settings saved.');
+  res.redirect('/admin/profile-settings#search');
 });
 
 router.post('/languages', (req, res) => {

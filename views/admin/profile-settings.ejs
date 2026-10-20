@@ -23,6 +23,19 @@
       <div class="actions start"><button class="btn btn-primary">Save profile settings</button></div>
     </form>
 
+    <form method="post" action="/admin/search-settings" class="card stack" id="search">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>Search results</h2>
+      <label>Default order on "Find a lawyer"
+        <select name="default_sort">
+          <% Object.entries(SORT_LABELS).forEach(([k, label]) => { %><option value="<%= k %>" <%= search.defaultSort === k ? 'selected' : '' %>><%= label %></option><% }) %>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" name="sponsored_first" <%= search.sponsoredFirst ? 'checked' : '' %>> Always list sponsored lawyers first</label>
+      <p class="tiny muted">Visitors can still choose another order from the "Sort by" menu. Last-name order ignores middle names, initials and suffixes like Esq. or Jr.</p>
+      <div class="actions start"><button class="btn btn-primary">Save search settings</button></div>
+    </form>
+
     <form method="post" action="/admin/languages" class="card stack" id="languages">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <h2>Languages list</h2>
