@@ -10,12 +10,14 @@
         </div>
       <% } %>
     </div>
+    <% if (!locals.membersOnly || locals.isMember) { %>
     <div>
       <h4><%- e('footer.directory') %></h4>
       <a href="/lawyers"><%- e('footer.find') %></a>
       <a href="/assistant"><%- e('footer.ai') %></a>
       <a href="/blog"><%- e('footer.guides') %></a>
     </div>
+    <% } %>
     <div>
       <h4><%- e('footer.forLawyers') %></h4>
       <a href="/register"><%- e('footer.list') %></a>
