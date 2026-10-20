@@ -2,12 +2,12 @@
 <section class="container page-pad assistant-page">
   <div class="assistant-intro">
     <h1>AI lawyer match</h1>
-    <p class="muted">Tell us what's going on in your own words — what happened, where you are, and anything that matters to you (language, budget, free consultation). The assistant will suggest lawyers from our directory who handle matters like yours.</p>
+    <p class="muted">Tell us what's going on in your own words, plus anything that matters to you (language, budget, free consultation, a city if you have one in mind). The assistant will suggest lawyers from our directory who handle matters like yours.</p>
     <% if (!aiOn) { %><p class="flash flash-info small">The assistant is running in basic keyword mode.</p><% } %>
   </div>
   <div class="card chat" id="chat" data-initial="<%= initial %>">
     <div class="chat-log" id="chat-log" aria-live="polite">
-      <div class="msg msg-bot"><div class="bubble">Hi! What legal matter can I help you find a lawyer for? Please include your city or state.</div></div>
+      <div class="msg msg-bot"><div class="bubble">Hi! What legal matter can I help you find a lawyer for?</div></div>
     </div>
     <form class="chat-form" id="chat-form">
       <label class="sr-only" for="chat-input">Your message</label>

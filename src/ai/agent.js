@@ -71,7 +71,9 @@ function systemPrompt() {
   return `You are the matching assistant for ${s.site_name}, an online directory of lawyers. Visitors describe their legal matter in their own words; your job is to understand it and recommend lawyers from this directory who fit.
 
 How to work:
-- Work out which practice area(s) the matter falls under and where the visitor is located. If location or the nature of the matter is unclear and it would change who you recommend, ask one short clarifying question before searching. Otherwise search right away.
+- Always search right away. Never ask for the visitor's location (or anything else) before searching and recommending.
+- Work out which practice area(s) the matter falls under. If the visitor mentions a city or state, use it; otherwise search without a location filter, and mention where each recommended lawyer is based so the visitor can say if they need someone closer.
+- If the matter is vague, still search, using the most likely practice areas or keywords from what they wrote, and recommend the best fits; you can invite them to add detail afterwards.
 - Use search_lawyers to find candidates (try related practice areas if the first search is thin), get_lawyer_profile when you need detail to choose, then call recommend_lawyers with your best 1-5 matches.
 - After recommending, write a brief reply: a plain-language summary of what kind of lawyer they need and why, and any useful next steps (e.g. documents to gather before a consultation). Keep it under about 150 words; the cards show the lawyer details.
 - Respect stated preferences: language, budget/free consultation, location.
@@ -204,6 +206,8 @@ const KEYWORDS = {
   'tax-law': ['tax', 'irs', 'audit', 'back taxes', 'lien'],
 };
 
+const STOP = new Set(['about', 'after', 'again', 'because', 'before', 'being', 'could', 'doesn', 'their', 'there', 'these', 'thing', 'think', 'which', 'while', 'would', 'should', 'lawyer', 'attorney', 'legal', 'help', 'please', 'need', 'someone', 'where', 'what', 'years', 'since', 'still', 'other', 'really', 'going', 'getting']);
+
 export const STATES = { alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA', colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA', hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA', kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD', massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO', montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH', oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC', 'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT', virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY' };
 
 function offlineChat(history, userText) {
@@ -223,23 +227,33 @@ function offlineChat(history, userText) {
   const language = ['spanish', 'mandarin', 'korean', 'hindi', 'tamil', 'french', 'portuguese', 'italian', 'hebrew', 'vietnamese', 'arabic', 'russian']
     .find((w) => all.includes(w));
 
-  let { rows } = searchLawyers({ area, state, city: cityRow, language, perPage: 3 });
-  if (!rows.length) rows = searchLawyers({ area, state, city: cityRow, perPage: 3 }).rows;
-  if (!rows.length) rows = searchLawyers({ area, state, perPage: 3 }).rows;
-  if (!rows.length) rows = searchLawyers({ area, perPage: 3 }).rows;
-
-  const areaName = area ? listAreas().find((a) => a.slug === area)?.name : null;
-  let reply;
-  if (!area) {
-    reply = 'Could you tell me a bit more about your situation — for example, is it about a family matter, an injury, a job, a criminal charge, property, or a business? And which city or state are you in?';
-    rows = [];
-  } else if (!rows.length) {
-    reply = `It sounds like you may need a ${areaName} lawyer, but we don't have a matching listing yet. Your state or local bar association's lawyer referral service can also help.`;
-  } else {
-    reply = `It sounds like your matter falls under ${areaName}. Here are lawyers in our directory who handle it${state ? ` in or near ${state}` : ''}. ` +
-      'Before a consultation, gather any documents, dates and correspondence related to your matter.';
+  // Directory practice areas may be named differently from the keyword list (e.g. "Real Estate Law"),
+  // so search on the area's words, then relax location and language until something matches.
+  const term = area ? area.replace(/-law$/, '').replace(/-/g, ' ') : null;
+  const words = all.split(/[^a-z]+/).filter((w) => w.length > 4 && !STOP.has(w));
+  const attempts = term
+    ? [{ q: term, state, city: cityRow, language }, { q: term, state, city: cityRow }, { q: term, state }, { q: term }]
+    : [...words.slice(0, 6).map((w) => ({ q: w, state })), ...words.slice(0, 6).map((w) => ({ q: w })), {}];
+  let rows = [];
+  for (const a of attempts) {
+    for (const l of searchLawyers({ ...a, perPage: 3 }).rows) if (rows.length < 3 && !rows.some((r) => r.id === l.id)) rows.push(l);
+    if (rows.length >= 3) break;
   }
-  const recommendations = rows.map((l) => ({ lawyer: l, reason: `Practices ${areaName}${l.city ? ` in ${l.city}, ${l.state}` : ''}${l.years_experience ? ` with ${l.years_experience} years of experience` : ''}.` }));
+
+  const areaName = area ? area.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : null;
+  let reply;
+  if (!rows.length) {
+    reply = "We don't have a matching lawyer listed yet. Your state or local bar association's lawyer referral service can also help.";
+  } else if (areaName) {
+    reply = `It sounds like your matter involves ${areaName}. Here are lawyers in our directory who may fit${state ? ` (in or near ${state} where possible)` : ''}. ` +
+      'Before a consultation, gather any documents, dates and correspondence related to your matter. If you need someone in a particular city, just say so.';
+  } else {
+    reply = 'Here are some lawyers in our directory who may be able to help. Tell me a little more about your situation, or where you are, and I can narrow it down.';
+  }
+  const recommendations = rows.map((l) => ({
+    lawyer: l,
+    reason: `${l.areas.slice(0, 3).map((a) => a.name).join(', ') || 'Attorney'}${l.city ? ` in ${l.city}, ${l.state}` : ''}${l.years_experience ? `, ${l.years_experience} years of experience` : ''}.`,
+  }));
   const newHistory = [...history, { role: 'user', content: userText }, { role: 'assistant', content: reply }];
   return { reply, recommendations, history: newHistory, offline: true };
 }
