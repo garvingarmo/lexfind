@@ -125,3 +125,11 @@ src/ai/              client.js, agent.js (matching), enrich.js (research)
 views/               EJS templates
 public/              CSS, JS (chat UI), uploads
 ```
+
+## Members only
+
+By default the directory is for members: search, lawyer profiles, the AI lawyer match and exporting
+results need an approved lawyer login (or an admin). Lawyers who register can sign in and edit their
+own profile at once, and get access when an admin sets their listing to **Active** (they are emailed
+when email is set up). The home page, blog and About page stay public. Switch it off in
+**Admin → Lawyer profiles → Search results → Members only**.

@@ -133,6 +133,7 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .search-bar input, .search-bar select { border-color: transparent; background: #f4f3ef; }
 .ai-teaser { color: var(--ink); margin: 0; }
 .ai-teaser textarea { margin: 6px 0 12px; }
+.members-card .btn + .btn { margin-top: 10px; }
 .ai-pill { display: inline-block; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); margin-bottom: 8px; }
 
 .area-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }

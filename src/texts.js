@@ -51,6 +51,15 @@ export const TEXT_GROUPS = {
     'home.ctaText': 'Create your free listing, manage your profile, and receive inquiries from people who need your help.',
     'home.ctaButton': 'List your practice',
   },
+  'Members only': {
+    'members.pill': 'Members only',
+    'members.title': 'For registered lawyers',
+    'members.text': 'Search the directory, view full lawyer profiles and use the AI lawyer match. Membership is free for licensed lawyers and approved by our team.',
+    'members.signin': 'Member sign in',
+    'members.register': 'Apply for membership',
+    'members.pendingTitle': 'Your membership is awaiting approval',
+    'members.pendingText': 'Thanks for registering. Our team verifies every lawyer before giving access to the directory and AI tools. You will get an email once you are approved. In the meantime, complete your profile so we can approve it quickly.',
+  },
   'Find a lawyer': {
     'search.title': 'Find a lawyer',
     'search.keywords': 'Keywords',

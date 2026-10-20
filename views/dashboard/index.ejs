@@ -3,7 +3,7 @@
   <%- include('../partials/side-nav') %>
   <div>
     <h1>Welcome, <%= l.name.split(' ')[0] %></h1>
-    <% if (l.status === 'pending') { %><div class="flash flash-info">Your listing is awaiting verification. Complete your profile so our team can approve it quickly.</div><% } %>
+    <% if (l.status === 'pending') { %><div class="flash flash-info">Your listing is awaiting verification. Complete your profile so our team can approve it quickly.<% if (membersOnly) { %> Once approved, you can search the directory and use the AI lawyer match.<% } %></div><% } %>
     <% if (l.status === 'suspended') { %><div class="flash flash-error">Your listing is suspended. Please contact support.</div><% } %>
     <div class="stat-grid">
       <div class="card stat"><span class="stat-n"><%= l.status %></span><span class="muted small">Listing status</span></div>

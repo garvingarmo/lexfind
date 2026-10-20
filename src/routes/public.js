@@ -14,6 +14,7 @@ import { mailEnabled, sendMail } from '../mailer.js';
 import { getSettings } from '../db.js';
 import { exportRows, allMatchingIds, buildPdf, resultsEmail, recentShares, logShare, MAX_EXPORT } from '../exportResults.js';
 import { baseUrl } from '../invites.js';
+import { requireMember } from '../members.js';
 
 const router = Router();
 
@@ -37,7 +38,7 @@ router.get('/', (req, res) => {
   });
 });
 
-router.get('/lawyers', (req, res) => {
+router.get('/lawyers', requireMember, (req, res) => {
   const search = getSearchSettings();
   const f = {
     q: (req.query.q || '').toString().slice(0, 200),
@@ -79,12 +80,12 @@ function searchFilters(src) {
 const selectedIds = (body) => [].concat(body.ids || []).flatMap((v) => String(v).split(',')).map(Number).filter(Boolean).slice(0, MAX_EXPORT);
 
 // Ids of every lawyer matching the current filters, for "Select all N results".
-router.get('/lawyers-select-all.json', (req, res) => {
+router.get('/lawyers-select-all.json', requireMember, (req, res) => {
   res.json({ ids: allMatchingIds(searchLawyers, searchFilters(req.query)), max: MAX_EXPORT });
 });
 
 const exportLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 30, message: 'Too many exports. Please wait a few minutes.' });
-router.post('/lawyers/export.pdf', exportLimit, async (req, res) => {
+router.post('/lawyers/export.pdf', requireMember, exportLimit, async (req, res) => {
   const rows = exportRows(selectedIds(req.body), baseUrl(req));
   if (!rows.length) {
     flash(req, 'error', 'Select at least one lawyer to export.');
@@ -96,7 +97,7 @@ router.post('/lawyers/export.pdf', exportLimit, async (req, res) => {
 });
 
 const shareLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'You have sent several emails already. Please try again later.' });
-router.post('/lawyers/email-results', shareLimit, async (req, res) => {
+router.post('/lawyers/email-results', requireMember, shareLimit, async (req, res) => {
   const b = req.body || {};
   if (b.website) return res.json({ ok: true }); // honeypot
   const to = String(b.to || '').trim();
@@ -119,9 +120,12 @@ router.post('/lawyers/email-results', shareLimit, async (req, res) => {
   }
 });
 
-router.get('/practice-areas/:slug', (req, res) => res.redirect(`/lawyers?area=${encodeURIComponent(req.params.slug)}`));
+router.get('/practice-areas/:slug', requireMember, (req, res) => res.redirect(`/lawyers?area=${encodeURIComponent(req.params.slug)}`));
 
-router.get('/lawyers/:slug', (req, res, next) => {
+// A lawyer can always see their own profile, even before approval.
+const ownProfileOrMember = (req, res, next) => (req.lawyer && req.lawyer.slug === req.params.slug ? next() : requireMember(req, res, next));
+
+router.get('/lawyers/:slug', ownProfileOrMember, (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
   if (!lawyer) {
     // Old profile address: send visitors (and search engines) to the current one.
@@ -158,7 +162,7 @@ Reply directly to this person by email or phone. This message was sent through y
   }
 }
 
-router.post('/lawyers/:slug/contact', inquiryLimit, (req, res, next) => {
+router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
   if (!lawyer || lawyer.status !== 'active') return next();
   const { name, email, phone, message, website } = req.body;
@@ -180,12 +184,12 @@ router.post('/lawyers/:slug/contact', inquiryLimit, (req, res, next) => {
 
 // --- AI assistant ---------------------------------------------------------
 
-router.get('/assistant', (req, res) => {
+router.get('/assistant', requireMember, (req, res) => {
   res.render('assistant', { title: 'AI lawyer match', aiOn: aiEnabled(), initial: (req.query.q || '').toString().slice(0, 2000) });
 });
 
 const chatLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 30, message: 'You have sent a lot of messages. Please wait a few minutes and try again.' });
-router.post('/api/assistant', chatLimit, async (req, res) => {
+router.post('/api/assistant', requireMember, chatLimit, async (req, res) => {
   const text = (req.body?.message || '').toString().trim().slice(0, 4000);
   if (!text) return res.status(400).json({ error: 'Please describe your legal matter.' });
   let history = req.session.assistant || [];
@@ -207,7 +211,7 @@ router.post('/api/assistant', chatLimit, async (req, res) => {
   }
 });
 
-router.post('/api/assistant/reset', (req, res) => {
+router.post('/api/assistant/reset', requireMember, (req, res) => {
   req.session.assistant = [];
   res.json({ ok: true });
 });

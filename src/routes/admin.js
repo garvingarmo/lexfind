@@ -15,6 +15,8 @@ import { SECTIONS, getSections, saveSections } from '../homepage.js';
 import { NETWORKS, SOCIAL_KEYS, saveSiteSocial, socialIcon } from '../social.js';
 import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings, SORT_LABELS, getSearchSettings, saveSearchSettings } from '../profileSettings.js';
 import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
+import { watchApprovals } from '../members.js';
+import { baseUrl } from '../invites.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
 
@@ -93,10 +95,12 @@ router.post('/lawyers/bulk', (req, res) => {
     area = db.prepare('SELECT * FROM practice_areas WHERE id = ?').get(req.body.area_id);
     if (!area) { flash(req, 'error', 'Choose a practice area.'); return res.redirect(back); }
   }
+  const notify = watchApprovals(ids, baseUrl(req));
   tx(() => {
     const stmt = db.prepare(op[0]);
     for (const id of ids) area ? stmt.run(id, area.id) : stmt.run(id);
   });
+  notify();
   flash(req, 'success', `${n} ${op[1]}${area ? ` "${area.name}"` : ''}.`);
   res.redirect(back);
 });
@@ -160,7 +164,9 @@ router.post('/lawyers/:id', upload.single('photo'), verifyCsrf, (req, res, next)
   if (!data.name) { flash(req, 'error', 'Name is required.'); return res.redirect(`/admin/lawyers/${l.id}`); }
   if (req.file) data.photo = uploadedPath(req.file);
   if (req.body.remove_photo) data.photo = null;
+  const notify = watchApprovals([l.id], baseUrl(req));
   updateLawyer(l.id, data);
+  notify();
   if (req.body.slug && slugify(req.body.slug) !== l.slug) setLawyerSlug(l.id, req.body.slug);
   setAreas(l.id, [].concat(req.body.areas || []));
   const err = saveLogin(l.id, req.body);
@@ -170,7 +176,9 @@ router.post('/lawyers/:id', upload.single('photo'), verifyCsrf, (req, res, next)
 
 router.post('/lawyers/:id/status', (req, res) => {
   const s = ['pending', 'active', 'suspended'].includes(req.body.status) ? req.body.status : null;
+  const notify = watchApprovals([req.params.id], baseUrl(req));
   if (s) db.prepare("UPDATE lawyers SET status = ?, verified = CASE WHEN ? = 'active' THEN 1 ELSE verified END, updated_at = datetime('now') WHERE id = ?").run(s, s, req.params.id);
+  notify();
   flash(req, 'success', 'Status updated.');
   res.redirect(req.get('referer') || '/admin/lawyers');
 });

@@ -6,6 +6,7 @@ import { flash, rateLimit } from '../middleware.js';
 import { checkInvite, acceptInvite } from '../invites.js';
 import { requestReset, findReset, setPassword } from '../passwords.js';
 import { mailEnabled } from '../mailer.js';
+import { membersOnly } from '../members.js';
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many attempts. Try again in a few minutes.' });
@@ -66,7 +67,7 @@ router.post('/register', authLimit, (req, res) => {
   });
   req.session.regenerate(() => {
     req.session.userId = userId;
-    flash(req, 'success', 'Welcome! Complete your profile below. Your listing will go live once our team verifies it.');
+    flash(req, 'success', `Welcome! Complete your profile below. Your listing will go live${membersOnly() ? ', and you will get access to the directory and AI tools,' : ''} once our team verifies it.`);
     res.redirect('/dashboard/profile');
   });
 });

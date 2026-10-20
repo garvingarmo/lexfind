@@ -2,6 +2,6 @@
 <section class="container narrow page-pad center">
   <h1><%= title %></h1>
   <p class="muted"><%= message %></p>
-  <p><a class="btn btn-primary" href="/">Go home</a> <a class="btn btn-outline" href="/lawyers">Find a lawyer</a></p>
+  <p><a class="btn btn-primary" href="/">Go home</a> <% if (!membersOnly || isMember) { %><a class="btn btn-outline" href="/lawyers">Find a lawyer</a><% } %></p>
 </section>
 <%- include('partials/footer') %>

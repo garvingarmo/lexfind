@@ -4,6 +4,8 @@
     <div>
       <h1><%- e('hero_title') %></h1>
       <p class="lead"><%- e('hero_subtitle') %></p>
+      <% const locked = membersOnly && !isMember; %>
+      <% if (!locked) { %>
       <form class="search-bar" action="/lawyers" method="get" role="search">
         <label class="sr-only" for="hq"><%= t('search.keywords') %></label>
         <input id="hq" name="q" placeholder="<%= t('home.searchPlaceholder') %>">
@@ -19,7 +21,17 @@
         </select>
         <button class="btn btn-primary"><%- e('home.searchButton') %></button>
       </form>
+      <% } %>
     </div>
+    <% if (locked) { %>
+    <div class="card ai-teaser members-card">
+      <div class="ai-pill"><%- e('members.pill') %></div>
+      <h2><%- e('members.title') %></h2>
+      <p class="muted"><%- e('members.text') %></p>
+      <a class="btn btn-accent btn-block" href="/login"><%- e('members.signin') %></a>
+      <a class="btn btn-outline btn-block" href="/register"><%- e('members.register') %></a>
+    </div>
+    <% } else { %>
     <form class="card ai-teaser" action="/assistant" method="get">
       <div class="ai-pill"><%- e('home.aiPill') %></div>
       <h2><%- e('home.aiTitle') %></h2>
@@ -29,6 +41,7 @@
       <button class="btn btn-accent btn-block"><%- e('home.aiButton') %></button>
       <p class="tiny muted"><%- e('home.aiNote') %></p>
     </form>
+    <% } %>
   </div>
 </section>
 <% sections.filter(s => s.visible).forEach(s => { %><%- include('home/' + s.id) %><% }) %>

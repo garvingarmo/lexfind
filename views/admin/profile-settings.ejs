@@ -33,6 +33,8 @@
       </label>
       <label class="check"><input type="checkbox" name="sponsored_first" <%= search.sponsoredFirst ? 'checked' : '' %>> Always list sponsored lawyers first</label>
       <p class="tiny muted">Visitors can still choose another order from the "Sort by" menu. Last-name order ignores middle names, initials and suffixes like Esq. or Jr.</p>
+      <label class="check"><input type="checkbox" name="members_only" <%= search.membersOnly ? 'checked' : '' %>> <strong>Members only:</strong> search, lawyer profiles and the AI lawyer match need an approved lawyer login</label>
+      <p class="tiny muted">Lawyers who register can sign in and edit their own profile straight away, but only get access once you set their listing to Active (they are emailed when you do, if email is set up). The home page, blog and About page stay public.</p>
       <div class="actions start"><button class="btn btn-primary">Save search settings</button></div>
     </form>
 

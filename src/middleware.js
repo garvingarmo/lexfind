@@ -10,6 +10,7 @@ import { getTheme, themeVersion, fontUrl } from './theme.js';
 import { getSiteSocial, socialIcon } from './social.js';
 import { getProfileSettings } from './profileSettings.js';
 import { getLanguageOptions } from './languages.js';
+import { membersOnly, isMember } from './members.js';
 
 /** express-session store backed by the app's SQLite database. */
 export class SqliteStore extends session.Store {
@@ -55,6 +56,8 @@ export function locals(req, res, next) {
       res.locals.myLawyer = req.lawyer || null;
     }
   }
+  res.locals.membersOnly = membersOnly();
+  res.locals.isMember = isMember(req);
   // Admins can switch on "Edit page" to change wording by clicking it.
   const editMode = Boolean(req.user?.role === 'admin' && req.session.editMode && !req.path.startsWith('/admin') && !req.path.startsWith('/dashboard'));
   res.locals.editMode = editMode;

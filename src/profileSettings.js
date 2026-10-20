@@ -40,12 +40,14 @@ export function getSearchSettings() {
   return {
     defaultSort: SORT_LABELS[s.search_default_sort] ? s.search_default_sort : 'last_name',
     sponsoredFirst: s.search_sponsored_first !== '0',
+    membersOnly: s.members_only !== '0',
   };
 }
 
 export function saveSearchSettings(body) {
   if (SORT_LABELS[body.default_sort]) setSetting('search_default_sort', body.default_sort);
   setSetting('search_sponsored_first', body.sponsored_first ? '1' : '0');
+  setSetting('members_only', body.members_only ? '1' : '0');
 }
 
 export function saveProfileSettings(body) {

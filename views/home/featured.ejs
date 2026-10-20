@@ -1,4 +1,4 @@
-<% if (featured.length) { %>
+<% if (featured.length && !(membersOnly && !isMember)) { %>
 <section class="container section">
   <div class="section-head"><h2><%- e('home.featuredTitle') %></h2><a href="/lawyers"><%- e('home.seeAll') %></a></div>
   <div class="lawyer-list two-col"><% featured.forEach(l => { %><%- include('../partials/lawyer-card', { l }) %><% }) %></div>
