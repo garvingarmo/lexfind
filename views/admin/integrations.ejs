@@ -27,17 +27,37 @@
     <div class="card stack">
       <div class="section-head"><h2>Email</h2><span class="status status-<%= mail.on ? 'active' : 'draft' %>"><%= mail.on ? 'On' : 'Off' %></span></div>
       <% if (!mail.on && missing.length) { %><p class="flash flash-info small">Email is off because these are missing: <strong><%= missing.join(', ') %></strong>.</p><% } %>
-      <p class="small muted">Used for "Forgot password" and lawyer invitation emails. Use the details of a mailbox from cPanel → Email Accounts.</p>
+      <p class="small muted">Used for "Forgot password", lawyer invitations, contact-form notifications and "Email results". A sending service such as Resend or Brevo is the most reliable way to reach Gmail and Outlook inboxes.</p>
       <% if (mail.fromEnv) { %>
-        <p class="small">Email is set by the server's <code>SMTP_*</code> settings, which take priority over this page.</p>
+        <p class="small">Email is set by the server's <code>MAIL_*</code> / <code>SMTP_*</code> settings, which take priority over this page.</p>
       <% } else { %>
         <form method="post" action="/admin/integrations/mail" class="form-grid">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <label>Mail server (SMTP host) <input name="smtp_host" value="<%= mail.host %>" placeholder="e.g. mail.yourdomain.com" required></label>
-          <label>Port <input name="smtp_port" type="number" value="<%= mail.port %>"></label>
-          <label>Username <input name="smtp_user" value="<%= mail.user || (mail.host ? '' : suggest.user) %>" placeholder="e.g. noreply@yourdomain.com" autocomplete="off"></label>
-          <label>Password <% if (mail.passMasked) { %><span class="tiny muted">(saved; leave blank to keep)</span><% } %><input name="smtp_pass" type="password" autocomplete="new-password"></label>
-          <label class="span-2">Send emails as <input name="mail_from" value="<%= mail.from || suggest.from %>" placeholder="e.g. Your Site <noreply@yourdomain.com>" required></label>
+          <label class="span-2">Send email using
+            <select name="mail_provider" data-show-group="mail-provider">
+              <% for (const [value, label] of Object.entries(PROVIDERS)) { %><option value="<%= value %>" <%= mail.provider === value ? 'selected' : '' %>><%= label %></option><% } %>
+            </select>
+          </label>
+
+          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="resend brevo" <%= mail.provider === 'smtp' ? 'hidden' : '' %>>
+            <p class="span-2 small muted" data-show-for-provider="resend">Sign up at <a href="https://resend.com" target="_blank" rel="noopener">resend.com</a>, add your domain under <strong>Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>API Keys</strong> (permission "Sending access") and paste it below.</p>
+            <p class="span-2 small muted" data-show-for-provider="brevo">Sign up at <a href="https://www.brevo.com" target="_blank" rel="noopener">brevo.com</a>, authenticate your domain under <strong>Senders, Domains &amp; Dedicated IPs → Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>SMTP &amp; API → API Keys</strong> and paste it below.</p>
+            <label class="span-2">API key <% if (mail.keyMasked) { %><span class="tiny muted">(saved: <%= mail.keyMasked %>; paste a new one to replace it)</span><% } %>
+              <input name="mail_api_key" type="password" autocomplete="off" placeholder="Paste the key from the sending service">
+            </label>
+          </div>
+
+          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="smtp" <%= mail.provider === 'smtp' ? '' : 'hidden' %>>
+            <p class="span-2 small muted">Use the details of a mailbox from cPanel → Email Accounts.</p>
+            <label>Mail server (SMTP host) <input name="smtp_host" value="<%= mail.host %>" placeholder="e.g. mail.yourdomain.com"></label>
+            <label>Port <input name="smtp_port" type="number" value="<%= mail.port %>"></label>
+            <label>Username <input name="smtp_user" value="<%= mail.user || (mail.host ? '' : suggest.user) %>" placeholder="e.g. noreply@yourdomain.com" autocomplete="off"></label>
+            <label>Password <% if (mail.passMasked) { %><span class="tiny muted">(saved; leave blank to keep)</span><% } %><input name="smtp_pass" type="password" autocomplete="new-password"></label>
+          </div>
+
+          <label class="span-2">Send emails as <input name="mail_from" value="<%= mail.from || suggest.from %>" placeholder="e.g. Your Site <noreply@yourdomain.com>" required>
+            <span class="tiny muted">Must be an address at a domain you have verified with the sending service.</span>
+          </label>
           <div class="actions start span-2">
             <button class="btn btn-primary btn-sm">Save email settings</button>
             <% if (mail.on) { %><button class="btn btn-ghost btn-sm" name="remove" value="1" data-confirm="Remove the email settings?">Remove</button><% } %>

@@ -14,6 +14,18 @@
     });
   });
 
+  // Show only the parts of a form that match a <select data-show-group> (e.g. email provider fields).
+  document.querySelectorAll('select[data-show-group]').forEach((sel) => {
+    const sync = () => {
+      document.querySelectorAll(`[data-group="${sel.dataset.showGroup}"]`).forEach((g) => {
+        g.hidden = !g.dataset.showFor.split(' ').includes(sel.value);
+      });
+      document.querySelectorAll('[data-show-for-provider]').forEach((p) => { p.hidden = p.dataset.showForProvider !== sel.value; });
+    };
+    sel.addEventListener('change', sync);
+    sync();
+  });
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {

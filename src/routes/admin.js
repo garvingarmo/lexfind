@@ -6,7 +6,7 @@ import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, upda
 import { requireRole, flash, upload, uploadTwo, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
-import { mailConfig, mailEnabled as smtpEnabled, sendMail } from '../mailer.js';
+import { mailConfig, mailEnabled as smtpEnabled, sendMail, PROVIDERS } from '../mailer.js';
 import multer from 'multer';
 import { cleanHtml, renderPost } from './public.js';
 import { TEXT_GROUPS, TEXT_DEFAULTS, loadTexts, saveTexts } from '../texts.js';
@@ -576,12 +576,14 @@ router.get('/integrations', (req, res) => {
   // Suggest the usual mailbox for this domain until something is saved.
   const domain = (() => { try { return new URL(getSettings().site_url).hostname.replace(/^www\./, ''); } catch { return ''; } })();
   const suggest = { user: domain ? `noreply@${domain}` : '', from: domain ? `${getSettings().site_name} <noreply@${domain}>` : '' };
-  const missing = [!mail.host && 'mail server', !mail.from && '"send emails as" address', mail.user && !mail.pass && 'password'].filter(Boolean);
+  const missing = mail.provider === 'smtp'
+    ? [!mail.host && 'mail server', !mail.from && '"send emails as" address', mail.user && !mail.pass && 'password'].filter(Boolean)
+    : [!mail.apiKey && 'API key', !mail.from && '"send emails as" address'].filter(Boolean);
   res.render('admin/integrations', {
-    suggest, missing,
+    suggest, missing, PROVIDERS,
     title: 'Integrations',
     ai: { on: aiEnabled(), fromEnv: Boolean(process.env.ANTHROPIC_API_KEY), masked: mask(apiKey()), model: MODEL },
-    mail: { ...mail, pass: undefined, passMasked: mask(mail.pass), on: smtpEnabled(), fromEnv: Boolean(process.env.SMTP_HOST) },
+    mail: { ...mail, pass: undefined, apiKey: undefined, passMasked: mask(mail.pass), keyMasked: mask(mail.apiKey), on: smtpEnabled(), fromEnv: Boolean(process.env.SMTP_HOST || process.env.MAIL_PROVIDER) },
   });
 });
 
@@ -611,21 +613,32 @@ router.post('/integrations/ai/test', async (req, res) => {
 router.post('/integrations/mail', (req, res) => {
   const b = req.body;
   if (b.remove) {
-    for (const k of ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'mail_from']) setSecret(k, '');
+    for (const k of ['mail_provider', 'mail_api_key', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'mail_from']) setSecret(k, '');
     flash(req, 'success', 'Email settings removed.');
     return res.redirect('/admin/integrations');
   }
-  const host = (b.smtp_host || '').trim();
-  const user = (b.smtp_user || '').trim();
+  const provider = PROVIDERS[b.mail_provider] ? b.mail_provider : 'smtp';
   const from = (b.mail_from || '').trim();
-  setSecret('smtp_host', host);
-  setSecret('smtp_port', String(parseInt(b.smtp_port, 10) || 465));
-  setSecret('smtp_user', user);
-  if (b.smtp_pass) setSecret('smtp_pass', b.smtp_pass);
+  setSecret('mail_provider', provider);
   setSecret('mail_from', from);
-  const missing = [!host && 'Mail server', !from && 'Send emails as', user && !mailConfig().pass && 'Password'].filter(Boolean);
+  let missing;
+  if (provider === 'smtp') {
+    const host = (b.smtp_host || '').trim();
+    const user = (b.smtp_user || '').trim();
+    setSecret('smtp_host', host);
+    setSecret('smtp_port', String(parseInt(b.smtp_port, 10) || 465));
+    setSecret('smtp_user', user);
+    if (b.smtp_pass) setSecret('smtp_pass', b.smtp_pass);
+    missing = [!host && 'Mail server', !from && 'Send emails as', user && !mailConfig().pass && 'Password'];
+  } else {
+    // Keys are per service, so a new key is needed when switching services.
+    const key = (b.mail_api_key || '').trim();
+    if (key) setSecret('mail_api_key', key);
+    missing = [!mailConfig().apiKey && 'API key', !from && 'Send emails as'];
+  }
+  missing = missing.filter(Boolean);
   if (missing.length) flash(req, 'error', `Saved, but email is still off. Please fill in: ${missing.join(', ')}.`);
-  else flash(req, 'success', 'Email settings saved. Email is on. Click "Send test email" to check them.');
+  else flash(req, 'success', `Email settings saved (${PROVIDERS[provider]}). Email is on. Click "Send test email" to check them.`);
   res.redirect('/admin/integrations');
 });
 
@@ -641,7 +654,7 @@ router.post('/integrations/mail/test', async (req, res) => {
       html: '<p>This test email confirms your website can send email (password resets and lawyer invitations).</p>',
     });
     console.log(`[mail] test email to ${to}: ${info.response}`);
-    flash(req, 'success', `Test email handed to the mail server for ${to} (server reply: ${info.response}). Check the inbox and spam folder; if it hasn't arrived in a few minutes, look it up in cPanel → Email → Track Delivery.`);
+    flash(req, 'success', `Test email handed to the mail server for ${to} (server reply: ${info.response}). Check the inbox and spam folder${mailConfig().provider === 'smtp' ? "; if it hasn't arrived in a few minutes, look it up in cPanel → Email → Track Delivery" : ''}.`);
   } catch (e) {
     flash(req, 'error', `Could not send: ${e.message}`);
   }
