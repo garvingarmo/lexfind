@@ -151,7 +151,9 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .ad-search_sidebar img, .ad-profile_sidebar img, .ad-blog_sidebar img { width: 100%; }
 
 /* Search */
-.search-layout { display: grid; grid-template-columns: 250px 1fr 240px; gap: 24px; align-items: start; }
+.container-wide { max-width: 1292px; }
+/* Results column ≈ 760px at full width (25% wider than the original 610px). */
+.search-layout { display: grid; grid-template-columns: 230px 1fr 220px; gap: 24px; align-items: start; }
 .filters { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 84px; }
 .result-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
 .result-head p { margin: 0; }
