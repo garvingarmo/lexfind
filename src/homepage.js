@@ -1,4 +1,5 @@
 // Homepage section order and visibility (Admin → Homepage). The search hero always comes first.
+// A section can also be limited to signed-in members (approved lawyers and admins).
 import { getSettings, setSetting } from './db.js';
 
 export const SECTIONS = {
@@ -10,18 +11,26 @@ export const SECTIONS = {
   cta: '"Are you a lawyer?" box',
 };
 
-/** Ordered sections as [{ id, label, visible }], including any added since the setting was saved. */
+// Sections shown only to signed-in members unless the admin changes it.
+const MEMBERS_ONLY_DEFAULT = new Set(['areas', 'featured', 'guides']);
+
+/** Ordered sections as [{ id, label, visible, membersOnly }], including any added since the setting was saved. */
 export function getSections() {
   let saved = [];
   try { saved = JSON.parse(getSettings().home_sections || '[]'); } catch { saved = []; }
-  const list = saved.filter((s) => SECTIONS[s.id]).map((s) => ({ id: s.id, label: SECTIONS[s.id], visible: s.visible !== false }));
-  for (const id of Object.keys(SECTIONS)) if (!list.some((s) => s.id === id)) list.push({ id, label: SECTIONS[id], visible: true });
+  const make = (id, s = {}) => ({
+    id, label: SECTIONS[id], visible: s.visible !== false,
+    membersOnly: typeof s.membersOnly === 'boolean' ? s.membersOnly : MEMBERS_ONLY_DEFAULT.has(id),
+  });
+  const list = saved.filter((s) => SECTIONS[s.id]).map((s) => make(s.id, s));
+  for (const id of Object.keys(SECTIONS)) if (!list.some((s) => s.id === id)) list.push(make(id));
   return list;
 }
 
-export function saveSections(order, visibleIds) {
+export function saveSections(order, visibleIds, membersOnlyIds = []) {
   const visible = new Set(visibleIds);
+  const members = new Set(membersOnlyIds);
   const ids = order.filter((id) => SECTIONS[id]);
   for (const id of Object.keys(SECTIONS)) if (!ids.includes(id)) ids.push(id);
-  setSetting('home_sections', JSON.stringify(ids.map((id) => ({ id, visible: visible.has(id) }))));
+  setSetting('home_sections', JSON.stringify(ids.map((id) => ({ id, visible: visible.has(id), membersOnly: members.has(id) }))));
 }

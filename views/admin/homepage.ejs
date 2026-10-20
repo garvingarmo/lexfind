@@ -3,14 +3,18 @@
   <%- include('../partials/side-nav') %>
   <div>
     <h1>Homepage sections</h1>
-    <p class="muted small">The search area always stays at the top. Use the arrows to change the order of everything below it, and untick a section to hide it. Section titles can be changed with <strong>✎ Edit page</strong> on the home page.</p>
+    <p class="muted small">The search area always stays at the top. Use the arrows to change the order of everything below it, untick <strong>Show</strong> to hide a section, and tick <strong>Members only</strong> to show it only to signed-in members (approved lawyers and admins). Section titles can be changed with <strong>✎ Edit page</strong> on the home page.</p>
     <form method="post" action="/admin/homepage" class="card" id="sections-form">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <input type="hidden" name="order" id="sections-order" value="<%= sections.map(s => s.id).join(',') %>">
       <ol class="section-list" id="section-list">
         <% sections.forEach(s => { %>
           <li data-id="<%= s.id %>">
-            <label class="check"><input type="checkbox" name="visible" value="<%= s.id %>" <%= s.visible ? 'checked' : '' %>> <strong><%= s.label %></strong></label>
+            <strong class="section-name"><%= s.label %></strong>
+            <span class="section-toggles">
+              <label class="check small"><input type="checkbox" name="visible" value="<%= s.id %>" <%= s.visible ? 'checked' : '' %>> Show</label>
+              <label class="check small"><input type="checkbox" name="members_only" value="<%= s.id %>" <%= s.membersOnly ? 'checked' : '' %>> Members only</label>
+            </span>
             <span class="section-move">
               <button type="button" class="btn btn-ghost btn-sm" data-move="-1" aria-label="Move <%= s.label %> up">↑</button>
               <button type="button" class="btn btn-ghost btn-sm" data-move="1" aria-label="Move <%= s.label %> down">↓</button>

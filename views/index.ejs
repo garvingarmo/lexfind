@@ -44,5 +44,5 @@
     <% } %>
   </div>
 </section>
-<% sections.filter(s => s.visible).forEach(s => { %><%- include('home/' + s.id) %><% }) %>
+<% sections.filter(s => s.visible && (!s.membersOnly || isMember)).forEach(s => { %><%- include('home/' + s.id) %><% }) %>
 <%- include('partials/footer') %>
