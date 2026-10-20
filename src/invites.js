@@ -2,9 +2,11 @@
 // the lawyer opens a one-time link, sets a password, and gets a login tied to that listing.
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import nodemailer from 'nodemailer';
 import { db, tx, getSettings } from './db.js';
 import { getLawyer } from './models.js';
+import { mailEnabled, sendMail } from './mailer.js';
+
+export { mailEnabled };
 
 export const INVITE_DAYS = 30;
 
@@ -82,26 +84,6 @@ export function inviteStatuses() {
 
 // --- Email ------------------------------------------------------------------
 
-let transport = null;
-
-/** True when SMTP settings are configured, so invitations can be emailed from the site. */
-export function mailEnabled() {
-  return Boolean(process.env.SMTP_HOST && process.env.MAIL_FROM);
-}
-
-function getTransport() {
-  if (!transport) {
-    const port = Number(process.env.SMTP_PORT) || 465;
-    transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : port === 465,
-      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
-    });
-  }
-  return transport;
-}
-
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function inviteEmail(lawyer, url, expiresAt) {
@@ -132,7 +114,7 @@ export async function sendInvite(invite, req) {
   const lawyer = getLawyer('id', invite.lawyer_id);
   if (!invite.email) throw new Error(`${lawyer.name} has no email address.`);
   const { subject, text, html } = inviteEmail(lawyer, inviteUrl(req, invite.token), invite.expires_at);
-  await getTransport().sendMail({ from: process.env.MAIL_FROM, to: invite.email, subject, text, html });
+  await sendMail({ to: invite.email, subject, text, html });
   db.prepare("UPDATE invites SET sent_at = datetime('now') WHERE id = ?").run(invite.id);
 }
 

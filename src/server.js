@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { ROOT, db } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
-import { bootstrapIfEmpty } from './bootstrap.js';
+import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin.js';
 import { aiEnabled, MODEL } from './ai/client.js';
 
 bootstrapIfEmpty();
+applyAdminReset();
 
 const app = express();
 const prod = process.env.NODE_ENV === 'production';

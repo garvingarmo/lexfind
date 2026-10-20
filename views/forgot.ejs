@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card auth-card">
+    <h1>Forgot password</h1>
+    <% if (sent) { %>
+      <div class="flash flash-success">If an account exists for that email, we've sent a link to choose a new password. It expires in 1 hour, so check your inbox (and spam folder).</div>
+      <p><a href="/login">Back to sign in</a></p>
+    <% } else if (!mailOn) { %>
+      <p class="muted">Password reset by email isn't available on this site yet. Please contact the site administrator to reset your password.</p>
+      <p><a href="/login">Back to sign in</a></p>
+    <% } else { %>
+      <p class="muted">Enter the email you sign in with and we'll send you a link to choose a new password.</p>
+      <form method="post" action="/forgot-password" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label>Email <input name="email" type="email" required autocomplete="username"></label>
+        <button class="btn btn-primary btn-block">Send reset link</button>
+      </form>
+      <p class="small"><a href="/login">Back to sign in</a></p>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/footer') %>

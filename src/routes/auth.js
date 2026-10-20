@@ -4,6 +4,8 @@ import { db, tx } from '../db.js';
 import { createLawyer, setAreas, listAreas } from '../models.js';
 import { flash, rateLimit } from '../middleware.js';
 import { checkInvite, acceptInvite } from '../invites.js';
+import { requestReset, findReset, setPassword } from '../passwords.js';
+import { mailEnabled } from '../mailer.js';
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many attempts. Try again in a few minutes.' });
@@ -82,8 +84,8 @@ router.post('/account/password', (req, res) => {
   else if ((password || '').length < 8) flash(req, 'error', 'New password must be at least 8 characters.');
   else if (password !== password2) flash(req, 'error', 'New passwords do not match.');
   else {
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), u.id);
-    flash(req, 'success', 'Password updated.');
+    setPassword(u.id, password);
+    flash(req, 'success', 'Password updated. Use your new password next time you sign in.');
   }
   res.redirect('/account/password');
 });
@@ -120,6 +122,45 @@ router.post('/invite/:token', authLimit, (req, res) => {
     req.session.userId = userId;
     flash(req, 'success', 'Welcome! Your login is set up. Review your profile below and keep it up to date.');
     res.redirect('/dashboard/profile');
+  });
+});
+
+// --- Forgot password ----------------------------------------------------------------
+
+const resetLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Too many reset requests. Please try again later.' });
+
+router.get('/forgot-password', (req, res) => {
+  res.render('forgot', { title: 'Forgot password', sent: false, mailOn: mailEnabled() });
+});
+
+router.post('/forgot-password', resetLimit, async (req, res) => {
+  if (mailEnabled()) {
+    try {
+      await requestReset(req.body.email, req);
+    } catch (e) {
+      console.error('password reset email failed:', e.message);
+      return res.status(502).render('forgot', { title: 'Forgot password', sent: false, mailOn: true, flash: [{ type: 'error', msg: 'We could not send the email right now. Please try again in a few minutes.' }] });
+    }
+  }
+  res.render('forgot', { title: 'Forgot password', sent: true, mailOn: mailEnabled() });
+});
+
+router.get('/reset-password/:token', (req, res) => {
+  res.render('reset', { title: 'Choose a new password', valid: Boolean(findReset(req.params.token)), token: req.params.token });
+});
+
+router.post('/reset-password/:token', authLimit, (req, res) => {
+  const reset = findReset(req.params.token);
+  const render = (msg) => res.status(422).render('reset', { title: 'Choose a new password', valid: Boolean(reset), token: req.params.token, flash: [{ type: 'error', msg }] });
+  if (!reset) return render('This reset link is no longer valid.');
+  if ((req.body.password || '').length < 8) return render('Password must be at least 8 characters.');
+  if (req.body.password !== req.body.password2) return render('Passwords do not match.');
+  setPassword(reset.user_id, req.body.password);
+  const user = db.prepare('SELECT role FROM users WHERE id = ?').get(reset.user_id);
+  req.session.regenerate(() => {
+    req.session.userId = reset.user_id;
+    flash(req, 'success', 'Your password has been changed and you are signed in.');
+    res.redirect(user.role === 'admin' ? '/admin' : '/dashboard');
   });
 });
 

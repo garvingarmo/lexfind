@@ -49,3 +49,20 @@ export function bootstrapIfEmpty() {
   ensureUser(email, 'admin', password);
   console.log(`Created admin account ${email}.`);
 }
+
+/**
+ * Emergency access for hosts without a terminal: if ADMIN_RESET_PASSWORD is set,
+ * the admin account ADMIN_EMAIL gets that password on start-up. Remove the variable afterwards.
+ */
+export function applyAdminReset() {
+  const { ADMIN_EMAIL: email, ADMIN_RESET_PASSWORD: password } = process.env;
+  if (!password) return;
+  if (!email || password.length < 8) {
+    console.warn('ADMIN_RESET_PASSWORD needs ADMIN_EMAIL and at least 8 characters; nothing was changed.');
+    return;
+  }
+  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (user) db.prepare("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?").run(bcrypt.hashSync(password, 10), user.id);
+  else ensureUser(email, 'admin', password);
+  console.warn(`Admin password for ${email} was reset from ADMIN_RESET_PASSWORD. Remove that variable now.`);
+}

@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card auth-card">
+    <h1>Choose a new password</h1>
+    <% if (!valid) { %>
+      <div class="flash flash-info">This reset link has expired or has already been used.</div>
+      <p><a class="btn btn-primary" href="/forgot-password">Send a new link</a></p>
+    <% } else { %>
+      <form method="post" action="/reset-password/<%= token %>" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label>New password <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+        <label>Confirm new password <input name="password2" type="password" minlength="8" required autocomplete="new-password"></label>
+        <button class="btn btn-primary btn-block">Save and sign in</button>
+      </form>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/footer') %>
