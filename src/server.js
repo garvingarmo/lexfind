@@ -33,6 +33,10 @@ app.use(helmet({
     },
   },
 }));
+// NOINDEX=1 keeps a test or staging site out of search engines.
+const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
+app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
+if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '100kb' }));
