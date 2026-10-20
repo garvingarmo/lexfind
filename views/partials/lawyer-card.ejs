@@ -1,19 +1,16 @@
 <article class="card lawyer-card <%= l.featured ? 'is-featured' : '' %>">
-  <% if (l.featured) { %><span class="badge badge-sponsored"><%- e('card.sponsored') %></span><% } %>
-  <div class="lawyer-card-head">
-    <%- include('avatar', { l }) %>
-    <div>
-      <h3><a href="/lawyers/<%= l.slug %>"><%= l.name %></a><% if (l.verified) { %> <span class="verified" title="Verified listing">✓</span><% } %></h3>
-      <div class="muted small"><%= l.firm || '' %></div>
-      <div class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></div>
-    </div>
+  <a class="lc-photo" href="/lawyers/<%= l.slug %>" tabindex="-1" aria-hidden="true"><%- include('avatar', { l, size: 'avatar-md' }) %></a>
+  <div class="lc-main">
+    <% if (l.featured) { %><span class="badge badge-sponsored"><%- e('card.sponsored') %></span><% } %>
+    <h3><a href="/lawyers/<%= l.slug %>"><%= l.name %></a><% if (l.verified && pf.show_verified) { %> <span class="verified" title="Verified listing">✓</span><% } %></h3>
+    <div class="lc-meta small"><% const meta = [l.firm, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean); %><%= meta.join(' · ') %></div>
+    <% if ((l.areas || []).length) { %>
+      <div class="tags"><% l.areas.forEach(a => { %><a class="tag" href="/lawyers?area=<%= a.slug %>"><%= a.name %></a><% }) %></div>
+    <% } %>
+    <ul class="facts small">
+      <% if (l.years_experience && pf.show_experience) { %><li><%= l.years_experience %> <%- e('card.experience') %></li><% } %>
+      <% if (l.languages && pf.show_languages) { %><li><%= l.languages %></li><% } %>
+    </ul>
   </div>
-  <div class="tags">
-    <% (l.areas || []).forEach(a => { %><a class="tag" href="/lawyers?area=<%= a.slug %>"><%= a.name %></a><% }) %>
-  </div>
-  <ul class="facts small">
-    <% if (l.years_experience) { %><li><%= l.years_experience %> <%- e('card.experience') %></li><% } %>
-    <% if (l.languages) { %><li><%= l.languages %></li><% } %>
-  </ul>
-  <a class="btn btn-outline btn-block" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a>
+  <div class="lc-action"><a class="btn btn-outline" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a></div>
 </article>

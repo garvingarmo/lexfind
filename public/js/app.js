@@ -321,35 +321,39 @@
     return m;
   }
 
+  // Same horizontal layout as the server-rendered lawyer cards: photo | details | button.
   function lawyerCard(r) {
     const card = el('article', 'card lawyer-card rec-card');
-    const head = el('div', 'lawyer-card-head');
+    const photo = el('div', 'lc-photo');
     if (r.photo) {
-      const img = el('img', 'avatar'); img.src = r.photo; img.alt = r.name; head.appendChild(img);
+      const img = el('img', 'avatar avatar-md'); img.src = r.photo; img.alt = r.name; photo.appendChild(img);
     } else {
-      head.appendChild(el('div', 'avatar avatar-initials', r.name.split(' ').map((s) => s[0]).slice(0, 2).join('')));
+      photo.appendChild(el('div', 'avatar avatar-md avatar-initials', r.name.split(' ').map((s) => s[0]).slice(0, 2).join('')));
     }
-    const info = el('div');
+    card.appendChild(photo);
+    const main = el('div', 'lc-main');
     const h = el('h3');
     const a = el('a', null, r.name); a.href = `/lawyers/${r.slug}?from=ai`;
     h.appendChild(a);
     if (r.verified) h.appendChild(el('span', 'verified', ' ✓'));
-    info.appendChild(h);
-    info.appendChild(el('div', 'muted small', r.firm || ''));
-    info.appendChild(el('div', 'small', [r.city, r.state].filter(Boolean).join(', ')));
-    head.appendChild(info);
-    card.appendChild(head);
-    card.appendChild(el('p', 'rec-reason', r.reason));
-    const tags = el('div', 'tags');
-    r.areas.forEach((t) => tags.appendChild(el('span', 'tag', t)));
-    card.appendChild(tags);
+    main.appendChild(h);
+    main.appendChild(el('div', 'lc-meta small', [r.firm, [r.city, r.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')));
+    main.appendChild(el('p', 'rec-reason', r.reason));
+    if (r.areas.length) {
+      const tags = el('div', 'tags');
+      r.areas.forEach((t) => tags.appendChild(el('span', 'tag', t)));
+      main.appendChild(tags);
+    }
     const facts = el('ul', 'facts small');
     if (r.years_experience) facts.appendChild(el('li', null, `${r.years_experience} yrs experience`));
     if (r.languages) facts.appendChild(el('li', null, r.languages));
-    card.appendChild(facts);
-    const btn = el('a', 'btn btn-primary btn-block', 'View profile & contact');
+    if (facts.children.length) main.appendChild(facts);
+    card.appendChild(main);
+    const action = el('div', 'lc-action');
+    const btn = el('a', 'btn btn-primary', 'View profile & contact');
     btn.href = `/lawyers/${r.slug}?from=ai#contact`;
-    card.appendChild(btn);
+    action.appendChild(btn);
+    card.appendChild(action);
     return card;
   }
 

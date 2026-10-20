@@ -41,7 +41,7 @@
           <p class="small muted"><a href="/assistant"><%- e('search.emptyHint') %></a></p>
         </div>
       <% } %>
-      <div class="card-grid two"><% rows.forEach(l => { %><%- include('partials/lawyer-card', { l }) %><% }) %></div>
+      <div class="lawyer-list"><% rows.forEach(l => { %><%- include('partials/lawyer-card', { l }) %><% }) %></div>
       <% if (pages > 1) { %>
         <nav class="pager">
           <% for (let p = 1; p <= pages; p++) { %><a class="<%= p === f.page ? 'current' : '' %>" href="<%= qs({ page: p }) %>"><%= p %></a><% } %>
