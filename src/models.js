@@ -1,6 +1,7 @@
 // Query helpers shared by the web routes and the AI agent.
-import { db, tx, uniqueSlug } from './db.js';
+import { db, tx, uniqueSlug, slugify } from './db.js';
 import { LAWYER_SOCIAL_KEYS, normalizeSocial } from './social.js';
+import { normalizeLanguages } from './languages.js';
 
 export const LAWYER_FIELDS = [
   'name', 'firm', 'title', 'bio', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip',
@@ -128,6 +129,7 @@ export function cleanLawyerInput(body) {
     if (!(f in body) && f !== 'free_consultation') continue;
     let v = body[f];
     if (f === 'free_consultation') v = v === 'on' || v === '1' || v === 1 || v === true ? 1 : 0;
+    else if (f === 'languages') v = normalizeLanguages(v);
     else if (f === 'years_experience') v = v === '' || v == null ? null : Math.max(0, Math.min(80, parseInt(v, 10) || 0));
     else v = v == null ? null : String(v).trim().slice(0, f === 'bio' ? 6000 : 500) || null;
     out[f] = v;
@@ -140,8 +142,47 @@ export function cleanLawyerInput(body) {
   return out;
 }
 
+const NAME_EXTRAS = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v', 'esq', 'esquire', 'jd', 'phd', 'llm', 'md', 'cpa', 'dr', 'mr', 'mrs', 'ms', 'miss', 'hon', 'atty', 'attorney']);
+
+/** Profile URL from a name: first and last name only ("Steven A. Elia, Esq." → "steven-elia"). */
+export function nameSlug(name) {
+  const words = String(name || '')
+    .replace(/\([^)]*\)/g, ' ')        // (nicknames)
+    .split(',')[0]                      // ", Esq." and other credentials after a comma
+    .split(/\s+/)
+    .map((w) => slugify(w.replace(/['’]/g, '')))
+    .filter((w) => w && w !== 'item' && !NAME_EXTRAS.has(w.replace(/-/g, '')));
+  const named = words.filter((w) => w.replace(/-/g, '').length > 1); // drop middle initials like "A."
+  if (named.length) words.splice(0, words.length, ...named);
+  if (!words.length) return slugify(name);
+  return words.length === 1 ? words[0] : `${words[0]}-${words[words.length - 1]}`;
+}
+/** Give a lawyer a new URL and keep the old one as a redirect. */
+export function setLawyerSlug(id, wanted) {
+  const l = db.prepare('SELECT slug FROM lawyers WHERE id = ?').get(id);
+  const slug = uniqueSlug('lawyers', wanted, id);
+  if (!l || l.slug === slug) return l?.slug;
+  tx(() => {
+    db.prepare('DELETE FROM slug_redirects WHERE old_slug = ?').run(slug);
+    db.prepare('INSERT OR REPLACE INTO slug_redirects (old_slug, lawyer_id) VALUES (?, ?)').run(l.slug, id);
+    db.prepare("UPDATE lawyers SET slug = ?, updated_at = datetime('now') WHERE id = ?").run(slug, id);
+  });
+  return slug;
+}
+
+/** One-time switch of existing profile URLs to first-last name, with redirects from the old ones. */
+export function migrateSlugsToNames() {
+  if (db.prepare("SELECT value FROM settings WHERE key = 'slug_style'").get()?.value === 'name') return 0;
+  let changed = 0;
+  for (const l of db.prepare('SELECT id, name, slug FROM lawyers ORDER BY id').all()) {
+    if (setLawyerSlug(l.id, nameSlug(l.name)) !== l.slug) changed++;
+  }
+  db.prepare("INSERT INTO settings (key, value) VALUES ('slug_style', 'name') ON CONFLICT(key) DO UPDATE SET value = 'name'").run();
+  return changed;
+}
+
 export function createLawyer(data) {
-  const slug = uniqueSlug('lawyers', `${data.name} ${data.city || ''}`);
+  const slug = uniqueSlug('lawyers', nameSlug(data.name));
   const fields = Object.keys(data);
   const r = db.prepare(`INSERT INTO lawyers (slug, ${fields.join(', ')}) VALUES (?, ${fields.map(() => '?').join(', ')})`)
     .run(slug, ...fields.map((f) => data[f]));

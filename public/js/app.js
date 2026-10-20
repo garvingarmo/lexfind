@@ -248,6 +248,17 @@
     rte.closest('form').addEventListener('submit', () => { body.value = rte.innerHTML; });
   }
 
+  // Checkbox dropdowns (e.g. Languages): show the ticked items in the summary, close on outside click.
+  document.querySelectorAll('details.multi-select').forEach((d) => {
+    const summary = d.querySelector('summary');
+    const sync = () => {
+      const picked = [...d.querySelectorAll('input[type=checkbox]:checked')].map((c) => c.value);
+      summary.textContent = picked.join(', ') || d.dataset.placeholder;
+    };
+    d.addEventListener('change', sync);
+    document.addEventListener('click', (ev) => { if (d.open && !d.contains(ev.target)) d.open = false; });
+  });
+
   // Poll a running AI research job and reload when it finishes.
   const wait = document.getElementById('research-wait');
   if (wait) {

@@ -153,6 +153,12 @@ CREATE TABLE IF NOT EXISTS invites (
 );
 CREATE INDEX IF NOT EXISTS idx_invites_lawyer ON invites(lawyer_id);
 
+-- Old profile addresses, so links keep working after a lawyer's URL changes.
+CREATE TABLE IF NOT EXISTS slug_redirects (
+  old_slug TEXT PRIMARY KEY,
+  lawyer_id INTEGER NOT NULL REFERENCES lawyers(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS password_resets (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

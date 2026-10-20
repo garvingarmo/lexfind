@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, tx, getSettings, setSetting, getSecret, setSecret, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
-import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas } from '../models.js';
+import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas, setLawyerSlug, nameSlug } from '../models.js';
 import { requireRole, flash, upload, uploadTwo, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
@@ -14,6 +14,7 @@ import { FONTS, THEME_DEFAULTS, getTheme, saveTheme, allFontsUrl } from '../them
 import { SECTIONS, getSections, saveSections } from '../homepage.js';
 import { NETWORKS, SOCIAL_KEYS, saveSiteSocial, socialIcon } from '../social.js';
 import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings } from '../profileSettings.js';
+import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
 
@@ -161,8 +162,8 @@ router.post('/lawyers/:id', upload.single('photo'), verifyCsrf, (req, res, next)
   if (!data.name) { flash(req, 'error', 'Name is required.'); return res.redirect(`/admin/lawyers/${l.id}`); }
   if (req.file) data.photo = uploadedPath(req.file);
   if (req.body.remove_photo) data.photo = null;
-  if (req.body.slug && slugify(req.body.slug) !== l.slug) data.slug = uniqueSlug('lawyers', req.body.slug, l.id);
   updateLawyer(l.id, data);
+  if (req.body.slug && slugify(req.body.slug) !== l.slug) setLawyerSlug(l.id, req.body.slug);
   setAreas(l.id, [].concat(req.body.areas || []));
   const err = saveLogin(l.id, req.body);
   flash(req, err ? 'error' : 'success', err || 'Saved.');
@@ -721,7 +722,13 @@ router.post('/social', (req, res) => {
 });
 
 router.get('/profile-settings', (req, res) => {
-  res.render('admin/profile-settings', { title: 'Lawyer profiles', options: PROFILE_OPTIONS, pf: getProfileSettings(), mailOn: smtpEnabled() });
+  res.render('admin/profile-settings', { title: 'Lawyer profiles', options: PROFILE_OPTIONS, pf: getProfileSettings(), mailOn: smtpEnabled(), languages: getLanguageOptions(), unlisted: unlistedLanguages() });
+});
+
+router.post('/languages', (req, res) => {
+  const list = saveLanguageOptions(req.body.language_options);
+  flash(req, 'success', `Language list saved (${list.length} languages).`);
+  res.redirect('/admin/profile-settings#languages');
 });
 
 router.post('/profile-settings', (req, res) => {

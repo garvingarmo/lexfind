@@ -13,7 +13,19 @@
 <label>Bar number <input name="bar_number" value="<%= l.bar_number || '' %>"></label>
 <label>Bar admissions <input name="bar_admissions" value="<%= l.bar_admissions || '' %>" placeholder="California (2009), Nevada (2012)"></label>
 <label>Years of experience <input name="years_experience" type="number" min="0" max="80" value="<%= l.years_experience ?? '' %>"></label>
-<label>Languages <input name="languages" value="<%= l.languages || '' %>" placeholder="English, Spanish"></label>
+<% const myLangs = String(l.languages || '').split(/[,;/|\n]+/).map(s => s.trim()).filter(Boolean); const langList = [...languageOptions, ...myLangs.filter(x => !languageOptions.some(o => o.toLowerCase() === x.toLowerCase()))]; %>
+<div class="field">
+  <span class="field-label">Languages</span>
+  <details class="multi-select" data-placeholder="Choose languages">
+    <summary><%= myLangs.join(', ') || 'Choose languages' %></summary>
+    <div class="ms-options">
+      <input type="hidden" name="languages" value="">
+      <% langList.forEach(lang => { %>
+        <label class="check"><input type="checkbox" name="languages" value="<%= lang %>" <%= myLangs.some(x => x.toLowerCase() === lang.toLowerCase()) ? 'checked' : '' %>> <%= lang %></label>
+      <% }) %>
+    </div>
+  </details>
+</div>
 <label class="span-2">Education <input name="education" value="<%= l.education || '' %>"></label>
 <label>Fee structure <input name="fee_structure" value="<%= l.fee_structure || '' %>" placeholder="Hourly, flat fee, contingency…"></label>
 <label>Hourly rate <input name="hourly_rate" value="<%= l.hourly_rate || '' %>" placeholder="$250–$350"></label>

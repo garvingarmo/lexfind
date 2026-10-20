@@ -373,3 +373,13 @@ div.card.inquiry { padding: 20px; }
 .social-fields .form-grid { gap: 10px 18px; }
 .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 16px; }
 @media (max-width: 600px) { .social-row { grid-template-columns: 34px 1fr; } .social-row input { grid-column: 1 / -1; } }
+
+/* Checkbox dropdown */
+.multi-select { position: relative; }
+.multi-select summary { list-style: none; cursor: pointer; border: 1px solid #cfccc3; border-radius: 8px; padding: 9px 34px 9px 11px; background: var(--surface); position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; font-weight: 400; }
+.multi-select summary::-webkit-details-marker { display: none; }
+.multi-select summary::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.multi-select[open] summary { outline: 2px solid var(--primary); outline-offset: 1px; }
+.ms-options { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; max-height: 260px; overflow-y: auto; }
+.ms-options label.check { padding: 7px 8px; border-radius: 6px; }
+.ms-options label.check:hover { background: var(--bg); }

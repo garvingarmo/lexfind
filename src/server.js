@@ -9,6 +9,8 @@ import { ROOT, db } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
 import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
 import { themeCss } from './theme.js';
+import { migrateSlugsToNames } from './models.js';
+import { normalizeAllLanguages } from './languages.js';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -17,6 +19,10 @@ import { aiEnabled, MODEL } from './ai/client.js';
 
 bootstrapIfEmpty();
 applyAdminReset();
+const renamed = migrateSlugsToNames();
+if (renamed) console.log(`Changed ${renamed} lawyer profile URLs to first-last name (old URLs redirect).`);
+const tidied = normalizeAllLanguages();
+if (tidied) console.log(`Tidied the languages on ${tidied} listings.`);
 
 const app = express();
 const prod = process.env.NODE_ENV === 'production';

@@ -22,6 +22,17 @@
       <p class="tiny muted">Emails go to the email address on the lawyer's listing. Replying to the email replies to the visitor.</p>
       <div class="actions start"><button class="btn btn-primary">Save profile settings</button></div>
     </form>
+
+    <form method="post" action="/admin/languages" class="card stack" id="languages">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>Languages list</h2>
+      <p class="small muted">The languages lawyers can tick on their profile, and the choices in the "Language" search filter. One per line, in the order you want them shown.</p>
+      <textarea name="language_options" rows="<%= Math.max(5, languages.length + 2) %>"><%= languages.join('\n') %></textarea>
+      <% if (unlisted.length) { %>
+        <p class="small">Also on listings but not in this list: <% unlisted.forEach((u, i) => { %><strong><%= u.name %></strong> (<%= u.count %>)<%= i < unlisted.length - 1 ? ', ' : '' %><% }) %>. Add them above if visitors should be able to search for them.</p>
+      <% } %>
+      <div class="actions start"><button class="btn btn-primary">Save languages</button></div>
+    </form>
   </div>
 </section>
 <%- include('../partials/footer') %>

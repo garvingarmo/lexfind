@@ -8,6 +8,7 @@ import { chat } from '../ai/agent.js';
 import { aiEnabled } from '../ai/client.js';
 import { getSections } from '../homepage.js';
 import { lawyerSocial } from '../social.js';
+import { getLanguageOptions } from '../languages.js';
 import { getProfileSettings } from '../profileSettings.js';
 import { mailEnabled, sendMail } from '../mailer.js';
 import { getSettings } from '../db.js';
@@ -48,8 +49,7 @@ router.get('/lawyers', (req, res) => {
   const perPage = 12;
   const { rows, total } = searchLawyers({ ...f, perPage });
   const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
-  const languages = [...new Set(db.prepare("SELECT languages FROM lawyers WHERE status = 'active' AND languages IS NOT NULL").all()
-    .flatMap((r) => r.languages.split(',').map((s) => s.trim())).filter(Boolean))].sort();
+  const languages = getLanguageOptions();
   const qs = (overrides) => {
     const p = new URLSearchParams();
     const merged = { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, free: f.freeConsult ? '1' : '', sort: f.sort, page: f.page, ...overrides };
@@ -66,6 +66,11 @@ router.get('/practice-areas/:slug', (req, res) => res.redirect(`/lawyers?area=${
 
 router.get('/lawyers/:slug', (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
+  if (!lawyer) {
+    // Old profile address: send visitors (and search engines) to the current one.
+    const moved = db.prepare('SELECT l.slug FROM slug_redirects r JOIN lawyers l ON l.id = r.lawyer_id WHERE r.old_slug = ?').get(req.params.slug);
+    if (moved) return res.redirect(301, `/lawyers/${moved.slug}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`);
+  }
   const isOwner = req.lawyer && lawyer && req.lawyer.id === lawyer.id;
   if (!lawyer || (lawyer.status !== 'active' && !isOwner && req.user?.role !== 'admin')) return next();
   res.render('lawyer', { title: lawyer.name, lawyer, bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });

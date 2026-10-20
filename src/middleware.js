@@ -9,6 +9,7 @@ import { textHelpers } from './texts.js';
 import { getTheme, themeVersion, fontUrl } from './theme.js';
 import { getSiteSocial, socialIcon } from './social.js';
 import { getProfileSettings } from './profileSettings.js';
+import { getLanguageOptions } from './languages.js';
 
 /** express-session store backed by the app's SQLite database. */
 export class SqliteStore extends session.Store {
@@ -65,6 +66,7 @@ export function locals(req, res, next) {
   res.locals.siteSocial = getSiteSocial();
   res.locals.socialIcon = socialIcon;
   res.locals.pf = getProfileSettings();
+  res.locals.languageOptions = getLanguageOptions();
   next();
 }
 
