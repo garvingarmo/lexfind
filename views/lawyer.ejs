@@ -15,17 +15,17 @@
       </div>
 
       <div class="card">
-        <h2>About</h2>
-        <div class="prose"><%- bioHtml || '<p class="muted">No bio yet.</p>' %></div>
+        <h2><%- e('profile.about') %></h2>
+        <div class="prose"><%- bioHtml || `<p class="muted">${e('profile.noBio')}</p>` %></div>
       </div>
 
       <div class="card">
-        <h2>Details</h2>
+        <h2><%- e('profile.details') %></h2>
         <dl class="details">
-          <% [['Experience', lawyer.years_experience ? lawyer.years_experience + ' years' : null], ['Languages', lawyer.languages], ['Bar admissions', lawyer.bar_admissions],
-              ['Education', lawyer.education], ['Fees', lawyer.fee_structure], ['Hourly rate', lawyer.hourly_rate],
-              ['Free consultation', lawyer.free_consultation ? 'Yes' : 'No'], ['Office', [lawyer.address, lawyer.city, lawyer.state, lawyer.zip].filter(Boolean).join(', ')]].forEach(([k, v]) => { if (v) { %>
-            <dt><%= k %></dt><dd><%= v %></dd>
+          <% [['profile.experience', lawyer.years_experience ? lawyer.years_experience + ' ' + t('profile.years') : null], ['profile.languages', lawyer.languages], ['profile.bar', lawyer.bar_admissions],
+              ['profile.education', lawyer.education], ['profile.fees', lawyer.fee_structure], ['profile.hourly', lawyer.hourly_rate],
+              ['profile.free', t(lawyer.free_consultation ? 'profile.yes' : 'profile.no')], ['profile.office', [lawyer.address, lawyer.city, lawyer.state, lawyer.zip].filter(Boolean).join(', ')]].forEach(([k, v]) => { if (v) { %>
+            <dt><%- e(k) %></dt><dd><%= v %></dd>
           <% } }) %>
         </dl>
       </div>
@@ -33,19 +33,19 @@
 
     <div class="sidebar">
       <div class="card contact-card" id="contact">
-        <h2>Contact <%= lawyer.name.split(' ')[0] %></h2>
+        <h2><%- e('profile.contact') %> <%= lawyer.name.split(' ')[0] %></h2>
         <% if (lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %>">☎ <%= lawyer.phone %></a></p><% } %>
-        <% if (lawyer.website) { %><p><a class="btn btn-outline btn-block" href="<%= lawyer.website %>" target="_blank" rel="noopener nofollow">Visit website</a></p><% } %>
+        <% if (lawyer.website) { %><p><a class="btn btn-outline btn-block" href="<%= lawyer.website %>" target="_blank" rel="noopener nofollow"><%- e('profile.website') %></a></p><% } %>
         <form method="post" action="/lawyers/<%= lawyer.slug %>/contact" class="stack">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <input type="hidden" name="source" value="<%= locals.query && query.from === 'ai' ? 'assistant' : 'profile' %>">
           <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
-          <label>Your name <input name="name" required maxlength="120"></label>
-          <label>Email <input name="email" type="email" required maxlength="200"></label>
-          <label>Phone (optional) <input name="phone" maxlength="40"></label>
-          <label>Briefly describe your matter <textarea name="message" rows="5" required maxlength="5000"></textarea></label>
-          <button class="btn btn-primary btn-block">Send message</button>
-          <p class="tiny muted">Sending a message does not create an attorney-client relationship. Avoid confidential details until you've spoken with the lawyer.</p>
+          <label><%- e('profile.yourName') %> <input name="name" required maxlength="120"></label>
+          <label><%- e('profile.email') %> <input name="email" type="email" required maxlength="200"></label>
+          <label><%- e('profile.phone') %> <input name="phone" maxlength="40"></label>
+          <label><%- e('profile.message') %> <textarea name="message" rows="5" required maxlength="5000"></textarea></label>
+          <button class="btn btn-primary btn-block"><%- e('profile.send') %></button>
+          <p class="tiny muted"><%- e('profile.note') %></p>
         </form>
       </div>
       <%- include('partials/ad', { ad }) %>

@@ -176,6 +176,7 @@ if (addColumn('lawyers', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
 if (addColumn('ads', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
   db.exec("UPDATE ads SET is_sample = 1 WHERE lawyer_id IN (SELECT id FROM lawyers WHERE is_sample = 1) OR title = 'Advertise your practice here'");
 }
+addColumn('posts', 'format', "TEXT NOT NULL DEFAULT 'markdown'");
 if (addColumn('posts', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
   db.exec("UPDATE posts SET is_sample = 1 WHERE author IN ('LexFind Editorial Team', 'Chaldean Law Editorial Team')");
 }

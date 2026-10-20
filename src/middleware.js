@@ -5,6 +5,8 @@ import session from 'express-session';
 import multer from 'multer';
 import { db, ROOT, DATA_DIR, getSettings } from './db.js';
 import { getLawyer } from './models.js';
+import { textHelpers } from './texts.js';
+import { getTheme, themeVersion, fontUrl } from './theme.js';
 
 /** express-session store backed by the app's SQLite database. */
 export class SqliteStore extends session.Store {
@@ -50,6 +52,14 @@ export function locals(req, res, next) {
       res.locals.myLawyer = req.lawyer || null;
     }
   }
+  // Admins can switch on "Edit page" to change wording by clicking it.
+  const editMode = Boolean(req.user?.role === 'admin' && req.session.editMode && !req.path.startsWith('/admin') && !req.path.startsWith('/dashboard'));
+  res.locals.editMode = editMode;
+  Object.assign(res.locals, textHelpers(res.locals.settings, editMode));
+  const theme = getTheme();
+  res.locals.theme = theme;
+  res.locals.themeV = themeVersion(theme);
+  res.locals.fontUrl = fontUrl(theme.theme_font);
   next();
 }
 
@@ -112,7 +122,7 @@ export function rateLimit({ windowMs, max, message }) {
 export const uploadDir = path.resolve(process.env.UPLOAD_DIR || (process.env.DATA_DIR ? path.join(DATA_DIR, 'uploads') : path.join(ROOT, 'public', 'uploads')));
 fs.mkdirSync(uploadDir, { recursive: true });
 
-export const upload = multer({
+const imageUpload = (files) => multer({
   storage: multer.diskStorage({
     destination: uploadDir,
     filename: (req, file, cb) => {
@@ -120,8 +130,11 @@ export const upload = multer({
       cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
     },
   }),
-  limits: { fileSize: 3 * 1024 * 1024, files: 1 },
+  limits: { fileSize: 3 * 1024 * 1024, files },
   fileFilter: (req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)),
 });
+
+export const upload = imageUpload(1);
+export const uploadTwo = imageUpload(2);
 
 export const uploadedPath = (file) => (file ? `/uploads/${file.filename}` : null);

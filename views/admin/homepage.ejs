@@ -1,0 +1,25 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Homepage sections</h1>
+    <p class="muted small">The search area always stays at the top. Use the arrows to change the order of everything below it, and untick a section to hide it. Section titles can be changed with <strong>✎ Edit page</strong> on the home page.</p>
+    <form method="post" action="/admin/homepage" class="card" id="sections-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="order" id="sections-order" value="<%= sections.map(s => s.id).join(',') %>">
+      <ol class="section-list" id="section-list">
+        <% sections.forEach(s => { %>
+          <li data-id="<%= s.id %>">
+            <label class="check"><input type="checkbox" name="visible" value="<%= s.id %>" <%= s.visible ? 'checked' : '' %>> <strong><%= s.label %></strong></label>
+            <span class="section-move">
+              <button type="button" class="btn btn-ghost btn-sm" data-move="-1" aria-label="Move <%= s.label %> up">↑</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-move="1" aria-label="Move <%= s.label %> down">↓</button>
+            </span>
+          </li>
+        <% }) %>
+      </ol>
+      <div class="actions start"><button class="btn btn-primary">Save homepage</button> <a class="btn btn-outline" href="/" target="_blank">View home page ↗</a></div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

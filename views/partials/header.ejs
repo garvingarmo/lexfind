@@ -14,21 +14,22 @@
 <meta property="og:description" content="<%= settings.tagline %>">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<link href="<%= fontUrl %>" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
+<link rel="stylesheet" href="/theme.css?v=<%= themeV %>">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="csrf-token" content="<%= csrf %>">
 </head>
-<body>
+<body class="<%= editMode ? 'edit-mode' : '' %>">
 <header class="site-header">
   <div class="container nav">
-    <a class="brand" href="/"><span class="brand-mark">§</span><%= settings.site_name %></a>
+    <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><span class="brand-mark">§</span><%= settings.site_name %><% } %></a>
     <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Menu">
     <label for="nav-toggle" class="nav-burger" aria-hidden="true"><span></span></label>
     <nav class="nav-links">
-      <a href="/lawyers" class="<%= path.startsWith('/lawyers') ? 'active' : '' %>">Find a lawyer</a>
-      <a href="/assistant" class="<%= path === '/assistant' ? 'active' : '' %>">AI match</a>
-      <a href="/blog" class="<%= path.startsWith('/blog') ? 'active' : '' %>">Guides</a>
+      <a href="/lawyers" class="<%= path.startsWith('/lawyers') ? 'active' : '' %>"><%- e('nav.find') %></a>
+      <a href="/assistant" class="<%= path === '/assistant' ? 'active' : '' %>"><%- e('nav.ai') %></a>
+      <a href="/blog" class="<%= path.startsWith('/blog') ? 'active' : '' %>"><%- e('nav.guides') %></a>
       <% if (user && user.role === 'admin') { %>
         <a href="/admin" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Admin</a>
       <% } else if (user) { %>
@@ -37,8 +38,8 @@
       <% if (user) { %>
         <form method="post" action="/logout" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Sign out</button></form>
       <% } else { %>
-        <a href="/login">Lawyer sign in</a>
-        <a class="btn btn-primary btn-sm" href="/register">List your practice</a>
+        <a href="/login"><%- e('nav.signin') %></a>
+        <a class="btn btn-primary btn-sm" href="/register"><%- e('nav.list') %></a>
       <% } %>
     </nav>
   </div>

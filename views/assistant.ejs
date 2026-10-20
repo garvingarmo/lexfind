@@ -1,23 +1,23 @@
 <%- include('partials/header') %>
 <section class="container page-pad assistant-page">
   <div class="assistant-intro">
-    <h1>AI lawyer match</h1>
-    <p class="muted">Tell us what's going on in your own words, plus anything that matters to you (language, budget, free consultation, a city if you have one in mind). The assistant will suggest lawyers from our directory who handle matters like yours.</p>
+    <h1><%- e('assistant.title') %></h1>
+    <p class="muted"><%- e('assistant.intro') %></p>
     <% if (!aiOn) { %><p class="flash flash-info small">The assistant is running in basic keyword mode.</p><% } %>
   </div>
   <div class="card chat" id="chat" data-initial="<%= initial %>">
     <div class="chat-log" id="chat-log" aria-live="polite">
-      <div class="msg msg-bot"><div class="bubble">Hi! What legal matter can I help you find a lawyer for?</div></div>
+      <div class="msg msg-bot"><div class="bubble"><%- e('assistant.greeting') %></div></div>
     </div>
     <form class="chat-form" id="chat-form">
       <label class="sr-only" for="chat-input">Your message</label>
-      <textarea id="chat-input" rows="2" maxlength="4000" placeholder="e.g. I was injured in a car accident in Orlando last month and the other driver's insurer is ignoring me." required></textarea>
+      <textarea id="chat-input" rows="2" maxlength="4000" placeholder="<%= t('assistant.placeholder') %>" required></textarea>
       <div class="chat-actions">
-        <button type="button" class="btn btn-ghost btn-sm" id="chat-reset">Start over</button>
-        <button class="btn btn-primary" id="chat-send">Send</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="chat-reset"><%- e('assistant.startOver') %></button>
+        <button class="btn btn-primary" id="chat-send"><%- e('assistant.send') %></button>
       </div>
     </form>
   </div>
-  <p class="tiny muted center"><%= settings.disclaimer %></p>
+  <p class="tiny muted center"><%- e('disclaimer') %></p>
 </section>
 <%- include('partials/footer') %>

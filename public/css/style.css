@@ -7,6 +7,8 @@
   --primary: #1f3a5f;
   --primary-ink: #ffffff;
   --primary-soft: #e8eef6;
+  --primary-dark: #172b47;
+  --footer: #141d2b;
   --accent: #b8862b;
   --accent-ink: #ffffff;
   --ok: #2f7a4a;
@@ -123,7 +125,7 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .facts .ok { color: var(--ok); font-weight: 600; }
 
 /* Hero */
-.hero { background: linear-gradient(160deg, #1f3a5f 0%, #172b47 100%); color: #fff; padding: 56px 0 64px; }
+.hero { background: linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; padding: 56px 0 64px; }
 .hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
 .hero .lead { font-size: 1.12rem; color: #d7e0ec; max-width: 560px; }
 .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
@@ -238,7 +240,7 @@ div.card.inquiry { padding: 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Footer */
-.site-footer { background: #141d2b; color: #c4cbd6; padding: 40px 0 24px; margin-top: 40px; }
+.site-footer { background: var(--footer); color: #c4cbd6; padding: 40px 0 24px; margin-top: 40px; }
 .site-footer .brand { color: #fff; }
 .site-footer a:not(.brand) { display: block; color: #c4cbd6; text-decoration: none; margin: 4px 0; font-size: .92rem; }
 .site-footer h4 { color: #fff; margin: 4px 0 10px; }
@@ -296,3 +298,64 @@ div.card.inquiry { padding: 20px; }
 .danger-card h2 { color: var(--danger); }
 .bulk-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 .bulk-bar select { width: auto; max-width: 260px; padding: 6px 8px; font-size: .88rem; }
+
+/* Logo */
+.brand-logo { height: 40px; width: auto; max-width: 220px; object-fit: contain; }
+.site-footer .brand-logo { height: 34px; background: #fff; border-radius: 6px; padding: 3px 6px; }
+
+/* Edit page mode */
+.edit-bar { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.edit-bar.on { left: 16px; justify-content: center; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.edit-bar.on .btn-ghost { color: #fff; border-color: rgba(255,255,255,.4); }
+.edit-count { font-size: .85rem; color: #f3d38d; }
+.edit-mode main, .edit-mode .site-footer { padding-bottom: 70px; }
+.edit-mode .editable { outline: 1px dashed rgba(184, 134, 43, .9); outline-offset: 2px; border-radius: 3px; cursor: text; min-width: 1ch; display: inline-block; }
+.edit-mode .editable:hover { background: rgba(255, 230, 160, .35); }
+.edit-mode .editable:focus { outline: 2px solid var(--accent); background: rgba(255, 240, 200, .6); color: var(--ink); }
+.edit-mode .editable.edited { outline: 2px solid #2f7a4a; }
+
+/* Admin → Texts */
+.text-filter { margin-bottom: 16px; }
+.text-row { display: flex; gap: 8px; align-items: flex-end; }
+.text-row label { flex: 1; }
+.text-row input, .text-row textarea { margin-top: 2px; }
+
+/* Admin → Homepage */
+.section-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.section-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; background: var(--surface); }
+.section-move { display: flex; gap: 4px; }
+
+/* Admin → Appearance */
+.appearance-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.appearance-grid h2 { font-size: 1.05rem; margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.appearance-grid form > h2:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.appearance-grid input[type=color] { height: 44px; padding: 3px; cursor: pointer; }
+.logo-thumb { max-height: 60px; background: var(--bg); padding: 6px; }
+.preview-wrap { position: sticky; top: 84px; }
+.theme-preview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg); font-family: var(--sans); box-shadow: var(--shadow); }
+.theme-preview .pv-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); font-size: .85rem; }
+.theme-preview .brand { font-size: 1.05rem; }
+.theme-preview .pv-logo img { height: 30px; max-width: 140px; object-fit: contain; vertical-align: middle; }
+.theme-preview .pv-hero { color: #fff; padding: 22px 16px; background-size: cover; background-position: center; }
+.theme-preview .pv-hero h3 { font-family: var(--serif); font-size: 1.3rem; }
+.theme-preview .pv-hero p { color: #e1e7f0; font-size: .9rem; }
+.theme-preview .pv-body { padding: 14px 16px; }
+.theme-preview .pv-body strong { font-family: var(--serif); }
+
+/* Visual blog editor */
+.field-label { display: block; font-weight: 500; font-size: .92rem; margin-bottom: 4px; }
+.rte { border: 1px solid #cfccc3; border-radius: 8px; background: var(--surface); }
+.rte:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }
+.rte-toolbar { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px; border-bottom: 1px solid var(--line); background: var(--bg); border-radius: 8px 8px 0 0; position: sticky; top: 64px; z-index: 2; }
+.rte-toolbar button { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 5px 9px; font: 500 .85rem var(--sans); cursor: pointer; color: var(--ink); }
+.rte-toolbar button:hover { background: var(--surface); border-color: var(--line); }
+.rte-sep { width: 1px; background: var(--line); margin: 3px 4px; }
+.rte-area { min-height: 320px; padding: 14px 16px; outline: none; }
+.rte-area:empty::before, .rte-area > p:only-child:has(> br:only-child)::before { content: 'Start writing your guide…'; color: var(--muted); }
+.rte-area blockquote, .prose blockquote { border-left: 3px solid var(--accent); margin: 1em 0; padding: 4px 14px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .appearance-grid { grid-template-columns: 1fr; }
+  .preview-wrap { position: static; }
+  .edit-bar.on { font-size: .85rem; }
+}

@@ -2,24 +2,36 @@
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
-      <a class="brand" href="/"><span class="brand-mark">§</span><%= settings.site_name %></a>
-      <p class="muted small"><%= settings.disclaimer %></p>
+      <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><span class="brand-mark">§</span><%= settings.site_name %><% } %></a>
+      <p class="muted small"><%- e('disclaimer') %></p>
     </div>
     <div>
-      <h4>Directory</h4>
-      <a href="/lawyers">Find a lawyer</a>
-      <a href="/assistant">AI lawyer match</a>
-      <a href="/blog">Legal guides</a>
+      <h4><%- e('footer.directory') %></h4>
+      <a href="/lawyers"><%- e('footer.find') %></a>
+      <a href="/assistant"><%- e('footer.ai') %></a>
+      <a href="/blog"><%- e('footer.guides') %></a>
     </div>
     <div>
-      <h4>For lawyers</h4>
-      <a href="/register">List your practice</a>
-      <a href="/login">Sign in</a>
-      <a href="/about">About</a>
+      <h4><%- e('footer.forLawyers') %></h4>
+      <a href="/register"><%- e('footer.list') %></a>
+      <a href="/login"><%- e('footer.signin') %></a>
+      <a href="/about"><%- e('footer.about') %></a>
     </div>
   </div>
-  <div class="container small muted footer-bottom"><%= settings.footer_text %></div>
+  <div class="container small muted footer-bottom"><%- e('footer_text') %></div>
 </footer>
+<% if (user && user.role === 'admin' && !path.startsWith('/admin') && !path.startsWith('/dashboard')) { %>
+<div class="edit-bar <%= editMode ? 'on' : '' %>" id="edit-bar">
+  <% if (editMode) { %>
+    <span><strong>Editing page.</strong> Click any outlined text to change it.</span>
+    <span class="edit-count" id="edit-count"></span>
+    <button type="button" class="btn btn-accent btn-sm" id="edit-save" disabled>Save changes</button>
+    <form method="post" action="/admin/edit-mode" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= path %>"><button class="btn btn-ghost btn-sm">Done</button></form>
+  <% } else { %>
+    <form method="post" action="/admin/edit-mode" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="on" value="1"><input type="hidden" name="next" value="<%= path %>"><button class="btn btn-primary btn-sm">✎ Edit page</button></form>
+  <% } %>
+</div>
+<% } %>
 <script src="/js/app.js?v=<%= assetV %>" defer></script>
 </body>
 </html>

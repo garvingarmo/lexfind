@@ -1,0 +1,24 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Texts</h1>
+    <p class="muted small">Change the wording used across the public site. The quickest way is usually to open a page and click <strong>✎ Edit page</strong> (bottom right), then click the text. This list also covers things you can't click, like search-box placeholders and dropdown options. Clear a box, or use "Restore", to go back to the original wording.</p>
+    <input type="search" id="text-filter" class="text-filter" placeholder="Filter, e.g. button, search, footer…" value="<%= q %>" aria-label="Filter texts">
+    <% Object.entries(groups).forEach(([group, keys]) => { %>
+      <form method="post" action="/admin/texts" class="card stack text-group" id="<%= group.replace(/\W+/g, '-') %>">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="group" value="<%= group.replace(/\W+/g, '-') %>">
+        <div class="section-head"><h2><%= group %></h2><button class="btn btn-primary btn-sm">Save <%= group.toLowerCase() %></button></div>
+        <% Object.entries(keys).forEach(([key, def]) => { const val = current(key); const long = def.length > 70; %>
+          <div class="text-row" data-search="<%= (key + ' ' + def + ' ' + val).toLowerCase() %>">
+            <label><span class="tiny muted"><%= key %></span><% if (changed(key)) { %> <span class="status status-active">edited</span><% } %>
+              <% if (long) { %><textarea name="text__<%= key %>" rows="2"><%= val %></textarea><% } else { %><input name="text__<%= key %>" value="<%= val %>"><% } %>
+            </label>
+            <% if (changed(key)) { %><button class="btn btn-ghost btn-sm" name="reset" value="<%= key %>" title="Original: <%= def %>">Restore</button><% } %>
+          </div>
+        <% }) %>
+      </form>
+    <% }) %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

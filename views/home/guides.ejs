@@ -1,0 +1,11 @@
+<% if (posts.length) { %>
+<section class="container section">
+  <div class="section-head"><h2><%- e('home.guidesTitle') %></h2><a href="/blog"><%- e('home.allGuides') %></a></div>
+  <div class="card-grid three"><% posts.forEach(p => { %>
+    <a class="card post-card" href="/blog/<%= p.slug %>">
+      <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt=""><% } %>
+      <h3><%= p.title %></h3><p class="muted small"><%= p.excerpt %></p>
+    </a>
+  <% }) %></div>
+</section>
+<% } %>

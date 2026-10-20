@@ -2,81 +2,34 @@
 <section class="hero">
   <div class="container hero-grid">
     <div>
-      <h1><%= settings.hero_title %></h1>
-      <p class="lead"><%= settings.hero_subtitle %></p>
+      <h1><%- e('hero_title') %></h1>
+      <p class="lead"><%- e('hero_subtitle') %></p>
       <form class="search-bar" action="/lawyers" method="get" role="search">
-        <label class="sr-only" for="hq">Keywords</label>
-        <input id="hq" name="q" placeholder="Name, firm or keyword">
-        <label class="sr-only" for="harea">Practice area</label>
+        <label class="sr-only" for="hq"><%= t('search.keywords') %></label>
+        <input id="hq" name="q" placeholder="<%= t('home.searchPlaceholder') %>">
+        <label class="sr-only" for="harea"><%= t('search.area') %></label>
         <select id="harea" name="area">
-          <option value="">Any practice area</option>
+          <option value=""><%= t('home.anyArea') %></option>
           <% areas.forEach(a => { %><option value="<%= a.slug %>"><%= a.name %></option><% }) %>
         </select>
-        <label class="sr-only" for="hstate">State</label>
+        <label class="sr-only" for="hstate"><%= t('search.state') %></label>
         <select id="hstate" name="state">
-          <option value="">Any state</option>
+          <option value=""><%= t('home.anyState') %></option>
           <% states.forEach(s => { %><option><%= s %></option><% }) %>
         </select>
-        <button class="btn btn-primary">Search</button>
+        <button class="btn btn-primary"><%- e('home.searchButton') %></button>
       </form>
     </div>
     <form class="card ai-teaser" action="/assistant" method="get">
-      <div class="ai-pill">AI lawyer match</div>
-      <h2>Not sure what kind of lawyer you need?</h2>
-      <p class="muted">Describe your situation in your own words. Our assistant will suggest lawyers who handle matters like yours.</p>
-      <label class="sr-only" for="aiq">Describe your legal matter</label>
-      <textarea id="aiq" name="q" rows="4" placeholder="e.g. My landlord in Chicago won't return my security deposit after I moved out…"></textarea>
-      <button class="btn btn-accent btn-block">Get matched</button>
-      <p class="tiny muted">Not legal advice. Don't include information you wouldn't share with a stranger.</p>
+      <div class="ai-pill"><%- e('home.aiPill') %></div>
+      <h2><%- e('home.aiTitle') %></h2>
+      <p class="muted"><%- e('home.aiText') %></p>
+      <label class="sr-only" for="aiq"><%= t('home.aiTitle') %></label>
+      <textarea id="aiq" name="q" rows="4" placeholder="<%= t('home.aiPlaceholder') %>"></textarea>
+      <button class="btn btn-accent btn-block"><%- e('home.aiButton') %></button>
+      <p class="tiny muted"><%- e('home.aiNote') %></p>
     </form>
   </div>
 </section>
-
-<% if (ad) { %><section class="container"><%- include('partials/ad', { ad }) %></section><% } %>
-
-<section class="container section">
-  <h2>Browse by practice area</h2>
-  <div class="area-grid">
-    <% areas.forEach(a => { %>
-      <a class="area-tile" href="/lawyers?area=<%= a.slug %>">
-        <strong><%= a.name %></strong>
-        <span class="small muted"><%= a.description %></span>
-        <span class="tiny"><%= a.lawyer_count %> lawyer<%= a.lawyer_count === 1 ? '' : 's' %></span>
-      </a>
-    <% }) %>
-  </div>
-</section>
-
-<% if (featured.length) { %>
-<section class="container section">
-  <div class="section-head"><h2>Featured lawyers</h2><a href="/lawyers">See all →</a></div>
-  <div class="card-grid"><% featured.forEach(l => { %><%- include('partials/lawyer-card', { l }) %><% }) %></div>
-</section>
-<% } %>
-
-<section class="container section how">
-  <h2>How it works</h2>
-  <ol class="steps">
-    <li><strong>Describe or search.</strong> Tell our AI assistant about your matter, or search by practice area and location.</li>
-    <li><strong>Compare lawyers.</strong> Review experience, languages, fees and whether they offer a free consultation.</li>
-    <li><strong>Get in touch.</strong> Send a message straight from the profile — the lawyer contacts you directly.</li>
-  </ol>
-</section>
-
-<% if (posts.length) { %>
-<section class="container section">
-  <div class="section-head"><h2>Legal guides</h2><a href="/blog">All guides →</a></div>
-  <div class="card-grid three"><% posts.forEach(p => { %>
-    <a class="card post-card" href="/blog/<%= p.slug %>">
-      <% if (p.cover_image) { %><img src="<%= p.cover_image %>" alt=""><% } %>
-      <h3><%= p.title %></h3><p class="muted small"><%= p.excerpt %></p>
-    </a>
-  <% }) %></div>
-</section>
-<% } %>
-
-<section class="container section cta-band">
-  <div><h2>Are you a lawyer?</h2><p>Create your free listing, manage your profile, and receive inquiries from people who need your help.</p></div>
-  <a class="btn btn-accent" href="/register">List your practice</a>
-</section>
+<% sections.filter(s => s.visible).forEach(s => { %><%- include('home/' + s.id) %><% }) %>
 <%- include('partials/footer') %>

@@ -62,6 +62,15 @@ Go to **Admin → Import lawyers**. Either paste a Google Sheets link (shared as
 
 Importing the same sheet again updates existing lawyers instead of duplicating them; a lawyer counts as existing if the email matches, or the name and city match. There's a CSV template on that page.
 
+## Visual editing
+
+These admin tools change the site without code:
+- **Edit page.** Signed-in admins see a "✎ Edit page" button on public pages. Click any outlined text, type, then **Save changes**.
+- **Admin → Texts.** Every editable phrase in one list, including placeholders and dropdown labels, with a filter and "Restore" for the original wording.
+- **Admin → Appearance.** Main and highlight colours, font pairing, logo, and the homepage background image, with a live preview. It is served as `/theme.css`.
+- **Admin → Homepage.** Reorder, show or hide the homepage sections.
+- **Blog editor.** A visual editor for headings, bold, lists, links and image uploads. Posts are stored as sanitized HTML; older Markdown posts still display and convert when edited.
+
 ## Inviting lawyers to claim their listings
 
 Go to **Admin → Invitations**, or open a lawyer's edit page. Create a personal link for each lawyer, or for everyone without a login at once. A lawyer opens the link, sets a password and gets control of their listing. Each link works once, expires after 30 days, and is cancelled when you create a newer one.

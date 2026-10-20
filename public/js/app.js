@@ -63,6 +63,191 @@
     refresh();
   }
 
+  // --- Edit page mode (admins): click outlined text, type, then save ------------------------
+  if (document.body.classList.contains('edit-mode')) {
+    const changed = new Map();
+    const saveBtn = document.getElementById('edit-save');
+    const countEl = document.getElementById('edit-count');
+    const update = () => {
+      saveBtn.disabled = !changed.size;
+      countEl.textContent = changed.size ? `${changed.size} change${changed.size === 1 ? '' : 's'} not saved` : '';
+    };
+    document.querySelectorAll('.editable').forEach((el) => {
+      el.setAttribute('contenteditable', 'plaintext-only');
+      if (el.contentEditable !== 'plaintext-only') el.setAttribute('contenteditable', 'true');
+      el.spellcheck = true;
+      el.dataset.original = el.textContent;
+      el.addEventListener('input', () => {
+        const key = el.dataset.editKey;
+        const value = el.innerText.replace(/\n{3,}/g, '\n\n');
+        // The same text can appear twice on a page (e.g. the disclaimer); keep copies in sync.
+        document.querySelectorAll(`.editable[data-edit-key="${key}"]`).forEach((o) => { if (o !== el) o.textContent = value; });
+        if (value === el.dataset.original) changed.delete(key); else changed.set(key, value);
+        el.classList.toggle('edited', changed.has(key));
+        update();
+      });
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey && el.closest('h1,h2,h3,h4,a,button,strong,label,.btn')) { ev.preventDefault(); el.blur(); }
+      });
+    });
+    // Clicking text inside a link or button edits it instead of following it.
+    document.addEventListener('click', (ev) => {
+      if (ev.target.closest('.editable')) { ev.preventDefault(); ev.stopPropagation(); }
+    }, true);
+    document.addEventListener('submit', (ev) => {
+      if (!ev.target.closest('#edit-bar')) { ev.preventDefault(); alert('Finish editing first: click Save changes or Done.'); }
+    }, true);
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        const r = await fetch('/admin/texts.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'x-csrf-token': csrf },
+          body: JSON.stringify({ changes: Object.fromEntries(changed) }),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Save failed');
+        changed.clear();
+        document.querySelectorAll('.editable').forEach((el) => { el.dataset.original = el.textContent; el.classList.remove('edited'); });
+        saveBtn.textContent = 'Saved ✓';
+        setTimeout(() => { saveBtn.textContent = 'Save changes'; update(); }, 1500);
+      } catch (e) {
+        alert(`Could not save: ${e.message}`);
+        saveBtn.textContent = 'Save changes';
+        update();
+      }
+    });
+    window.addEventListener('beforeunload', (ev) => { if (changed.size) { ev.preventDefault(); ev.returnValue = ''; } });
+  }
+
+  // --- Admin → Texts: filter the list --------------------------------------------------------
+  const textFilter = document.getElementById('text-filter');
+  if (textFilter) {
+    const apply = () => {
+      const q = textFilter.value.trim().toLowerCase();
+      document.querySelectorAll('.text-row').forEach((row) => { row.hidden = q && !row.dataset.search.includes(q); });
+      document.querySelectorAll('.text-group').forEach((g) => { g.hidden = q && !g.querySelector('.text-row:not([hidden])'); });
+    };
+    textFilter.addEventListener('input', apply);
+    apply();
+  }
+
+  // --- Admin → Homepage: reorder sections -----------------------------------------------------
+  const sectionList = document.getElementById('section-list');
+  if (sectionList) {
+    const order = document.getElementById('sections-order');
+    const sync = () => { order.value = [...sectionList.children].map((li) => li.dataset.id).join(','); };
+    sectionList.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-move]');
+      if (!btn) return;
+      const li = btn.closest('li');
+      if (btn.dataset.move === '-1' && li.previousElementSibling) li.parentNode.insertBefore(li, li.previousElementSibling);
+      if (btn.dataset.move === '1' && li.nextElementSibling) li.parentNode.insertBefore(li.nextElementSibling, li);
+      sync();
+      btn.focus();
+    });
+  }
+
+  // --- Admin → Appearance: live preview ----------------------------------------------------
+  const preview = document.getElementById('theme-preview');
+  if (preview) {
+    const form = document.getElementById('appearance-form');
+    const font = document.getElementById('theme-font');
+    const hero = document.getElementById('pv-hero');
+    const shade = (hex, t) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `#${[n >> 16, (n >> 8) & 255, n & 255].map((c) => Math.round(t >= 0 ? c + (255 - c) * t : c * (1 + t)).toString(16).padStart(2, '0')).join('')}`;
+    };
+    const setHero = (url) => {
+      const p = form.theme_primary.value;
+      hero.style.backgroundImage = url
+        ? `linear-gradient(160deg, ${p}b8 0%, ${shade(p, -0.35)}d9 100%), url("${url}")`
+        : `linear-gradient(160deg, ${p} 0%, ${shade(p, -0.3)} 100%)`;
+    };
+    const apply = () => {
+      const p = form.theme_primary.value;
+      preview.style.setProperty('--primary', p);
+      preview.style.setProperty('--primary-soft', shade(p, 0.88));
+      preview.style.setProperty('--accent', form.theme_accent.value);
+      const opt = font.options[font.selectedIndex];
+      preview.style.setProperty('--serif', `'${opt.dataset.heading}', Georgia, serif`);
+      preview.style.setProperty('--sans', `'${opt.dataset.body}', system-ui, sans-serif`);
+      setHero(hero.dataset.image);
+      document.getElementById('pv-name').hidden = Boolean(document.querySelector('#pv-logo img')) && !document.getElementById('logo-text').checked;
+    };
+    form.addEventListener('input', apply);
+    form.addEventListener('change', apply);
+    const previewFile = (input, onUrl) => input.addEventListener('change', () => {
+      const f = input.files[0];
+      if (!f) return;
+      const reader = new FileReader(); // data: URLs are allowed by the site's image policy; blob: URLs are not
+      reader.onload = () => onUrl(reader.result);
+      reader.readAsDataURL(f);
+    });
+    previewFile(document.getElementById('logo-file'), (url) => {
+      const box = document.getElementById('pv-logo');
+      box.replaceChildren(Object.assign(document.createElement('img'), { src: url, alt: '' }));
+      apply();
+    });
+    previewFile(document.getElementById('hero-file'), (url) => { hero.dataset.image = url; apply(); });
+    apply();
+  }
+
+  // --- Visual blog editor ---------------------------------------------------------------------
+  const rte = document.getElementById('rte-area');
+  if (rte) {
+    const body = document.getElementById('rte-body');
+    const imageInput = document.getElementById('rte-image');
+    let savedRange = null;
+    const remember = () => { const sel = getSelection(); if (sel.rangeCount && rte.contains(sel.anchorNode)) savedRange = sel.getRangeAt(0); };
+    const restore = () => { rte.focus(); if (savedRange) { const sel = getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); } };
+    rte.addEventListener('keyup', remember);
+    rte.addEventListener('mouseup', remember);
+    document.execCommand('defaultParagraphSeparator', false, 'p');
+    if (!rte.innerHTML.trim()) rte.innerHTML = '<p><br></p>'; // so the first line is a paragraph too
+    rte.closest('form').addEventListener('submit', () => {
+      rte.querySelectorAll('p').forEach((el) => { if (!el.textContent.trim() && !el.querySelector('img')) el.remove(); });
+    });
+    document.querySelector('.rte-toolbar').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button[data-cmd]');
+      if (!btn) return;
+      const { cmd, arg } = btn.dataset;
+      restore();
+      if (cmd === 'link') {
+        const url = prompt('Link address (https://…, or /lawyers for a page on this site):', 'https://');
+        if (url && url !== 'https://') document.execCommand('createLink', false, url);
+      } else if (cmd === 'image') {
+        imageInput.click();
+      } else {
+        document.execCommand(cmd, false, arg ? `<${arg}>` : null);
+      }
+      remember();
+    });
+    imageInput.addEventListener('change', async () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('_csrf', csrf);
+      fd.append('image', file);
+      try {
+        const r = await fetch('/admin/uploads/image', { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Upload failed');
+        restore();
+        document.execCommand('insertImage', false, data.url);
+      } catch (e) {
+        alert(e.message);
+      }
+      imageInput.value = '';
+    });
+    // Paste as plain text so formatting from Word or web pages doesn't come along.
+    rte.addEventListener('paste', (ev) => {
+      ev.preventDefault();
+      document.execCommand('insertText', false, ev.clipboardData.getData('text/plain'));
+    });
+    rte.closest('form').addEventListener('submit', () => { body.value = rte.innerHTML; });
+  }
+
   // Poll a running AI research job and reload when it finishes.
   const wait = document.getElementById('research-wait');
   if (wait) {

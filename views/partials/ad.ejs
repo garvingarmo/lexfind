@@ -1,6 +1,6 @@
 <% if (ad) { %>
 <aside class="ad ad-<%= ad.placement %>">
-  <span class="ad-label">Sponsored</span>
+  <span class="ad-label"><%- e('card.sponsored') %></span>
   <% if (ad.image) { %><img src="<%= ad.image %>" alt=""><% } %>
   <div class="ad-body">
     <strong><%= ad.title %></strong>

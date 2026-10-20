@@ -1,45 +1,45 @@
 <%- include('partials/header') %>
 <section class="container page-pad">
-  <h1>Find a lawyer</h1>
+  <h1><%- e('search.title') %></h1>
   <div class="search-layout">
     <form class="card filters" method="get" action="/lawyers">
-      <label>Keywords <input name="q" value="<%= f.q %>" placeholder="Name, firm, keyword"></label>
-      <label>Practice area
-        <select name="area"><option value="">Any</option>
+      <label><%- e('search.keywords') %> <input name="q" value="<%= f.q %>" placeholder="<%= t('search.keywordsPlaceholder') %>"></label>
+      <label><%- e('search.area') %>
+        <select name="area"><option value=""><%= t('search.any') %></option>
           <% areas.forEach(a => { %><option value="<%= a.slug %>" <%= f.area === a.slug ? 'selected' : '' %>><%= a.name %></option><% }) %>
         </select>
       </label>
-      <label>City <input name="city" value="<%= f.city %>"></label>
-      <label>State
-        <select name="state"><option value="">Any</option>
+      <label><%- e('search.city') %> <input name="city" value="<%= f.city %>"></label>
+      <label><%- e('search.state') %>
+        <select name="state"><option value=""><%= t('search.any') %></option>
           <% states.forEach(s => { %><option <%= f.state.toUpperCase() === s ? 'selected' : '' %>><%= s %></option><% }) %>
         </select>
       </label>
-      <label>Language
-        <select name="language"><option value="">Any</option>
+      <label><%- e('search.language') %>
+        <select name="language"><option value=""><%= t('search.any') %></option>
           <% languages.forEach(s => { %><option <%= f.language === s ? 'selected' : '' %>><%= s %></option><% }) %>
         </select>
       </label>
-      <label class="check"><input type="checkbox" name="free" value="1" <%= f.freeConsult ? 'checked' : '' %>> Free consultation</label>
-      <label>Sort by
+      <label class="check"><input type="checkbox" name="free" value="1" <%= f.freeConsult ? 'checked' : '' %>> <%- e('search.free') %></label>
+      <label><%- e('search.sortBy') %>
         <select name="sort">
-          <% [['relevance','Best match'],['experience','Most experience'],['name','Name'],['newest','Newest']].forEach(([v, t]) => { %>
+          <% [['relevance',t('search.sortBest')],['experience',t('search.sortExperience')],['name',t('search.sortName')],['newest',t('search.sortNewest')]].forEach(([v, t]) => { %>
             <option value="<%= v %>" <%= f.sort === v ? 'selected' : '' %>><%= t %></option><% }) %>
         </select>
       </label>
-      <button class="btn btn-primary btn-block">Apply filters</button>
-      <a class="small" href="/lawyers">Clear all</a>
+      <button class="btn btn-primary btn-block"><%- e('search.apply') %></button>
+      <a class="small" href="/lawyers"><%- e('search.clear') %></a>
     </form>
 
     <div>
       <div class="result-head">
-        <p class="muted"><%= total %> lawyer<%= total === 1 ? '' : 's' %> found</p>
-        <a class="btn btn-accent btn-sm" href="/assistant">✦ Ask the AI to match me</a>
+        <p class="muted"><%= total %> <%- e(total === 1 ? 'search.foundOne' : 'search.found') %></p>
+        <a class="btn btn-accent btn-sm" href="/assistant"><%- e('search.askAi') %></a>
       </div>
       <% if (!rows.length) { %>
         <div class="card empty">
-          <p>No lawyers match these filters yet.</p>
-          <p class="small muted">Try removing a filter, or <a href="/assistant">describe your matter to our AI assistant</a>.</p>
+          <p><%- e('search.empty') %></p>
+          <p class="small muted"><a href="/assistant"><%- e('search.emptyHint') %></a></p>
         </div>
       <% } %>
       <div class="card-grid two"><% rows.forEach(l => { %><%- include('partials/lawyer-card', { l }) %><% }) %></div>

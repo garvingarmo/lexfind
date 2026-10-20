@@ -3,11 +3,15 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, tx, getSettings, setSetting, getSecret, setSecret, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
 import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas } from '../models.js';
-import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middleware.js';
+import { requireRole, flash, upload, uploadTwo, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
 import { mailConfig, mailEnabled as smtpEnabled, sendMail } from '../mailer.js';
 import multer from 'multer';
+import { cleanHtml, renderPost } from './public.js';
+import { TEXT_GROUPS, TEXT_DEFAULTS, loadTexts, saveTexts } from '../texts.js';
+import { FONTS, THEME_DEFAULTS, getTheme, saveTheme, allFontsUrl } from '../theme.js';
+import { SECTIONS, getSections, saveSections } from '../homepage.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
 
@@ -319,7 +323,7 @@ router.get('/posts', (req, res) => {
 router.get('/posts/:id', (req, res, next) => {
   const post = req.params.id === 'new' ? { status: 'draft', author: getSettings().site_name + ' Editorial Team' } : db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
   if (!post) return next();
-  res.render('admin/post-edit', { title: post.id ? 'Edit post' : 'New post', post });
+  res.render('admin/post-edit', { title: post.id ? 'Edit post' : 'New post', post, bodyHtml: post.id ? renderPost(post) : '' });
 });
 
 router.post('/posts/:id', upload.single('cover_image'), verifyCsrf, (req, res) => {
@@ -329,7 +333,7 @@ router.post('/posts/:id', upload.single('cover_image'), verifyCsrf, (req, res) =
   const existing = isNew ? null : db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
   const status = b.status === 'published' ? 'published' : 'draft';
   const data = {
-    title: b.title.trim().slice(0, 200), excerpt: (b.excerpt || '').trim().slice(0, 500) || null, body: b.body || '',
+    title: b.title.trim().slice(0, 200), excerpt: (b.excerpt || '').trim().slice(0, 500) || null, body: cleanHtml(b.body || ''), format: 'html',
     author: (b.author || '').trim().slice(0, 120) || null, status,
     slug: uniqueSlug('posts', b.slug?.trim() || b.title, existing?.id ?? null),
     published_at: status === 'published' ? (existing?.published_at || new Date().toISOString().slice(0, 19).replace('T', ' ')) : existing?.published_at || null,
@@ -628,6 +632,76 @@ router.post('/integrations/mail/test', async (req, res) => {
     flash(req, 'error', `Could not send: ${e.message}`);
   }
   res.redirect('/admin/integrations');
+});
+
+// --- Visual editing: edit mode, texts, appearance, homepage sections ---------------------
+
+const safeNext = (n) => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') ? n : '/');
+
+router.post('/edit-mode', (req, res) => {
+  req.session.editMode = Boolean(req.body.on);
+  res.redirect(safeNext(req.body.next));
+});
+
+// Saves wording changed on the page in edit mode (JSON: { changes: { key: text } }).
+router.post('/texts.json', (req, res) => {
+  const changes = req.body?.changes;
+  if (!changes || typeof changes !== 'object') return res.status(400).json({ error: 'No changes sent.' });
+  saveTexts(changes);
+  res.json({ ok: true, saved: Object.keys(changes).length });
+});
+
+router.get('/texts', (req, res) => {
+  const saved = loadTexts();
+  const current = (key) => res.locals.t(key);
+  res.render('admin/texts', { title: 'Texts', groups: TEXT_GROUPS, current, changed: (k) => current(k) !== TEXT_DEFAULTS[k], q: (req.query.q || '').toString(), savedCount: Object.keys(saved).length });
+});
+
+router.post('/texts', (req, res) => {
+  const changes = {};
+  for (const key of Object.keys(TEXT_DEFAULTS)) if (`text__${key}` in req.body) changes[key] = req.body[`text__${key}`];
+  if (req.body.reset && TEXT_DEFAULTS[req.body.reset] !== undefined) changes[req.body.reset] = TEXT_DEFAULTS[req.body.reset];
+  saveTexts(changes);
+  flash(req, 'success', req.body.reset ? 'Restored the original wording.' : 'Texts saved.');
+  res.redirect(`/admin/texts${req.body.group ? `#${encodeURIComponent(req.body.group)}` : ''}`);
+});
+
+router.get('/appearance', (req, res) => {
+  res.render('admin/appearance', { title: 'Appearance', theme: getTheme(), FONTS, THEME_DEFAULTS, allFonts: allFontsUrl() });
+});
+
+router.post('/appearance', uploadTwo.fields([{ name: 'logo', maxCount: 1 }, { name: 'hero_image', maxCount: 1 }]), verifyCsrf, (req, res) => {
+  const b = req.body;
+  if (b.reset) {
+    saveTheme({ ...THEME_DEFAULTS });
+    flash(req, 'success', 'Appearance reset to the original design.');
+    return res.redirect('/admin/appearance');
+  }
+  const values = { theme_primary: b.theme_primary, theme_accent: b.theme_accent, theme_font: b.theme_font, theme_logo_text: b.theme_logo_text ? '1' : '0' };
+  if (req.files?.logo?.[0]) values.theme_logo = uploadedPath(req.files.logo[0]);
+  else if (b.remove_logo) values.theme_logo = '';
+  if (req.files?.hero_image?.[0]) values.theme_hero_image = uploadedPath(req.files.hero_image[0]);
+  else if (b.remove_hero) values.theme_hero_image = '';
+  saveTheme(values);
+  flash(req, 'success', 'Appearance saved. Open the site in a new tab to see it.');
+  res.redirect('/admin/appearance');
+});
+
+router.get('/homepage', (req, res) => {
+  res.render('admin/homepage', { title: 'Homepage sections', sections: getSections() });
+});
+
+router.post('/homepage', (req, res) => {
+  const order = String(req.body.order || '').split(',').filter(Boolean);
+  saveSections(order.length ? order : Object.keys(SECTIONS), [].concat(req.body.visible || []));
+  flash(req, 'success', 'Homepage sections saved.');
+  res.redirect('/admin/homepage');
+});
+
+// Image upload for the visual blog editor; returns { url }.
+router.post('/uploads/image', upload.single('image'), verifyCsrf, (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Please choose a JPG, PNG, WebP or GIF image under 3 MB.' });
+  res.json({ url: uploadedPath(req.file) });
 });
 
 export default router;

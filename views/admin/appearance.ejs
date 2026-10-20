@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+<link href="<%= allFonts %>" rel="stylesheet">
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Appearance</h1>
+    <div class="appearance-grid">
+      <form method="post" action="/admin/appearance" enctype="multipart/form-data" class="card stack" id="appearance-form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <h2>Colours</h2>
+        <div class="row-2">
+          <label>Main colour <span class="tiny muted">(header buttons, links, top banner)</span><input type="color" name="theme_primary" value="<%= theme.theme_primary %>" data-preview="--primary"></label>
+          <label>Highlight colour <span class="tiny muted">(call-to-action buttons)</span><input type="color" name="theme_accent" value="<%= theme.theme_accent %>" data-preview="--accent"></label>
+        </div>
+        <h2>Fonts</h2>
+        <label>Font style
+          <select name="theme_font" id="theme-font">
+            <% Object.entries(FONTS).forEach(([k, f]) => { %><option value="<%= k %>" data-heading="<%= f.heading %>" data-body="<%= f.body %>" <%= theme.theme_font === k ? 'selected' : '' %>><%= f.label %></option><% }) %>
+          </select>
+        </label>
+        <h2>Logo</h2>
+        <% if (theme.theme_logo) { %><img src="<%= theme.theme_logo %>" alt="Current logo" class="thumb logo-thumb"><label class="check"><input type="checkbox" name="remove_logo"> Remove logo (show the § icon instead)</label><% } %>
+        <label>Upload a logo <span class="tiny muted">(PNG with a transparent background works best, about 400×120 px)</span><input type="file" name="logo" accept="image/png,image/jpeg,image/webp" id="logo-file"></label>
+        <label class="check"><input type="checkbox" name="theme_logo_text" <%= theme.theme_logo_text === '1' ? 'checked' : '' %> id="logo-text"> Show the site name next to the logo</label>
+        <h2>Homepage background image</h2>
+        <% if (theme.theme_hero_image) { %><img src="<%= theme.theme_hero_image %>" alt="Current background" class="thumb"><label class="check"><input type="checkbox" name="remove_hero"> Remove image (plain colour)</label><% } %>
+        <label>Upload an image <span class="tiny muted">(wide photo, at least 1600 px across; it's tinted with your main colour so text stays readable)</span><input type="file" name="hero_image" accept="image/png,image/jpeg,image/webp" id="hero-file"></label>
+        <div class="actions start">
+          <button class="btn btn-primary">Save appearance</button>
+          <button class="btn btn-ghost btn-sm" name="reset" value="1" data-confirm="Go back to the original colours, font, logo and background?">Reset to original</button>
+        </div>
+      </form>
+
+      <div class="preview-wrap">
+        <p class="tiny muted">Live preview</p>
+        <div class="theme-preview" id="theme-preview">
+          <div class="pv-header">
+            <span class="brand"><span class="pv-logo" id="pv-logo"><% if (theme.theme_logo) { %><img src="<%= theme.theme_logo %>" alt=""><% } else { %><span class="brand-mark">§</span><% } %></span><span id="pv-name" <%= theme.theme_logo && theme.theme_logo_text !== '1' ? 'hidden' : '' %>><%= settings.site_name %></span></span>
+            <span class="pv-nav">Find a lawyer · AI match</span>
+          </div>
+          <div class="pv-hero" id="pv-hero" data-image="<%= theme.theme_hero_image %>">
+            <h3><%= t('hero_title') %></h3>
+            <p>Search our directory of attorneys…</p>
+            <span class="btn btn-primary btn-sm">Search</span> <span class="btn btn-accent btn-sm">Get matched</span>
+          </div>
+          <div class="pv-body">
+            <strong>Featured lawyers</strong>
+            <p class="small">Body text looks like this. <a href="#">Links look like this.</a></p>
+            <span class="tag">Family Law</span> <span class="tag">Immigration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

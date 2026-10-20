@@ -1,5 +1,5 @@
 <article class="card lawyer-card <%= l.featured ? 'is-featured' : '' %>">
-  <% if (l.featured) { %><span class="badge badge-sponsored">Sponsored</span><% } %>
+  <% if (l.featured) { %><span class="badge badge-sponsored"><%- e('card.sponsored') %></span><% } %>
   <div class="lawyer-card-head">
     <%- include('avatar', { l }) %>
     <div>
@@ -12,9 +12,9 @@
     <% (l.areas || []).forEach(a => { %><a class="tag" href="/lawyers?area=<%= a.slug %>"><%= a.name %></a><% }) %>
   </div>
   <ul class="facts small">
-    <% if (l.years_experience) { %><li><%= l.years_experience %> yrs experience</li><% } %>
+    <% if (l.years_experience) { %><li><%= l.years_experience %> <%- e('card.experience') %></li><% } %>
     <% if (l.languages) { %><li><%= l.languages %></li><% } %>
-    <% if (l.free_consultation) { %><li class="ok">Free consultation</li><% } %>
+    <% if (l.free_consultation) { %><li class="ok"><%- e('card.free') %></li><% } %>
   </ul>
-  <a class="btn btn-outline btn-block" href="/lawyers/<%= l.slug %>">View profile</a>
+  <a class="btn btn-outline btn-block" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a>
 </article>

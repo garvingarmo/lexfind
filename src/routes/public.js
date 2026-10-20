@@ -6,20 +6,27 @@ import { searchLawyers, getLawyer, listAreas, pickAd, featuredLawyers } from '..
 import { flash, rateLimit } from '../middleware.js';
 import { chat } from '../ai/agent.js';
 import { aiEnabled } from '../ai/client.js';
+import { getSections } from '../homepage.js';
 
 const router = Router();
 
-export const renderMarkdown = (md) => sanitizeHtml(marked.parse(md || ''), {
+const SANITIZE = {
   allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']),
   allowedAttributes: { a: ['href', 'title', 'target', 'rel'], img: ['src', 'alt', 'title'] },
-});
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+};
+
+export const cleanHtml = (html) => sanitizeHtml(html || '', SANITIZE).replace(/<(p|b|strong|em|i|u)>\s*<\/\1>/g, '').replace(/<(p|b|strong|em|i|u)>\s*<\/\1>/g, '');
+export const renderMarkdown = (md) => cleanHtml(marked.parse(md || ''));
+/** Blog posts written in the visual editor are HTML; older ones are Markdown. */
+export const renderPost = (post) => (post.format === 'html' ? cleanHtml(post.body) : renderMarkdown(post.body));
 
 router.get('/', (req, res) => {
   const posts = db.prepare("SELECT * FROM posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 3").all();
   const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   res.render('index', {
     title: null, areas: listAreas({ withLawyersOnly: true }), featured: featuredLawyers(4), posts, states,
-    ad: pickAd('home_banner'), aiOn: aiEnabled(),
+    ad: pickAd('home_banner'), aiOn: aiEnabled(), sections: getSections(),
   });
 });
 
@@ -134,7 +141,7 @@ router.get('/blog/:slug', (req, res, next) => {
   const post = db.prepare('SELECT * FROM posts WHERE slug = ?').get(req.params.slug);
   if (!post || (post.status !== 'published' && req.user?.role !== 'admin')) return next();
   const recent = db.prepare("SELECT title, slug FROM posts WHERE status = 'published' AND id != ? ORDER BY published_at DESC LIMIT 5").all(post.id);
-  res.render('post', { title: post.title, post, html: renderMarkdown(post.body), recent, ad: pickAd('blog_sidebar') });
+  res.render('post', { title: post.title, post, html: renderPost(post), recent, ad: pickAd('blog_sidebar') });
 });
 
 router.get('/about', (req, res) => {

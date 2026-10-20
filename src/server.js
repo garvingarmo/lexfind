@@ -8,6 +8,7 @@ import os from 'node:os';
 import { ROOT, db } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
 import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
+import { themeCss } from './theme.js';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -51,6 +52,9 @@ const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
 if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
+// Appearance settings as a stylesheet; the URL carries a version, so it can be cached long-term.
+app.get('/theme.css', (req, res) => res.type('text/css').set('Cache-Control', 'public, max-age=31536000, immutable').send(themeCss()));
+
 // Pages are per-visitor (sessions, CSRF tokens, sign-in state). Forbid shared caches such as the
 // hosting's nginx proxy from storing them, or one visitor's page is served to the next.
 app.use((req, res, next) => {
