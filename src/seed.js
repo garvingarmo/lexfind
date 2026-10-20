@@ -64,7 +64,7 @@ if (demo && !db.prepare('SELECT 1 FROM lawyers LIMIT 1').get()) {
       fee_structure: areas.includes('Personal Injury') ? 'Contingency fee' : 'Hourly; flat fees available for some matters',
       website: `https://www.example.com/${slugify(firm)}`,
     });
-    db.prepare("UPDATE lawyers SET status = 'active', verified = 1, featured = ? WHERE id = ?").run(featured, id);
+    db.prepare("UPDATE lawyers SET status = 'active', verified = 1, featured = ?, is_sample = 1 WHERE id = ?").run(featured, id);
     setAreas(id, areas.map((a) => areaId[a]));
   }
 
@@ -74,7 +74,7 @@ if (demo && !db.prepare('SELECT 1 FROM lawyers LIMIT 1').get()) {
   console.log('Demo lawyer login: lawyer@example.com / lawyer-demo-123');
 
   const firstFeatured = db.prepare('SELECT id, slug, name FROM lawyers WHERE featured = 1 ORDER BY id LIMIT 3').all();
-  const adIns = db.prepare('INSERT INTO ads (title, body, link_url, cta, placement, lawyer_id) VALUES (?, ?, ?, ?, ?, ?)');
+  const adIns = db.prepare('INSERT INTO ads (title, body, link_url, cta, placement, lawyer_id, is_sample) VALUES (?, ?, ?, ?, ?, ?, 1)');
   adIns.run('Going through a divorce?', `${firstFeatured[0].name} offers free 30-minute consultations for Los Angeles families.`, `/lawyers/${firstFeatured[0].slug}`, 'Book a consultation', 'search_sidebar', firstFeatured[0].id);
   adIns.run('Charged with a crime?', 'Former public defender. Available 24/7 for urgent matters.', `/lawyers/${firstFeatured[1].slug}`, 'Get help now', 'profile_sidebar', firstFeatured[1].id);
   adIns.run('Advertise your practice here', 'Reach people actively looking for a lawyer in your practice area and city.', '/register', 'List your practice', 'home_banner', null);
@@ -88,7 +88,7 @@ if (demo && !db.prepare('SELECT 1 FROM lawyers LIMIT 1').get()) {
     ['Contingency, hourly or flat fee: how lawyers charge', 'Understanding the most common fee arrangements.',
       '## Contingency fees\n\nThe lawyer is paid a percentage of any recovery, typically in personal injury cases. If there is no recovery, there is usually no fee, although you may still owe costs.\n\n## Hourly fees\n\nYou pay for the time spent on your matter, often with an upfront retainer.\n\n## Flat fees\n\nA single fee for a defined task, such as drafting a will or handling an uncontested divorce.\n\nAlways get the arrangement in writing.'],
   ];
-  const pIns = db.prepare("INSERT INTO posts (title, slug, excerpt, body, author, status, published_at) VALUES (?, ?, ?, ?, 'Chaldean Law Editorial Team', 'published', datetime('now', ?))");
+  const pIns = db.prepare("INSERT INTO posts (title, slug, excerpt, body, author, status, published_at, is_sample) VALUES (?, ?, ?, ?, 'Chaldean Law Editorial Team', 'published', datetime('now', ?), 1)");
   posts.forEach(([t, ex, body], i) => pIns.run(t, slugify(t), ex, body, `-${i * 3} days`));
   console.log(`Seeded ${L.length} sample lawyers, 4 ads and ${posts.length} blog posts.`);
 }

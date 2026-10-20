@@ -1,0 +1,47 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Import lawyers</h1>
+    <p class="muted">Bring in your lawyer list from Google Sheets. You'll match the columns and see a preview before anything is saved.</p>
+
+    <form method="post" action="/admin/import" enctype="multipart/form-data" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>1. Load your sheet</h2>
+      <label>Google Sheet link
+        <input name="sheet_url" type="url" placeholder="https://docs.google.com/spreadsheets/d/…">
+      </label>
+      <p class="tiny muted">The sheet must be shared as <strong>Anyone with the link → Viewer</strong> (Share button → General access). It reads the tab that's open in the link. You can turn sharing off again after importing.</p>
+      <p class="center muted small">— or —</p>
+      <label>Upload a CSV file <input type="file" name="file" accept=".csv,text/csv"></label>
+      <p class="tiny muted">In Google Sheets: <strong>File → Download → Comma-separated values (.csv)</strong>.</p>
+      <button class="btn btn-primary">Load sheet</button>
+    </form>
+
+    <div class="card">
+      <h2>Column tips</h2>
+      <p class="small">The first row of your sheet should be column headings. Common names like <em>Name, Firm, Email, Phone, City, State, Practice Areas, Languages</em> are matched automatically, and you can adjust the matching on the next screen.</p>
+      <ul class="small">
+        <li><strong>Practice areas:</strong> separate several with commas, e.g. <em>Family Law, Immigration</em>. New ones are created for you.</li>
+        <li><strong>State:</strong> full names (Michigan) or codes (MI) both work.</li>
+        <li><strong>Free consultation / Sponsored:</strong> Yes or No.</li>
+        <li><strong>Photo:</strong> a public image link starting with https://.</li>
+        <li><strong>Running it again</strong> updates lawyers it already imported (matched by email, or by name + city) instead of creating duplicates.</li>
+      </ul>
+      <a class="btn btn-outline btn-sm" href="/admin/import/template.csv">Download a template</a>
+    </div>
+
+    <div class="card">
+      <h2>Sample data</h2>
+      <% if (sample.lawyers || sample.ads || sample.posts) { %>
+        <p class="small">The site still has the demo content: <strong><%= sample.lawyers %> sample lawyers</strong>, <%= sample.ads %> sample ads and <%= sample.posts %> sample blog posts, plus the demo lawyer login. You can remove it here, or tick the box on the import screen to remove it as part of the import.</p>
+        <form method="post" action="/admin/sample-data/delete" data-confirm="Permanently delete all sample lawyers, sample ads, sample blog posts and the demo lawyer login?">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Delete sample data</button>
+        </form>
+      <% } else { %>
+        <p class="small muted">No sample data left. The directory has <%= total %> lawyer<%= total === 1 ? '' : 's' %>.</p>
+      <% } %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

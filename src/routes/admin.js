@@ -6,6 +6,8 @@ import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, upda
 import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled } from '../ai/client.js';
+import multer from 'multer';
+import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, templateCsv } from '../importer.js';
 
 const router = Router();
 router.use(requireRole('admin'));
@@ -307,6 +309,87 @@ router.post('/users/:id/delete', (req, res) => {
   if (Number(req.params.id) === req.user.id) flash(req, 'error', 'You cannot delete your own account.');
   else { db.prepare("DELETE FROM users WHERE id = ? AND role = 'admin'").run(req.params.id); flash(req, 'success', 'Admin removed.'); }
   res.redirect('/admin/users');
+});
+
+// --- Import lawyers from Google Sheets / CSV ------------------------------------------
+
+const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1 } });
+
+router.get('/import', (req, res) => {
+  const sample = {
+    lawyers: count('SELECT COUNT(*) n FROM lawyers WHERE is_sample = 1'),
+    ads: count('SELECT COUNT(*) n FROM ads WHERE is_sample = 1'),
+    posts: count('SELECT COUNT(*) n FROM posts WHERE is_sample = 1'),
+  };
+  res.render('admin/import', { title: 'Import lawyers', sample, total: count('SELECT COUNT(*) n FROM lawyers') });
+});
+
+router.get('/import/template.csv', (req, res) => {
+  res.type('text/csv').attachment('lawyers-template.csv').send(templateCsv());
+});
+
+router.post('/import', csvUpload.single('file'), verifyCsrf, async (req, res) => {
+  try {
+    let text;
+    let source;
+    if (req.file) {
+      text = req.file.buffer.toString('utf8');
+      source = req.file.originalname;
+    } else if (req.body.sheet_url?.trim()) {
+      text = await fetchSheet(req.body.sheet_url);
+      source = 'Google Sheet';
+    } else {
+      throw new Error('Paste your Google Sheet link or choose a CSV file.');
+    }
+    res.redirect(`/admin/import/${stageCsv(text, source)}`);
+  } catch (e) {
+    flash(req, 'error', e.message);
+    res.redirect('/admin/import');
+  }
+});
+
+function mappingFrom(body, headers) {
+  const mapping = {};
+  for (const [key] of IMPORT_FIELDS) {
+    const v = body[`map_${key}`];
+    if (v !== undefined && v !== '' && Number(v) >= 0 && Number(v) < headers.length) mapping[key] = Number(v);
+  }
+  return mapping;
+}
+
+router.get('/import/:token', (req, res, next) => {
+  const staged = loadStaged(req.params.token);
+  if (!staged) { flash(req, 'error', 'That import has expired. Please load the sheet again.'); return res.redirect('/admin/import'); }
+  const mapping = req.query.remap ? mappingFrom(req.query, staged.headers) : autoMap(staged.headers);
+  const filled = staged.rows.filter((r) => r.some((c) => String(c || '').trim()));
+  const preview = filled.slice(0, 8).map((r) => rowToLawyer(r, mapping));
+  const hasName = mapping.name != null || mapping.first_name != null || mapping.last_name != null;
+  res.render('admin/import-map', { title: 'Match columns', token: req.params.token, staged, rowCount: filled.length, mapping, preview, hasName, IMPORT_FIELDS, areas: listAreas() });
+});
+
+router.post('/import/:token/run', (req, res) => {
+  const staged = loadStaged(req.params.token);
+  if (!staged) { flash(req, 'error', 'That import has expired. Please load the sheet again.'); return res.redirect('/admin/import'); }
+  const mapping = mappingFrom(req.body, staged.headers);
+  if (mapping.name == null && mapping.first_name == null && mapping.last_name == null) {
+    flash(req, 'error', 'Choose which column holds the lawyer\'s name.');
+    return res.redirect(`/admin/import/${req.params.token}`);
+  }
+  const result = runImport(staged, mapping, {
+    status: req.body.status === 'pending' ? 'pending' : 'active',
+    mode: req.body.mode === 'skip' ? 'skip' : 'update',
+    createAreas: Boolean(req.body.create_areas),
+    verified: Boolean(req.body.verified),
+    deleteSample: Boolean(req.body.delete_sample),
+  });
+  discardStaged(req.params.token);
+  res.render('admin/import-done', { title: 'Import complete', result, source: staged.source });
+});
+
+router.post('/sample-data/delete', (req, res) => {
+  const r = deleteSampleData();
+  flash(req, 'success', `Removed ${r.lawyers} sample lawyers, ${r.ads} sample ads and ${r.posts} sample blog posts.`);
+  res.redirect('/admin/import');
 });
 
 export default router;

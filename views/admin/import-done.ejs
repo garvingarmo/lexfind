@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Import complete</h1>
+    <div class="stat-grid">
+      <div class="card stat"><span class="stat-n"><%= result.created %></span><span class="muted small">Lawyers added</span></div>
+      <div class="card stat"><span class="stat-n"><%= result.updated %></span><span class="muted small">Lawyers updated</span></div>
+      <div class="card stat"><span class="stat-n"><%= result.skipped %></span><span class="muted small">Rows skipped</span></div>
+      <div class="card stat"><span class="stat-n"><%= result.newAreas.length %></span><span class="muted small">New practice areas</span></div>
+    </div>
+    <% if (result.removedSample) { %><div class="flash flash-success">Removed the sample data: <%= result.removedSample.lawyers %> lawyers, <%= result.removedSample.ads %> ads and <%= result.removedSample.posts %> blog posts.</div><% } %>
+    <% if (result.newAreas.length) { %><div class="card small"><strong>New practice areas:</strong> <%= result.newAreas.join(', ') %>. <a href="/admin/areas">Add descriptions</a> so the AI assistant understands them.</div><% } %>
+    <% if (result.errors.length) { %><div class="card"><h2>Problems</h2><ul class="small"><% result.errors.slice(0, 100).forEach(e => { %><li><%= e %></li><% }) %></ul></div><% } %>
+    <p><a class="btn btn-primary" href="/admin/lawyers">View lawyers</a> <a class="btn btn-outline" href="/lawyers">See the directory</a></p>
+  </div>
+</section>
+<%- include('../partials/footer') %>

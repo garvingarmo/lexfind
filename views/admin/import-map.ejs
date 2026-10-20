@@ -1,0 +1,72 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Match columns</h1>
+    <p class="muted"><strong><%= rowCount %></strong> rows found in <%= staged.source %>. Check that each field points at the right column. Fields left as "—" are not imported.</p>
+
+    <form method="post" action="/admin/import/<%= token %>/run" class="stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="remap" value="1">
+      <div class="card">
+        <h2>2. Columns</h2>
+        <div class="map-grid">
+          <% IMPORT_FIELDS.forEach(([key, label]) => { %>
+            <label><%= label %>
+              <select name="map_<%= key %>">
+                <option value="">—</option>
+                <% staged.headers.forEach((h, i) => { %><option value="<%= i %>" <%= mapping[key] === i ? 'selected' : '' %>><%= h || `Column ${i + 1}` %></option><% }) %>
+              </select>
+            </label>
+          <% }) %>
+        </div>
+        <p class="tiny muted">Use either <em>Full name</em>, or <em>First name</em> + <em>Last name</em>.</p>
+        <button class="btn btn-outline btn-sm" formmethod="get" formaction="/admin/import/<%= token %>">Update preview</button>
+      </div>
+
+      <div class="card table-wrap">
+        <h2>Preview (first <%= preview.length %> rows)</h2>
+        <% if (!hasName) { %><div class="flash flash-error">Choose which column holds the lawyer's name.</div><% } %>
+        <table class="table small">
+          <thead><tr><th>Name</th><th>Firm</th><th>Location</th><th>Practice areas</th><th>Contact</th><th>Other</th></tr></thead>
+          <tbody>
+          <% preview.forEach(({ data: d, areas: a }) => { %>
+            <tr>
+              <td><strong><%= d.name || '— missing —' %></strong></td>
+              <td><%= d.firm || '' %></td>
+              <td><%= [d.city, d.state].filter(Boolean).join(', ') %></td>
+              <td><%= a.join(', ') %></td>
+              <td class="tiny"><%= d.email || '' %><br><%= d.phone || '' %></td>
+              <td class="tiny"><%= [d.years_experience ? d.years_experience + ' yrs' : '', d.languages, d.free_consultation ? 'Free consult' : ''].filter(Boolean).join(' · ') %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card stack">
+        <h2>3. Options</h2>
+        <label>Publish imported lawyers as
+          <select name="status">
+            <option value="active">Active: visible on the site right away</option>
+            <option value="pending">Pending: review each one before it goes live</option>
+          </select>
+        </label>
+        <label>If a lawyer is already in the directory (same email, or same name + city)
+          <select name="mode">
+            <option value="update">Update their listing with the sheet's values</option>
+            <option value="skip">Leave them unchanged</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" name="create_areas" checked> Create practice areas that don't exist yet</label>
+        <label class="check"><input type="checkbox" name="verified"> Mark new lawyers as verified</label>
+        <label class="check"><input type="checkbox" name="delete_sample" checked> Delete the sample (demo) lawyers, ads and blog posts first</label>
+        <div class="actions">
+          <a class="btn btn-ghost" href="/admin/import">Cancel</a>
+          <button class="btn btn-primary" <%= hasName ? '' : 'disabled' %>>Import <%= rowCount %> lawyer<%= rowCount === 1 ? '' : 's' %></button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

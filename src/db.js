@@ -139,6 +139,23 @@ CREATE INDEX IF NOT EXISTS idx_inquiries_lawyer ON inquiries(lawyer_id);
 CREATE INDEX IF NOT EXISTS idx_enrich_lawyer ON enrichments(lawyer_id);
 `);
 
+// Columns added after the first release, applied to existing databases on start-up.
+function addColumn(table, column, definition) {
+  const exists = db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
+  if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  return !exists;
+}
+if (addColumn('lawyers', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
+  // Databases seeded before this column existed: the sample lawyers all use @example.com addresses.
+  db.exec("UPDATE lawyers SET is_sample = 1 WHERE email LIKE '%@example.com'");
+}
+if (addColumn('ads', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
+  db.exec("UPDATE ads SET is_sample = 1 WHERE lawyer_id IN (SELECT id FROM lawyers WHERE is_sample = 1) OR title = 'Advertise your practice here'");
+}
+if (addColumn('posts', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
+  db.exec("UPDATE posts SET is_sample = 1 WHERE author IN ('LexFind Editorial Team', 'Chaldean Law Editorial Team')");
+}
+
 export const DEFAULT_SETTINGS = {
   site_name: 'Chaldean Law',
   site_url: 'https://chaldeanlaw.com',
@@ -178,9 +195,12 @@ export function uniqueSlug(table, base, excludeId = null) {
   return slug;
 }
 
-/** Run fn inside a transaction. */
+/** Run fn inside a transaction. Nested calls join the outer transaction. */
+let txDepth = 0;
 export function tx(fn) {
+  if (txDepth > 0) return fn();
   db.exec('BEGIN');
+  txDepth++;
   try {
     const r = fn();
     db.exec('COMMIT');
@@ -188,5 +208,7 @@ export function tx(fn) {
   } catch (e) {
     db.exec('ROLLBACK');
     throw e;
+  } finally {
+    txDepth--;
   }
 }

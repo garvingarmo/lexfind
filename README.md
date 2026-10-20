@@ -52,6 +52,16 @@ Set `ANTHROPIC_API_KEY` to turn on Claude (model `claude-opus-5-5` by default; o
 - Payments for sponsored placements are not built in. Admins turn ads and featured listings on manually.
 - Have the disclaimer and AI wording reviewed for the bar advertising and lawyer-referral rules in your jurisdictions.
 
+## Importing your lawyers
+
+Go to **Admin → Import lawyers**. Either paste a Google Sheets link (shared as "Anyone with the link → Viewer") or upload a CSV file. Then:
+
+1. Check how the columns are matched and look at the preview.
+2. Choose whether new listings go live right away or wait for review.
+3. Optionally delete the sample data in the same step.
+
+Importing the same sheet again updates existing lawyers instead of duplicating them; a lawyer counts as existing if the email matches, or the name and city match. There's a CSV template on that page.
+
 ## Deploying on cPanel
 
 Use **Setup Node.js App**. Set the application startup file to `app.cjs`, choose Node.js 22 or newer, and add the environment variables from `.env.example` in that screen. Then run `npm install` and `node src/seed.js --no-demo` from the app's virtual environment.
