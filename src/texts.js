@@ -51,6 +51,14 @@ export const TEXT_GROUPS = {
     'home.ctaText': 'Create your free listing, manage your profile, and receive inquiries from people who need your help.',
     'home.ctaButton': 'List your practice',
   },
+  'Install app prompt': {
+    'install.title': 'Get the Chaldean Law app',
+    'install.text': 'Add it to your phone or computer for one-tap access.',
+    'install.ios': 'Tap the Share button, then "Add to Home Screen".',
+    'install.mac': 'In Safari, choose File → "Add to Dock".',
+    'install.button': 'Install',
+    'install.later': 'Not now',
+  },
   'Client referrals': {
     'refer.title': 'Refer a client',
     'refer.intro': 'Send a client you are referring to',

@@ -141,3 +141,12 @@ from search results): client name, email, phone and an optional note about the m
 emailed the details, shown as referred by the member (replies go to the member), and the member gets a
 copy. Lawyers see referrals they received and sent under **Dashboard → Referrals**; admins see all of
 them under **Admin → Referrals**.
+
+## Install as an app
+
+The site is a progressive web app: visitors can install it on phones, tablets and computers with its own
+icon (`/manifest.webmanifest`, `public/sw.js`, icons in `public/icons/`). A small prompt offers it —
+an Install button in Chrome, Edge and Android, short instructions in iPhone, iPad and Mac Safari.
+"Not now" hides it for 30 days on that device. Turn it off in **Admin → Homepage → Install as an app**;
+the wording is under **Admin → Texts → Install app prompt**. The service worker caches nothing but an
+offline page, because pages are personal to the signed-in member.

@@ -5,10 +5,10 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { ROOT, db } from './db.js';
+import { ROOT, db, getSettings } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
 import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
-import { themeCss } from './theme.js';
+import { themeCss, getTheme } from './theme.js';
 import { migrateSlugsToNames, backfillSortNames } from './models.js';
 import { normalizeAllLanguages } from './languages.js';
 import publicRoutes from './routes/public.js';
@@ -58,9 +58,31 @@ app.get('/healthz', (req, res) => res.set('Cache-Control', 'no-store').json({ ok
 const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
 if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
+// The service worker must be re-checked by browsers, so it is never cached long-term.
+app.get('/sw.js', (req, res) => res.set('Cache-Control', 'no-cache').sendFile(path.join(ROOT, 'public', 'sw.js')));
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
 // Third-party browser scripts, served from our own domain (the CSP only allows our own scripts).
 app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'public, max-age=604800').sendFile(path.join(ROOT, 'node_modules', 'sortablejs', 'Sortable.min.js')));
+// Install as an app (progressive web app): the manifest names the app after the site and uses its colours.
+app.get('/manifest.webmanifest', (req, res) => {
+  const s = getSettings();
+  const theme = getTheme();
+  res.type('application/manifest+json').set('Cache-Control', 'public, max-age=3600').send(JSON.stringify({
+    name: s.site_name,
+    short_name: s.site_name.length > 12 ? s.site_name.split(' ')[0] : s.site_name,
+    description: s.tagline,
+    start_url: '/?source=app',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#ffffff',
+    theme_color: theme.theme_primary,
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  }));
+});
 // Appearance settings as a stylesheet; the URL carries a version, so it can be cached long-term.
 app.get('/theme.css', (req, res) => res.type('text/css').set('Cache-Control', 'public, max-age=31536000, immutable').send(themeCss()));
 

@@ -738,6 +738,12 @@ router.get('/homepage', (req, res) => {
   res.render('admin/homepage', { title: 'Homepage sections', sections: getSections() });
 });
 
+router.post('/install-app', (req, res) => {
+  setSetting('install_prompt', req.body.install_prompt ? '1' : '0');
+  flash(req, 'success', req.body.install_prompt ? 'Visitors will be offered the app.' : 'The "install the app" prompt is off.');
+  res.redirect('/admin/homepage#install');
+});
+
 router.post('/homepage', (req, res) => {
   const order = String(req.body.order || '').split(',').filter(Boolean);
   saveSections(order.length ? order : Object.keys(SECTIONS), [].concat(req.body.visible || []), [].concat(req.body.members_only || []));

@@ -85,6 +85,45 @@
     normalise();
   }
 
+  // Installable app: register the service worker and offer to install (once; "Not now" waits 30 days).
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  const banner = document.getElementById('install-banner');
+  if (banner) {
+    const KEY = 'lf-install-dismissed';
+    const store = {
+      get() { try { return Number(localStorage.getItem(KEY)) || 0; } catch { return 0; } },
+      set(v) { try { localStorage.setItem(KEY, String(v)); } catch { /* private mode */ } },
+    };
+    const installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const snoozed = Date.now() - store.get() < 30 * 24 * 60 * 60 * 1000;
+    const ua = navigator.userAgent;
+    const isIos = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+    const isSafari = /safari/i.test(ua) && !/chrome|crios|fxios|edg|android/i.test(ua);
+    const isMacSafari = isSafari && !isIos && /macintosh/i.test(ua);
+    let deferred = null;
+    const show = (mode) => {
+      if (installed || snoozed) return;
+      banner.querySelectorAll('[data-install-text]').forEach((el) => { el.hidden = el.dataset.installText !== mode; });
+      banner.querySelector('[data-install="go"]').hidden = mode !== 'prompt';
+      setTimeout(() => { banner.hidden = false; }, 1500);
+    };
+    const hide = () => { banner.hidden = true; };
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; show('prompt'); });
+    window.addEventListener('appinstalled', () => { hide(); store.set(Date.now() + 3650 * 24 * 60 * 60 * 1000); });
+    banner.querySelector('[data-install="go"]').addEventListener('click', async () => {
+      if (!deferred) return hide();
+      deferred.prompt();
+      const { outcome } = await deferred.userChoice.catch(() => ({}));
+      deferred = null;
+      hide();
+      if (outcome !== 'accepted') store.set(Date.now());
+    });
+    banner.querySelector('[data-install="later"]').addEventListener('click', () => { store.set(Date.now()); hide(); });
+    // Safari has no install button for websites, so explain where the option is.
+    if (isIos && isSafari) show('ios');
+    else if (isMacSafari) show('mac');
+  }
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {

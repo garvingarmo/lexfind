@@ -27,6 +27,21 @@
   </div>
   <div class="container small muted footer-bottom"><%- e('footer_text') %></div>
 </footer>
+<% if (settings.install_prompt !== '0' && !editMode && !path.startsWith('/admin')) { %>
+<div class="install-banner" id="install-banner" role="dialog" aria-labelledby="install-title" hidden>
+  <img src="/icons/icon-192.png" alt="" width="44" height="44">
+  <div class="install-text">
+    <strong id="install-title"><%- e('install.title') %></strong>
+    <span class="small muted" data-install-text="prompt"><%- e('install.text') %></span>
+    <span class="small muted" data-install-text="ios" hidden><%- e('install.ios') %></span>
+    <span class="small muted" data-install-text="mac" hidden><%- e('install.mac') %></span>
+  </div>
+  <div class="install-actions">
+    <button type="button" class="btn btn-primary btn-sm" data-install="go"><%- e('install.button') %></button>
+    <button type="button" class="btn btn-ghost btn-sm" data-install="later"><%- e('install.later') %></button>
+  </div>
+</div>
+<% } %>
 <% if (user && user.role === 'admin' && !path.startsWith('/admin') && !path.startsWith('/dashboard')) { %>
 <div class="edit-bar <%= editMode ? 'on' : '' %>" id="edit-bar">
   <% if (editMode) { %>

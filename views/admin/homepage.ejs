@@ -24,6 +24,14 @@
       </ol>
       <div class="actions start"><button class="btn btn-primary">Save homepage</button> <a class="btn btn-outline" href="/" target="_blank">View home page ↗</a></div>
     </form>
+
+    <form method="post" action="/admin/install-app" class="card stack" id="install">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>Install as an app</h2>
+      <p class="small muted">The site can be installed on phones, tablets and computers like an app, with its own icon. When this is on, visitors see a small "Install" prompt at the bottom of the screen (Chrome, Edge and Android get a one-tap Install button; iPhone, iPad and Mac Safari get short instructions). "Not now" hides it for 30 days on that device, and it never shows once the app is installed. Change the wording in Texts → Install app prompt.</p>
+      <label class="check"><input type="checkbox" name="install_prompt" <%= settings.install_prompt !== '0' ? 'checked' : '' %>> Offer visitors the app</label>
+      <div class="actions start"><button class="btn btn-primary">Save</button></div>
+    </form>
   </div>
 </section>
 <%- include('../partials/footer') %>
