@@ -26,6 +26,10 @@
     sync();
   });
 
+  // "Refer a client" links (…#refer) open the referral form on the profile.
+  const refer = document.getElementById('refer');
+  if (refer && location.hash === '#refer') refer.open = true;
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {

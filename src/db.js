@@ -110,6 +110,23 @@ CREATE TABLE IF NOT EXISTS inquiries (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Clients one member refers to another lawyer (from a lawyer profile → "Refer a client").
+CREATE TABLE IF NOT EXISTS referrals (
+  id INTEGER PRIMARY KEY,
+  to_lawyer_id INTEGER NOT NULL REFERENCES lawyers(id) ON DELETE CASCADE,
+  from_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  from_lawyer_id INTEGER REFERENCES lawyers(id) ON DELETE SET NULL,
+  from_name TEXT NOT NULL,
+  from_email TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  client_email TEXT NOT NULL,
+  client_phone TEXT NOT NULL,
+  matter TEXT,
+  emailed INTEGER NOT NULL DEFAULT 0,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT

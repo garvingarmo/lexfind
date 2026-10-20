@@ -16,6 +16,7 @@ import { NETWORKS, SOCIAL_KEYS, saveSiteSocial, socialIcon } from '../social.js'
 import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings, SORT_LABELS, getSearchSettings, saveSearchSettings } from '../profileSettings.js';
 import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
 import { watchApprovals } from '../members.js';
+import { allReferrals } from '../referrals.js';
 import { baseUrl } from '../invites.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -367,6 +368,8 @@ router.post('/posts/:id/delete', (req, res) => {
 });
 
 // --- Inquiries ---------------------------------------------------------------------
+
+router.get('/referrals', (req, res) => res.render('admin/referrals', { title: 'Referrals', rows: allReferrals() }));
 
 router.get('/inquiries', (req, res) => {
   const rows = db.prepare('SELECT i.*, l.name AS lawyer_name, l.slug FROM inquiries i JOIN lawyers l ON l.id = i.lawyer_id ORDER BY i.created_at DESC LIMIT 200').all();

@@ -1,0 +1,39 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Referrals</h1>
+    <p class="muted small">Clients other members referred to you, and clients you referred. To refer a client, open a lawyer's profile and use <strong>Refer a client</strong>.</p>
+
+    <h2>Referred to you</h2>
+    <% if (!received.length) { %><div class="card"><p class="muted">No referrals yet.</p></div><% } %>
+    <% received.forEach(r => { %>
+      <div class="card inquiry <%= r.is_read ? '' : 'unread' %>">
+        <div class="section-head">
+          <div><strong><%= r.client_name %></strong> <span class="muted small">· <%= r.created_at %></span></div>
+        </div>
+        <p class="small"><a href="mailto:<%= r.client_email %>"><%= r.client_email %></a> · <a href="tel:<%= r.client_phone.replace(/[^\d+]/g, '') %>"><%= r.client_phone %></a></p>
+        <% if (r.matter) { %><p class="pre"><%= r.matter %></p><% } %>
+        <p class="tiny muted">Referred by <% if (r.from_slug) { %><a href="/lawyers/<%= r.from_slug %>"><%= r.from_name %></a><% } else { %><%= r.from_name %><% } %> · <a href="mailto:<%= r.from_email %>"><%= r.from_email %></a></p>
+      </div>
+    <% }) %>
+
+    <h2>Referred by you</h2>
+    <% if (!sent.length) { %><div class="card"><p class="muted">You haven't referred anyone yet.</p></div><% } else { %>
+    <div class="card table-wrap">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Client</th><th>Referred to</th><th>Matter</th></tr></thead>
+        <tbody>
+        <% sent.forEach(r => { %>
+          <tr><td class="tiny nowrap"><%= r.created_at %></td>
+          <td class="small"><%= r.client_name %><div class="tiny muted"><%= r.client_email %> · <%= r.client_phone %></div></td>
+          <td class="small"><a href="/lawyers/<%= r.to_slug %>"><%= r.to_name %></a></td>
+          <td class="small"><%= (r.matter || '').slice(0, 140) %><%= (r.matter || '').length > 140 ? '…' : '' %></td></tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

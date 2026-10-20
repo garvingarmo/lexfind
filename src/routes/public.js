@@ -14,7 +14,8 @@ import { mailEnabled, sendMail } from '../mailer.js';
 import { getSettings } from '../db.js';
 import { exportRows, allMatchingIds, buildPdf, resultsEmail, recentShares, logShare, MAX_EXPORT } from '../exportResults.js';
 import { baseUrl } from '../invites.js';
-import { requireMember } from '../members.js';
+import { requireMember, isMember } from '../members.js';
+import { referrer, checkReferral, saveReferral, sendReferral } from '../referrals.js';
 
 const router = Router();
 
@@ -134,7 +135,7 @@ router.get('/lawyers/:slug', ownProfileOrMember, (req, res, next) => {
   }
   const isOwner = req.lawyer && lawyer && req.lawyer.id === lawyer.id;
   if (!lawyer || (lawyer.status !== 'active' && !isOwner && req.user?.role !== 'admin')) return next();
-  res.render('lawyer', { title: lawyer.name, lawyer, bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
+  res.render('lawyer', { title: lawyer.name, lawyer, canRefer: isMember(req) && !isOwner && lawyer.status === 'active', referDraft: (() => { const d = req.session.referDraft || {}; delete req.session.referDraft; return d; })(), bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
 });
 
 const inquiryLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
@@ -180,6 +181,28 @@ router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, ne
   notifyInquiry(lawyer, inquiry);
   flash(req, 'success', `Your message was sent to ${lawyer.name}. They will contact you directly.`);
   res.redirect(`/lawyers/${lawyer.slug}`);
+});
+
+const referLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: 'You have sent a lot of referrals. Please wait a while and try again.' });
+router.post('/lawyers/:slug/refer', requireMember, referLimit, async (req, res, next) => {
+  const lawyer = getLawyer('slug', req.params.slug);
+  if (!lawyer || lawyer.status !== 'active') return next();
+  const back = `/lawyers/${lawyer.slug}`;
+  if (req.lawyer && req.lawyer.id === lawyer.id) { flash(req, 'error', 'You cannot refer a client to yourself.'); return res.redirect(back); }
+  const { errors, data } = checkReferral(req.body);
+  if (errors.length) {
+    req.session.referDraft = req.body;
+    flash(req, 'error', `Please add ${errors.join(', ')}.`);
+    return res.redirect(`${back}#refer`);
+  }
+  const from = referrer(req);
+  const id = saveReferral(lawyer, from, data);
+  let emailed = false;
+  try { emailed = await sendReferral(id, lawyer, from, data, baseUrl(req)); } catch (e) { console.error('referral email failed:', e.message); }
+  flash(req, 'success', emailed
+    ? `Referral sent. ${lawyer.name} has been emailed ${data.client_name}'s details, and you've been sent a copy.`
+    : `Referral saved. ${lawyer.name} will see it on their dashboard${lawyer.email ? '' : ', and our team has been asked to pass it on'}.`);
+  res.redirect(back);
 });
 
 // --- AI assistant ---------------------------------------------------------

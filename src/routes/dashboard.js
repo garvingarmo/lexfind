@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { listAreas, cleanLawyerInput, updateLawyer, setAreas, getLawyer } from '../models.js';
+import { referralsReceived, referralsSent } from '../referrals.js';
 import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled } from '../ai/client.js';
@@ -18,6 +19,8 @@ router.get('/', (req, res) => {
   const stats = {
     unread: db.prepare('SELECT COUNT(*) n FROM inquiries WHERE lawyer_id = ? AND is_read = 0').get(l.id).n,
     total: db.prepare('SELECT COUNT(*) n FROM inquiries WHERE lawyer_id = ?').get(l.id).n,
+    referrals: db.prepare('SELECT COUNT(*) n FROM referrals WHERE to_lawyer_id = ?').get(l.id).n,
+    newReferrals: db.prepare('SELECT COUNT(*) n FROM referrals WHERE to_lawyer_id = ? AND is_read = 0').get(l.id).n,
     fromAssistant: db.prepare("SELECT COUNT(*) n FROM inquiries WHERE lawyer_id = ? AND source = 'assistant'").get(l.id).n,
   };
   const fields = ['bio', 'phone', 'website', 'address', 'education', 'bar_admissions', 'years_experience', 'languages', 'fee_structure', 'photo'];
@@ -44,6 +47,12 @@ router.post('/profile', upload.single('photo'), verifyCsrf, (req, res) => {
   setAreas(req.lawyer.id, [].concat(req.body.areas || []));
   flash(req, 'success', 'Profile saved.');
   res.redirect('/dashboard/profile');
+});
+
+router.get('/referrals', (req, res) => {
+  const received = referralsReceived(req.lawyer.id);
+  db.prepare('UPDATE referrals SET is_read = 1 WHERE to_lawyer_id = ? AND is_read = 0').run(req.lawyer.id);
+  res.render('dashboard/referrals', { title: 'Referrals', received, sent: referralsSent(req.user.id) });
 });
 
 router.get('/inquiries', (req, res) => {

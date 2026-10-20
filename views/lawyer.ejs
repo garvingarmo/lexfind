@@ -37,6 +37,22 @@
     </div>
 
     <div class="sidebar">
+      <% if (canRefer) { const d = referDraft; %>
+      <details class="card refer-card" id="refer" <%= Object.keys(d).length ? 'open' : '' %>>
+        <summary><span class="refer-title"><%- e('refer.title') %></span><span class="small muted"><%- e('refer.intro') %> <%= lawyer.name %>.</span></summary>
+        <form method="post" action="/lawyers/<%= lawyer.slug %>/refer" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <label><%- e('refer.clientName') %> <input name="client_name" required maxlength="120" value="<%= d.client_name || '' %>" autocomplete="off"></label>
+          <label><%- e('refer.clientEmail') %> <input name="client_email" type="email" required maxlength="200" value="<%= d.client_email || '' %>" autocomplete="off"></label>
+          <label><%- e('refer.clientPhone') %> <input name="client_phone" type="tel" required maxlength="40" value="<%= d.client_phone || '' %>" autocomplete="off"></label>
+          <label><%- e('refer.matter') %> <span class="tiny muted">(<%- e('refer.optional') %>)</span>
+            <textarea name="matter" rows="4" maxlength="3000" placeholder="<%= t('refer.matterPlaceholder') %>"><%= d.matter || '' %></textarea></label>
+          <label class="check small"><input type="checkbox" name="consent" required <%= d.consent ? 'checked' : '' %>> <%- e('refer.consent') %></label>
+          <button class="btn btn-accent btn-block"><%- e('refer.send') %></button>
+          <p class="tiny muted"><%- e('refer.note') %></p>
+        </form>
+      </details>
+      <% } %>
       <div class="card contact-card" id="contact">
         <h2><%- e('profile.contact') %> <%= lawyer.name.split(' ')[0] %></h2>
         <% if (pf.show_phone && lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %>">☎ <%= lawyer.phone %></a></p><% } %>

@@ -133,3 +133,11 @@ results need an approved lawyer login (or an admin). Lawyers who register can si
 own profile at once, and get access when an admin sets their listing to **Active** (they are emailed
 when email is set up). The home page, blog and About page stay public. Switch it off in
 **Admin → Lawyer profiles → Search results → Members only**.
+
+## Client referrals
+
+Members can refer a client to another lawyer from that lawyer's profile (**Refer a client**, also linked
+from search results): client name, email, phone and an optional note about the matter. The lawyer is
+emailed the details, shown as referred by the member (replies go to the member), and the member gets a
+copy. Lawyers see referrals they received and sent under **Dashboard → Referrals**; admins see all of
+them under **Admin → Referrals**.

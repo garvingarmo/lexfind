@@ -14,5 +14,6 @@
       <% if (l.languages && pf.show_languages) { %><li><%= l.languages %></li><% } %>
     </ul>
   </div>
-  <div class="lc-action"><a class="btn btn-outline" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a></div>
+  <div class="lc-action"><a class="btn btn-outline" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a>
+    <% if (isMember && !(myLawyer && myLawyer.id === l.id)) { %><a class="small lc-refer" href="/lawyers/<%= l.slug %>#refer"><%- e('card.refer') %></a><% } %></div>
 </article>
