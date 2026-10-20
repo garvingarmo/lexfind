@@ -15,5 +15,5 @@
     </ul>
   </div>
   <div class="lc-action"><a class="btn btn-outline" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a>
-    <% if (isMember && !(locals.myLawyer && locals.myLawyer.id === l.id)) { %><a class="small lc-refer" href="/lawyers/<%= l.slug %>#refer"><%- e('card.refer') %></a><% } %></div>
+    <% if (isMember && !(locals.myLawyer && locals.myLawyer.id === l.id)) { %><a class="btn btn-outline lc-refer" href="/lawyers/<%= l.slug %>#refer"><%- e('card.refer') %></a><% } %></div>
 </article>
