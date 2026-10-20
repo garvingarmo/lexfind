@@ -1,4 +1,4 @@
-// Members-only directory: search, lawyer profiles and the AI tools need an approved lawyer login
+// Members-only directory: search, lawyer profiles, the blog and the AI tools need an approved lawyer login
 // (or an admin). Switched in Admin → Lawyer profiles → Search results; on by default.
 import { db, getSettings } from './db.js';
 import { mailEnabled, sendMail } from './mailer.js';
@@ -23,7 +23,7 @@ export function requireMember(req, res, next) {
   }
   if (pending) return res.status(403).render('members-pending', { title: 'Membership pending', l: req.lawyer });
   if (req.method === 'GET') req.session.returnTo = req.originalUrl;
-  req.session.flash = [...(req.session.flash || []), { type: 'info', msg: 'The directory and AI tools are for members only. Please sign in, or register as a lawyer to apply.' }];
+  req.session.flash = [...(req.session.flash || []), { type: 'info', msg: 'The directory, guides and AI tools are for members only. Please sign in, or register as a lawyer to apply.' }];
   res.redirect('/login');
 }
 

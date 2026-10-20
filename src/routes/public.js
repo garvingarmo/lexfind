@@ -250,7 +250,7 @@ router.get('/ad/:id', (req, res, next) => {
 
 // --- Blog & pages ---------------------------------------------------------
 
-router.get('/blog', (req, res) => {
+router.get('/blog', requireMember, (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const perPage = 9;
   const total = db.prepare("SELECT COUNT(*) n FROM posts WHERE status = 'published'").get().n;
@@ -258,7 +258,7 @@ router.get('/blog', (req, res) => {
   res.render('blog', { title: 'Legal guides & news', posts, page, pages: Math.ceil(total / perPage) });
 });
 
-router.get('/blog/:slug', (req, res, next) => {
+router.get('/blog/:slug', requireMember, (req, res, next) => {
   const post = db.prepare('SELECT * FROM posts WHERE slug = ?').get(req.params.slug);
   if (!post || (post.status !== 'published' && req.user?.role !== 'admin')) return next();
   const recent = db.prepare("SELECT title, slug FROM posts WHERE status = 'published' AND id != ? ORDER BY published_at DESC LIMIT 5").all(post.id);
