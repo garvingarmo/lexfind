@@ -28,7 +28,7 @@
         <h2><%- e('profile.details') %></h2>
         <dl class="details">
           <% [['profile.experience', pf.show_experience && lawyer.years_experience ? lawyer.years_experience + ' ' + t('profile.years') : null], ['profile.languages', pf.show_languages && lawyer.languages], ['profile.bar', pf.show_bar && lawyer.bar_admissions],
-              ['profile.education', pf.show_education && lawyer.education], ['profile.fees', pf.show_fees && lawyer.fee_structure], ['profile.hourly', pf.show_hourly && lawyer.hourly_rate],
+              ['profile.education', pf.show_education && lawyer.education],
               ['profile.office', pf.show_office && [lawyer.address, lawyer.city, lawyer.state, lawyer.zip].filter(Boolean).join(', ')]].forEach(([k, v]) => { if (v) { %>
             <dt><%- e(k) %></dt><dd><%= v %></dd>
           <% } }) %>

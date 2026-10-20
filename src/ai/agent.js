@@ -28,7 +28,7 @@ const tools = [
   },
   {
     name: 'get_lawyer_profile',
-    description: 'Get the full profile of one lawyer, including bio, experience, fees and bar admissions.',
+    description: 'Get the full profile of one lawyer, including bio, experience and bar admissions.',
     strict: true,
     input_schema: {
       type: 'object',
@@ -76,7 +76,7 @@ How to work:
 - Practice areas are grouped: sub-categories are indented under their main category. Searching a main category also returns lawyers in its sub-categories; search a sub-category when the matter is clearly that specific.
 - Use search_lawyers to find candidates (try related practice areas if the first search is thin), get_lawyer_profile when you need detail to choose, then call recommend_lawyers with your best 1-5 matches.
 - After recommending, write a brief reply: a plain-language summary of what kind of lawyer they need and why, and any useful next steps (e.g. documents to gather before a consultation). Keep it under about 150 words; the cards show the lawyer details.
-- Respect stated preferences such as language, budget and location.
+- Respect stated preferences such as language and location.
 - Only recommend lawyers returned by the tools. Never invent lawyers, credentials, or outcomes. If there are no suitable lawyers in the directory, say so and suggest the visitor contact their state or local bar association's lawyer referral service.
 
 Boundaries:
@@ -118,7 +118,6 @@ function runTool(name, input, state) {
     if (!l || l.status !== 'active') return JSON.stringify({ error: 'No active lawyer with that id.' });
     return JSON.stringify({
       ...summarize(l), title: l.title, bio: l.bio, education: l.education, bar_admissions: l.bar_admissions,
-      fee_structure: l.fee_structure, hourly_rate: l.hourly_rate,
     });
   }
   if (name === 'recommend_lawyers') {

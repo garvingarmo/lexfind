@@ -32,8 +32,6 @@ export const IMPORT_FIELDS = [
   ['education', 'Education', ['education', 'law school', 'school', 'degrees']],
   ['practice_areas', 'Practice areas', ['practice areas', 'practice area', 'areas', 'specialty', 'specialties', 'specialization', 'areas of practice', 'category', 'categories']],
   ['bio', 'Bio', ['bio', 'biography', 'about', 'description', 'profile', 'summary']],
-  ['fee_structure', 'Fee structure', ['fees', 'fee structure', 'fee', 'billing']],
-  ['hourly_rate', 'Hourly rate', ['hourly rate', 'rate', 'hourly']],
   ['photo', 'Photo URL', ['photo', 'photo url', 'image', 'image url', 'headshot', 'picture']],
   ['social_linkedin', 'LinkedIn', ['linkedin', 'linkedin url', 'linked in']],
   ['social_facebook', 'Facebook', ['facebook', 'facebook url', 'fb']],

@@ -39,7 +39,6 @@ if (demo && !db.prepare('SELECT 1 FROM lawyers LIMIT 1').get()) {
       name, firm, city, state, bio, years_experience: years, languages, free_consultation: free,
       title: 'Attorney at Law', email: `${slugify(name).replace(/-/g, '.')}@example.com`, phone: '(555) 010-' + String(1000 + Math.floor(Math.random() * 8999)).slice(0, 4),
       bar_admissions: `${state} (${new Date().getFullYear() - years})`,
-      fee_structure: areas.includes('Personal Injury') ? 'Contingency fee' : 'Hourly; flat fees available for some matters',
       website: `https://www.example.com/${slugify(firm)}`,
     });
     db.prepare("UPDATE lawyers SET status = 'active', verified = 1, featured = ?, is_sample = 1 WHERE id = ?").run(featured, id);

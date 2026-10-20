@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
     newReferrals: db.prepare('SELECT COUNT(*) n FROM referrals WHERE to_lawyer_id = ? AND is_read = 0').get(l.id).n,
     fromAssistant: db.prepare("SELECT COUNT(*) n FROM inquiries WHERE lawyer_id = ? AND source = 'assistant'").get(l.id).n,
   };
-  const fields = ['bio', 'phone', 'website', 'address', 'education', 'bar_admissions', 'years_experience', 'languages', 'fee_structure', 'photo'];
+  const fields = ['bio', 'phone', 'website', 'address', 'education', 'bar_admissions', 'years_experience', 'languages', 'photo'];
   const completeness = Math.round(((fields.filter((f) => l[f] != null && l[f] !== '').length + (l.areas.length ? 1 : 0)) / (fields.length + 1)) * 100);
   const recent = db.prepare('SELECT * FROM inquiries WHERE lawyer_id = ? ORDER BY created_at DESC LIMIT 5').all(l.id);
   const lastJob = db.prepare('SELECT * FROM enrichments WHERE lawyer_id = ? ORDER BY id DESC LIMIT 1').get(l.id);

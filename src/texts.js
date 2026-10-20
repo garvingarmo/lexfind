@@ -124,8 +124,6 @@ export const TEXT_GROUPS = {
     'profile.languages': 'Languages',
     'profile.bar': 'Bar admissions',
     'profile.education': 'Education',
-    'profile.fees': 'Fees',
-    'profile.hourly': 'Hourly rate',
     'profile.yes': 'Yes',
     'profile.no': 'No',
     'profile.office': 'Office',

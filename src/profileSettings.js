@@ -11,8 +11,6 @@ export const PROFILE_OPTIONS = {
   show_languages: ['Languages', true],
   show_bar: ['Bar admissions', true],
   show_education: ['Education', true],
-  show_fees: ['Fee structure', true],
-  show_hourly: ['Hourly rate', true],
   show_contact_form: ['Contact form', true],
   show_verified: ['"Verified" tick on verified lawyers', true],
   notify_lawyer: ['Email new inquiries to the lawyer', true],
