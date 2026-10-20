@@ -93,7 +93,7 @@ Go to **Admin → Invitations**, or open a lawyer's edit page. Create a personal
 To get the links to lawyers, any of these work:
 - copy a link by hand;
 - download all active links as a spreadsheet for a mail merge;
-- set up email in **Admin → Integrations** (a sending service such as Resend or Brevo, or your own SMTP mailbox), and the site emails the invitations itself.
+- set up email in **Admin → Integrations** (a sending service such as Resend, Brevo or SendGrid, or your own SMTP mailbox), and the site emails the invitations itself.
 
 Set `PUBLIC_URL=https://chaldeanlaw.com` in production so links always use your domain.
 

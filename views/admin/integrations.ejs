@@ -39,9 +39,10 @@
             </select>
           </label>
 
-          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="resend brevo" <%= mail.provider === 'smtp' ? 'hidden' : '' %>>
+          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="resend brevo sendgrid" <%= mail.provider === 'smtp' ? 'hidden' : '' %>>
             <p class="span-2 small muted" data-show-for-provider="resend">Sign up at <a href="https://resend.com" target="_blank" rel="noopener">resend.com</a>, add your domain under <strong>Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>API Keys</strong> (permission "Sending access") and paste it below.</p>
             <p class="span-2 small muted" data-show-for-provider="brevo">Sign up at <a href="https://www.brevo.com" target="_blank" rel="noopener">brevo.com</a>, authenticate your domain under <strong>Senders, Domains &amp; Dedicated IPs → Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>SMTP &amp; API → API Keys</strong> and paste it below.</p>
+            <p class="span-2 small muted" data-show-for-provider="sendgrid">Sign up at <a href="https://sendgrid.com" target="_blank" rel="noopener">sendgrid.com</a>, go to <strong>Settings → Sender Authentication → Authenticate Your Domain</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>Settings → API Keys</strong> ("Restricted Access" with <strong>Mail Send</strong> on) and paste it below.</p>
             <label class="span-2">API key <% if (mail.keyMasked) { %><span class="tiny muted">(saved: <%= mail.keyMasked %>; paste a new one to replace it)</span><% } %>
               <input name="mail_api_key" type="password" autocomplete="off" placeholder="Paste the key from the sending service">
             </label>

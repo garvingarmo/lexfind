@@ -1,5 +1,5 @@
 // Outgoing email (invitations, password resets, notifications), sent either over SMTP or through
-// a sending service's web API (Resend, Brevo). Configured by MAIL_* / SMTP_* environment
+// a sending service's web API (Resend, Brevo, SendGrid). Configured by MAIL_* / SMTP_* environment
 // variables, or in Admin → Integrations.
 import nodemailer from 'nodemailer';
 import { getSecret } from './db.js';
@@ -13,6 +13,7 @@ export const PROVIDERS = {
   smtp: 'Your mail server (SMTP)',
   resend: 'Resend (resend.com)',
   brevo: 'Brevo (brevo.com)',
+  sendgrid: 'Twilio SendGrid (sendgrid.com)',
 };
 
 const transports = new Map();
@@ -59,11 +60,12 @@ async function postJson(url, headers, body) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const why = data.message || data.error?.message || data.error || data.code || res.statusText;
+    const why = data.message || data.error?.message || data.error || data.errors?.[0]?.message || data.code || res.statusText;
     const err = new Error(res.status === 401 || res.status === 403 ? `The sending service rejected the API key (${why}).` : `The sending service refused the email: ${why}`);
     err.status = res.status;
     throw err;
   }
+  data.headers = res.headers;
   return data;
 }
 
@@ -92,6 +94,21 @@ const API_SENDERS = {
       attachment: m.attachments?.map((a) => ({ name: a.filename, content: base64(a.content) })),
     });
     return { response: `accepted by Brevo, id ${data.messageId}`, messageId: data.messageId };
+  },
+  async sendgrid(c, m) {
+    const from = parseAddress(c.from);
+    const content = [{ type: 'text/plain', value: m.text || '' }];
+    if (m.html) content.push({ type: 'text/html', value: m.html });
+    const data = await postJson('https://api.sendgrid.com/v3/mail/send', { authorization: `Bearer ${c.apiKey}` }, {
+      personalizations: [{ to: [{ email: m.to }] }],
+      from: { email: from.email, name: from.name || undefined },
+      reply_to: m.replyTo ? { email: parseAddress(m.replyTo).email } : undefined,
+      subject: m.subject,
+      content,
+      attachments: m.attachments?.map((a) => ({ filename: a.filename, content: base64(a.content), type: a.contentType, disposition: 'attachment' })),
+    });
+    const id = data.headers.get('x-message-id');
+    return { response: `accepted by SendGrid${id ? `, id ${id}` : ''}`, messageId: id };
   },
 };
 
