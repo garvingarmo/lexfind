@@ -1,0 +1,20 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Social media</h1>
+    <p class="muted small">Your site's own accounts. Each one you fill in appears as an icon in the footer of every page. Paste the full link, or just the @username. For WhatsApp, enter a phone number with the country code. Leave a box empty to hide that icon. Lawyers add their own social links on their profile.</p>
+    <form method="post" action="/admin/social" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% networks.forEach(n => { %>
+        <label class="social-row">
+          <span class="social-badge"><%- socialIcon(n.key, 18) %></span>
+          <span class="social-name"><%= n.label %></span>
+          <input name="social_<%= n.key %>" value="<%= n.url %>" placeholder="<%= n.key === 'whatsapp' ? '+1 619 555 0100' : n.key === 'linkedin' ? 'linkedin.com/company/your-page' : '@yourname or full link' %>">
+        </label>
+      <% }) %>
+      <div class="actions start"><button class="btn btn-primary">Save social links</button></div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

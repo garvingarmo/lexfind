@@ -1,0 +1,27 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Lawyer profiles</h1>
+    <p class="muted small">Choose what visitors see on every lawyer's public profile. Lawyers still fill in all their details; this only controls what's shown. To change the labels themselves (e.g. "Visit website"), use <a href="/admin/texts">Texts</a> or ✎ Edit page on a profile.</p>
+    <form method="post" action="/admin/profile-settings" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>Shown on public profiles</h2>
+      <div class="option-grid">
+        <% Object.entries(options).filter(([k]) => k.startsWith('show_')).forEach(([k, [label]]) => { %>
+          <label class="check"><input type="checkbox" name="<%= k %>" <%= pf[k] ? 'checked' : '' %>> <%= label %></label>
+        <% }) %>
+      </div>
+      <h2>When a visitor sends a message</h2>
+      <% if (!mailOn) { %><p class="flash flash-info small">Email isn't set up yet, so messages only appear in the lawyer's dashboard and Admin → Inquiries. Set it up in <a href="/admin/integrations">Integrations</a>.</p><% } %>
+      <div class="option-grid">
+        <% Object.entries(options).filter(([k]) => k.startsWith('notify_')).forEach(([k, [label]]) => { %>
+          <label class="check"><input type="checkbox" name="<%= k %>" <%= pf[k] ? 'checked' : '' %>> <%= label %></label>
+        <% }) %>
+      </div>
+      <p class="tiny muted">Emails go to the email address on the lawyer's listing. Replying to the email replies to the visitor.</p>
+      <div class="actions start"><button class="btn btn-primary">Save profile settings</button></div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

@@ -1,10 +1,12 @@
 // Query helpers shared by the web routes and the AI agent.
 import { db, tx, uniqueSlug } from './db.js';
+import { LAWYER_SOCIAL_KEYS, normalizeSocial } from './social.js';
 
 export const LAWYER_FIELDS = [
   'name', 'firm', 'title', 'bio', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip',
   'bar_number', 'bar_admissions', 'years_experience', 'languages', 'education', 'fee_structure',
   'hourly_rate', 'free_consultation',
+  'social_linkedin', 'social_facebook', 'social_instagram', 'social_x', 'social_youtube', 'social_tiktok',
 ];
 
 /**
@@ -131,6 +133,10 @@ export function cleanLawyerInput(body) {
     out[f] = v;
   }
   if (out.website && !/^https?:\/\//i.test(out.website)) out.website = `https://${out.website}`;
+  for (const k of LAWYER_SOCIAL_KEYS) {
+    const f = `social_${k}`;
+    if (f in out) out[f] = normalizeSocial(k, out[f]) || null; // unusable links are dropped
+  }
   return out;
 }
 

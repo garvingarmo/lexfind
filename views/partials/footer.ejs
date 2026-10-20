@@ -4,6 +4,11 @@
     <div>
       <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><span class="brand-mark">§</span><%= settings.site_name %><% } %></a>
       <p class="muted small"><%- e('disclaimer') %></p>
+      <% if (siteSocial.length) { %>
+        <div class="social-links" aria-label="<%= t('footer.follow') %>">
+          <% siteSocial.forEach(n => { %><a href="<%= n.url %>" target="_blank" rel="noopener" aria-label="<%= n.label %>" title="<%= n.label %>"><%- socialIcon(n.key) %></a><% }) %>
+        </div>
+      <% } %>
     </div>
     <div>
       <h4><%- e('footer.directory') %></h4>

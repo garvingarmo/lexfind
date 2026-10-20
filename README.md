@@ -71,6 +71,12 @@ These admin tools change the site without code:
 - **Admin → Homepage.** Reorder, show or hide the homepage sections.
 - **Blog editor.** A visual editor for headings, bold, lists, links and image uploads. Posts are stored as sanitized HTML; older Markdown posts still display and convert when edited.
 
+## Social media and profile settings
+
+- **Admin → Social media.** The site's Facebook, Instagram, LinkedIn, X, YouTube, TikTok and WhatsApp links, shown as footer icons. You can enter a full link or just a @username.
+- **Lawyer social links.** Fields on the lawyer form, for both admins and lawyers, shown as icons on the profile. Imports pick them up from LinkedIn, Facebook, Instagram, Twitter/X, YouTube and TikTok columns.
+- **Admin → Lawyer profiles.** Choose which details profiles show (phone, email, website, office, social icons, fees, education, contact form and more), and whether new inquiries are emailed to the lawyer and/or the admins.
+
 ## Inviting lawyers to claim their listings
 
 Go to **Admin → Invitations**, or open a lawyer's edit page. Create a personal link for each lawyer, or for everyone without a login at once. A lawyer opens the link, sets a password and gets control of their listing. Each link works once, expires after 30 days, and is cancelled when you create a newer one.

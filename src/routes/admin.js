@@ -12,6 +12,8 @@ import { cleanHtml, renderPost } from './public.js';
 import { TEXT_GROUPS, TEXT_DEFAULTS, loadTexts, saveTexts } from '../texts.js';
 import { FONTS, THEME_DEFAULTS, getTheme, saveTheme, allFontsUrl } from '../theme.js';
 import { SECTIONS, getSections, saveSections } from '../homepage.js';
+import { NETWORKS, SOCIAL_KEYS, saveSiteSocial, socialIcon } from '../social.js';
+import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings } from '../profileSettings.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
 
@@ -702,6 +704,30 @@ router.post('/homepage', (req, res) => {
 router.post('/uploads/image', upload.single('image'), verifyCsrf, (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Please choose a JPG, PNG, WebP or GIF image under 3 MB.' });
   res.json({ url: uploadedPath(req.file) });
+});
+
+// --- Social media links and lawyer profile settings --------------------------------------
+
+router.get('/social', (req, res) => {
+  const s = getSettings();
+  res.render('admin/social', { title: 'Social media', networks: SOCIAL_KEYS.map((k) => ({ key: k, ...NETWORKS[k], url: s[`social_${k}`] || '' })), socialIcon });
+});
+
+router.post('/social', (req, res) => {
+  const errors = saveSiteSocial(req.body);
+  if (errors.length) errors.forEach((m) => flash(req, 'error', m));
+  else flash(req, 'success', 'Social media links saved. They appear as icons in the site footer.');
+  res.redirect('/admin/social');
+});
+
+router.get('/profile-settings', (req, res) => {
+  res.render('admin/profile-settings', { title: 'Lawyer profiles', options: PROFILE_OPTIONS, pf: getProfileSettings(), mailOn: smtpEnabled() });
+});
+
+router.post('/profile-settings', (req, res) => {
+  saveProfileSettings(req.body);
+  flash(req, 'success', 'Lawyer profile settings saved.');
+  res.redirect('/admin/profile-settings');
 });
 
 export default router;

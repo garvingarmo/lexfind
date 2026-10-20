@@ -359,3 +359,17 @@ div.card.inquiry { padding: 20px; }
   .preview-wrap { position: static; }
   .edit-bar.on { font-size: .85rem; }
 }
+
+/* Social media */
+.social-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.social-links a { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.08); color: inherit; transition: background .15s, color .15s; }
+.site-footer .social-links a { color: #c4cbd6; }
+.site-footer .social-links a:hover { background: var(--accent); color: #fff; }
+.profile-social a { width: 32px; height: 32px; background: var(--primary-soft); color: var(--primary); }
+.profile-social a:hover { background: var(--primary); color: #fff; }
+.social-row { display: grid; grid-template-columns: 34px 120px 1fr; gap: 10px; align-items: center; }
+.social-row input { margin-top: 0; }
+.social-badge { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); }
+.social-fields .form-grid { gap: 10px 18px; }
+.option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 16px; }
+@media (max-width: 600px) { .social-row { grid-template-columns: 34px 1fr; } .social-row input { grid-column: 1 / -1; } }

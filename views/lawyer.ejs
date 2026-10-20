@@ -7,10 +7,15 @@
       <div class="card profile-head">
         <%- include('partials/avatar', { l: lawyer, size: 'avatar-lg' }) %>
         <div>
-          <h1><%= lawyer.name %><% if (lawyer.verified) { %> <span class="verified" title="Verified listing">✓</span><% } %></h1>
+          <h1><%= lawyer.name %><% if (lawyer.verified && pf.show_verified) { %> <span class="verified" title="Verified listing">✓</span><% } %></h1>
           <div class="muted"><%= [lawyer.title, lawyer.firm].filter(Boolean).join(' · ') %></div>
           <div><%= [lawyer.city, lawyer.state].filter(Boolean).join(', ') %></div>
           <div class="tags"><% lawyer.areas.forEach(a => { %><a class="tag" href="/lawyers?area=<%= a.slug %>"><%= a.name %></a><% }) %></div>
+          <% if (pf.show_social && social.length) { %>
+            <div class="social-links profile-social" aria-label="<%= t('profile.follow') %> <%= lawyer.name %>">
+              <% social.forEach(n => { %><a href="<%= n.url %>" target="_blank" rel="noopener nofollow" aria-label="<%= n.label %>" title="<%= n.label %>"><%- socialIcon(n.key, 18) %></a><% }) %>
+            </div>
+          <% } %>
         </div>
       </div>
 
@@ -22,9 +27,9 @@
       <div class="card">
         <h2><%- e('profile.details') %></h2>
         <dl class="details">
-          <% [['profile.experience', lawyer.years_experience ? lawyer.years_experience + ' ' + t('profile.years') : null], ['profile.languages', lawyer.languages], ['profile.bar', lawyer.bar_admissions],
-              ['profile.education', lawyer.education], ['profile.fees', lawyer.fee_structure], ['profile.hourly', lawyer.hourly_rate],
-              ['profile.free', t(lawyer.free_consultation ? 'profile.yes' : 'profile.no')], ['profile.office', [lawyer.address, lawyer.city, lawyer.state, lawyer.zip].filter(Boolean).join(', ')]].forEach(([k, v]) => { if (v) { %>
+          <% [['profile.experience', pf.show_experience && lawyer.years_experience ? lawyer.years_experience + ' ' + t('profile.years') : null], ['profile.languages', pf.show_languages && lawyer.languages], ['profile.bar', pf.show_bar && lawyer.bar_admissions],
+              ['profile.education', pf.show_education && lawyer.education], ['profile.fees', pf.show_fees && lawyer.fee_structure], ['profile.hourly', pf.show_hourly && lawyer.hourly_rate],
+              ['profile.free', pf.show_free && t(lawyer.free_consultation ? 'profile.yes' : 'profile.no')], ['profile.office', pf.show_office && [lawyer.address, lawyer.city, lawyer.state, lawyer.zip].filter(Boolean).join(', ')]].forEach(([k, v]) => { if (v) { %>
             <dt><%- e(k) %></dt><dd><%= v %></dd>
           <% } }) %>
         </dl>
@@ -34,8 +39,10 @@
     <div class="sidebar">
       <div class="card contact-card" id="contact">
         <h2><%- e('profile.contact') %> <%= lawyer.name.split(' ')[0] %></h2>
-        <% if (lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %>">☎ <%= lawyer.phone %></a></p><% } %>
-        <% if (lawyer.website) { %><p><a class="btn btn-outline btn-block" href="<%= lawyer.website %>" target="_blank" rel="noopener nofollow"><%- e('profile.website') %></a></p><% } %>
+        <% if (pf.show_phone && lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %>">☎ <%= lawyer.phone %></a></p><% } %>
+        <% if (pf.show_email && lawyer.email) { %><p><a class="btn btn-outline btn-block" href="mailto:<%= lawyer.email %>">✉ <%- e('profile.emailButton') %> <%= lawyer.email %></a></p><% } %>
+        <% if (pf.show_website && lawyer.website) { %><p><a class="btn btn-outline btn-block" href="<%= lawyer.website %>" target="_blank" rel="noopener nofollow"><%- e('profile.website') %></a></p><% } %>
+        <% if (pf.show_contact_form) { %>
         <form method="post" action="/lawyers/<%= lawyer.slug %>/contact" class="stack">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <input type="hidden" name="source" value="<%= locals.query && query.from === 'ai' ? 'assistant' : 'profile' %>">
@@ -47,6 +54,7 @@
           <button class="btn btn-primary btn-block"><%- e('profile.send') %></button>
           <p class="tiny muted"><%- e('profile.note') %></p>
         </form>
+        <% } %>
       </div>
       <%- include('partials/ad', { ad }) %>
     </div>

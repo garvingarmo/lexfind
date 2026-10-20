@@ -36,6 +36,12 @@ export const IMPORT_FIELDS = [
   ['hourly_rate', 'Hourly rate', ['hourly rate', 'rate', 'hourly']],
   ['free_consultation', 'Free consultation (yes/no)', ['free consultation', 'free consult', 'consultation']],
   ['photo', 'Photo URL', ['photo', 'photo url', 'image', 'image url', 'headshot', 'picture']],
+  ['social_linkedin', 'LinkedIn', ['linkedin', 'linkedin url', 'linked in']],
+  ['social_facebook', 'Facebook', ['facebook', 'facebook url', 'fb']],
+  ['social_instagram', 'Instagram', ['instagram', 'instagram url', 'ig', 'insta']],
+  ['social_x', 'X (Twitter)', ['x', 'twitter', 'x (twitter)', 'twitter url']],
+  ['social_youtube', 'YouTube', ['youtube', 'youtube url']],
+  ['social_tiktok', 'TikTok', ['tiktok', 'tik tok']],
   ['featured', 'Sponsored (yes/no)', ['featured', 'sponsored', 'premium']],
 ];
 

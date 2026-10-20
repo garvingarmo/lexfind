@@ -7,6 +7,10 @@ import { flash, rateLimit } from '../middleware.js';
 import { chat } from '../ai/agent.js';
 import { aiEnabled } from '../ai/client.js';
 import { getSections } from '../homepage.js';
+import { lawyerSocial } from '../social.js';
+import { getProfileSettings } from '../profileSettings.js';
+import { mailEnabled, sendMail } from '../mailer.js';
+import { getSettings } from '../db.js';
 
 const router = Router();
 
@@ -64,10 +68,34 @@ router.get('/lawyers/:slug', (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
   const isOwner = req.lawyer && lawyer && req.lawyer.id === lawyer.id;
   if (!lawyer || (lawyer.status !== 'active' && !isOwner && req.user?.role !== 'admin')) return next();
-  res.render('lawyer', { title: lawyer.name, lawyer, bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query });
+  res.render('lawyer', { title: lawyer.name, lawyer, bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
 });
 
 const inquiryLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
+/** Email a new inquiry to the lawyer and/or the admins, per Admin → Lawyer profiles. Runs in the background. */
+function notifyInquiry(lawyer, q) {
+  if (!mailEnabled()) return;
+  const pf = getProfileSettings();
+  const to = [];
+  if (pf.notify_lawyer && lawyer.email) to.push(lawyer.email);
+  if (pf.notify_admin) to.push(...db.prepare("SELECT email FROM users WHERE role = 'admin'").all().map((u) => u.email));
+  if (!to.length) return;
+  const site = getSettings().site_name;
+  const via = q.source === 'assistant' ? ` (via the ${site} AI lawyer match)` : '';
+  const text = `New inquiry for ${lawyer.name} from ${site}${via}
+
+Name: ${q.name}
+Email: ${q.email}${q.phone ? `\nPhone: ${q.phone}` : ''}
+
+${q.message}
+
+Reply directly to this person by email or phone. This message was sent through your directory listing.`;
+  for (const addr of [...new Set(to)]) {
+    sendMail({ to: addr, subject: `New inquiry from ${q.name} via ${site}`, text, replyTo: q.email })
+      .catch((e) => console.error('inquiry email failed:', e.message));
+  }
+}
+
 router.post('/lawyers/:slug/contact', inquiryLimit, (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
   if (!lawyer || lawyer.status !== 'active') return next();
@@ -77,9 +105,13 @@ router.post('/lawyers/:slug/contact', inquiryLimit, (req, res, next) => {
     flash(req, 'error', 'Please enter your name, a valid email and a message.');
     return res.redirect(`/lawyers/${lawyer.slug}#contact`);
   }
+  const inquiry = {
+    name: name.trim().slice(0, 120), email: email.trim().slice(0, 200), phone: (phone || '').trim().slice(0, 40),
+    message: message.trim().slice(0, 5000), source: req.body.source === 'assistant' ? 'assistant' : 'profile',
+  };
   db.prepare('INSERT INTO inquiries (lawyer_id, name, email, phone, message, source) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(lawyer.id, name.trim().slice(0, 120), email.trim().slice(0, 200), (phone || '').trim().slice(0, 40), message.trim().slice(0, 5000),
-      req.body.source === 'assistant' ? 'assistant' : 'profile');
+    .run(lawyer.id, inquiry.name, inquiry.email, inquiry.phone, inquiry.message, inquiry.source);
+  notifyInquiry(lawyer, inquiry);
   flash(req, 'success', `Your message was sent to ${lawyer.name}. They will contact you directly.`);
   res.redirect(`/lawyers/${lawyer.slug}`);
 });

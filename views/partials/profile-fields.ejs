@@ -19,6 +19,13 @@
 <label>Hourly rate <input name="hourly_rate" value="<%= l.hourly_rate || '' %>" placeholder="$250–$350"></label>
 <label class="check span-2"><input type="checkbox" name="free_consultation" <%= l.free_consultation ? 'checked' : '' %>> I offer a free initial consultation</label>
 <label class="span-2">Bio <span class="tiny muted">(Markdown supported)</span><textarea name="bio" rows="8"><%= l.bio || '' %></textarea></label>
+<fieldset class="span-2 social-fields"><legend>Social media <span class="tiny muted">(a full link or just the @username)</span></legend>
+  <div class="form-grid">
+    <% [['linkedin','LinkedIn','linkedin.com/in/your-name'],['facebook','Facebook','facebook.com/yourpage'],['instagram','Instagram','@yourname'],['x','X (Twitter)','@yourname'],['youtube','YouTube','@yourchannel'],['tiktok','TikTok','@yourname']].forEach(([k, label, ph]) => { %>
+      <label><%= label %> <input name="social_<%= k %>" value="<%= l['social_' + k] || '' %>" placeholder="<%= ph %>"></label>
+    <% }) %>
+  </div>
+</fieldset>
 <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
   <% areas.forEach(a => { %><label class="check"><input type="checkbox" name="areas" value="<%= a.id %>" <%= selected.has(a.slug) ? 'checked' : '' %>> <%= a.name %></label><% }) %>
 </fieldset>
