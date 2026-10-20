@@ -41,6 +41,26 @@ function getTransport() {
   return transport;
 }
 
+/**
+ * Log which SMTP host/port combinations this process can open a connection to. Helps when the app
+ * runs in a container that can't reach the mail server the way the outside world does.
+ */
+export async function diagnoseSmtp() {
+  const net = await import('node:net');
+  const c = mailConfig();
+  const hosts = [...new Set([c.host, 'host.containers.internal', 'host.docker.internal', '10.0.2.2', '10.88.0.1', '172.17.0.1'].filter(Boolean))];
+  const ports = [465, 587, 25, 2525];
+  const probe = (host, port) => new Promise((resolve) => {
+    const sock = net.connect({ host, port, timeout: 3000 });
+    const done = (r) => { sock.destroy(); resolve(r); };
+    sock.once('connect', () => done('open'));
+    sock.once('timeout', () => done('timeout'));
+    sock.once('error', (e) => done(e.code || 'error'));
+  });
+  const results = await Promise.all(hosts.flatMap((h) => ports.map(async (p) => `${h}:${p}=${await probe(h, p)}`)));
+  console.log(`[smtp-diagnose] ${results.join(' ')}`);
+}
+
 export function sendMail({ to, subject, text, html, replyTo, attachments }) {
   return getTransport().sendMail({ from: mailConfig().from, to, subject, text, html, replyTo, attachments });
 }
