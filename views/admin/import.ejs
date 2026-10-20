@@ -42,6 +42,19 @@
         <p class="small muted">No sample data left. The directory has <%= total %> lawyer<%= total === 1 ? '' : 's' %>.</p>
       <% } %>
     </div>
+
+    <% if (total) { %>
+    <div class="card danger-card" id="start-over">
+      <h2>Start over</h2>
+      <p class="small">Delete <strong>all <%= total %> lawyers</strong> so you can import a clean copy of your sheet. This also removes their logins, inquiries, invitations and AI research. Admin accounts, blog posts, ads and site content are kept. <strong>This cannot be undone.</strong></p>
+      <form method="post" action="/admin/lawyers/delete-all" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="check"><input type="checkbox" name="areas" checked> Also delete all practice areas (your next import recreates them from the sheet)</label>
+        <label>Type <strong>DELETE</strong> to confirm <input name="confirm" autocomplete="off" required pattern="DELETE" placeholder="DELETE"></label>
+        <button class="btn btn-danger btn-sm">Delete all lawyers</button>
+      </form>
+    </div>
+    <% } %>
   </div>
 </section>
 <%- include('../partials/footer') %>

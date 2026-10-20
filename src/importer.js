@@ -211,6 +211,20 @@ export function deleteSampleData() {
   });
 }
 
+/**
+ * Remove every lawyer listing (with their logins, inquiries, invitations and AI research),
+ * optionally all practice areas too, so a fresh import starts clean. Admin accounts are kept.
+ */
+export function deleteAllLawyers({ areas = false } = {}) {
+  return tx(() => {
+    const users = db.prepare('SELECT user_id FROM lawyers WHERE user_id IS NOT NULL').all().map((r) => r.user_id);
+    const lawyers = db.prepare('DELETE FROM lawyers').run().changes;
+    for (const u of users) db.prepare("DELETE FROM users WHERE id = ? AND role = 'lawyer'").run(u);
+    const removedAreas = areas ? db.prepare('DELETE FROM practice_areas').run().changes : 0;
+    return { lawyers, logins: users.length, areas: removedAreas };
+  });
+}
+
 export function templateCsv() {
   const headers = ['Name', 'Firm', 'Title', 'Email', 'Phone', 'Website', 'Address', 'City', 'State', 'ZIP', 'Bar Number', 'Bar Admissions',
     'Years Experience', 'Languages', 'Education', 'Practice Areas', 'Free Consultation', 'Fee Structure', 'Hourly Rate', 'Bio', 'Photo URL'];

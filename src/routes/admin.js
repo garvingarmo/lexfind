@@ -8,7 +8,7 @@ import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai
 import { aiEnabled } from '../ai/client.js';
 import multer from 'multer';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
-import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, templateCsv } from '../importer.js';
+import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
 
 const router = Router();
 router.use(requireRole('admin'));
@@ -408,6 +408,16 @@ router.post('/import/:token/run', (req, res) => {
   });
   discardStaged(req.params.token);
   res.render('admin/import-done', { title: 'Import complete', result, source: staged.source });
+});
+
+router.post('/lawyers/delete-all', (req, res) => {
+  if ((req.body.confirm || '').trim() !== 'DELETE') {
+    flash(req, 'error', 'Type DELETE in capitals to confirm. Nothing was deleted.');
+    return res.redirect('/admin/import#start-over');
+  }
+  const r = deleteAllLawyers({ areas: Boolean(req.body.areas) });
+  flash(req, 'success', `Deleted ${r.lawyers} lawyers and ${r.logins} lawyer logins${req.body.areas ? ` and ${r.areas} practice areas` : ''}. You can import your sheet again now.`);
+  res.redirect('/admin/import');
 });
 
 router.post('/sample-data/delete', (req, res) => {

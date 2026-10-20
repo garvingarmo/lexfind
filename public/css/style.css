@@ -292,3 +292,5 @@ div.card.inquiry { padding: 20px; }
 .area-row { flex-wrap: wrap; }
 .area-merge { display: flex; gap: 6px; align-items: center; }
 .area-merge select { width: 170px; padding: 6px 8px; font-size: .85rem; }
+.danger-card { border-color: #ecc0c0; }
+.danger-card h2 { color: var(--danger); }
