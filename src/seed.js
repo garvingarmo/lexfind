@@ -88,7 +88,7 @@ if (demo && !db.prepare('SELECT 1 FROM lawyers LIMIT 1').get()) {
     ['Contingency, hourly or flat fee: how lawyers charge', 'Understanding the most common fee arrangements.',
       '## Contingency fees\n\nThe lawyer is paid a percentage of any recovery, typically in personal injury cases. If there is no recovery, there is usually no fee, although you may still owe costs.\n\n## Hourly fees\n\nYou pay for the time spent on your matter, often with an upfront retainer.\n\n## Flat fees\n\nA single fee for a defined task, such as drafting a will or handling an uncontested divorce.\n\nAlways get the arrangement in writing.'],
   ];
-  const pIns = db.prepare("INSERT INTO posts (title, slug, excerpt, body, author, status, published_at) VALUES (?, ?, ?, ?, 'LexFind Editorial Team', 'published', datetime('now', ?))");
+  const pIns = db.prepare("INSERT INTO posts (title, slug, excerpt, body, author, status, published_at) VALUES (?, ?, ?, ?, 'Chaldean Law Editorial Team', 'published', datetime('now', ?))");
   posts.forEach(([t, ex, body], i) => pIns.run(t, slugify(t), ex, body, `-${i * 3} days`));
   console.log(`Seeded ${L.length} sample lawyers, 4 ads and ${posts.length} blog posts.`);
 }

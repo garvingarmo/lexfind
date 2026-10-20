@@ -68,6 +68,6 @@ app.use((err, req, res, next) => {
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
-  console.log(`LexFind running at http://localhost:${port}`);
+  console.log(`Chaldean Law running at http://localhost:${port}`);
   console.log(aiEnabled() ? `AI features enabled (${MODEL}).` : 'AI features in offline mode: set ANTHROPIC_API_KEY to enable Claude.');
 });

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= title ? `${title} · ${settings.site_name}` : `${settings.site_name} — ${settings.tagline}` %></title>
 <meta name="description" content="<%= settings.tagline %>">
+<% const siteUrl = (settings.site_url || '').replace(/\/+$/, ''); if (siteUrl) { %>
+<link rel="canonical" href="<%= siteUrl + path %>">
+<meta property="og:url" content="<%= siteUrl + path %>">
+<% } %>
+<meta property="og:site_name" content="<%= settings.site_name %>">
+<meta property="og:title" content="<%= title ? `${title} · ${settings.site_name}` : settings.site_name %>">
+<meta property="og:description" content="<%= settings.tagline %>">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">

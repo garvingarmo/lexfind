@@ -1,4 +1,4 @@
-# LexFind — lawyer directory with AI matching
+# Chaldean Law (chaldeanlaw.com): lawyer directory with AI matching
 
 An online directory of lawyers with:
 

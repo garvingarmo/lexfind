@@ -1,5 +1,5 @@
 {
-  "name": "LexFind",
+  "name": "Chaldean Law",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "containerEnv": {
     "ADMIN_EMAIL": "admin@example.com",
@@ -14,6 +14,6 @@
   "postAttachCommand": "npm start",
   "forwardPorts": [3000],
   "portsAttributes": {
-    "3000": { "label": "LexFind", "onAutoForward": "openBrowser" }
+    "3000": { "label": "Chaldean Law", "onAutoForward": "openBrowser" }
   }
 }

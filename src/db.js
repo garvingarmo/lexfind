@@ -140,13 +140,14 @@ CREATE INDEX IF NOT EXISTS idx_enrich_lawyer ON enrichments(lawyer_id);
 `);
 
 export const DEFAULT_SETTINGS = {
-  site_name: 'LexFind',
+  site_name: 'Chaldean Law',
+  site_url: 'https://chaldeanlaw.com',
   tagline: 'Find the right lawyer for your legal matter',
   hero_title: 'The right lawyer, matched to your situation',
   hero_subtitle: 'Search our directory of attorneys, or describe your legal matter and our AI assistant will recommend lawyers who fit.',
-  disclaimer: 'LexFind is a directory and referral tool, not a law firm. Information on this site, including responses from the AI assistant, is not legal advice and does not create an attorney-client relationship.',
-  about_body: '## About LexFind\n\nLexFind helps people find attorneys who handle their kind of legal matter, close to where they live.\n\nAttorneys maintain their own listings, and our team reviews every profile before it is published.',
-  footer_text: '© LexFind. All rights reserved.',
+  disclaimer: 'Chaldean Law is a directory and referral tool, not a law firm. Information on this site, including responses from the AI assistant, is not legal advice and does not create an attorney-client relationship.',
+  about_body: '## About Chaldean Law\n\nChaldean Law helps people find attorneys who handle their kind of legal matter, close to where they live.\n\nAttorneys maintain their own listings, and our team reviews every profile before it is published.',
+  footer_text: '© Chaldean Law · chaldeanlaw.com. All rights reserved.',
 };
 
 export function getSettings() {
