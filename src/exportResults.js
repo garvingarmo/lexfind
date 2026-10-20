@@ -48,8 +48,11 @@ export function allMatchingIds(search, f) {
 
 const COLORS = { ink: '#1b2333', muted: '#5d6677', line: '#e3e1da' };
 
-/** Render the lawyers as a PDF; resolves to a Buffer. */
-export function buildPdf(rows, { note } = {}) {
+/**
+ * Render the lawyers as a PDF; resolves to a Buffer. `referredBy` (name, firm, email, phone) is the
+ * member who exported or emailed the list, shown in the header.
+ */
+export function buildPdf(rows, { note, referredBy } = {}) {
   const s = getSettings();
   const primary = /^#[0-9a-f]{6}$/i.test(s.theme_primary || '') ? s.theme_primary : '#1f3a5f';
   return new Promise((resolve, reject) => {
@@ -59,39 +62,59 @@ export function buildPdf(rows, { note } = {}) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-    doc.fillColor(primary).font('Helvetica-Bold').fontSize(20).text(s.site_name);
-    doc.moveDown(0.2).fillColor(COLORS.muted).font('Helvetica').fontSize(10)
-      .text(`${rows.length} lawyer${rows.length === 1 ? '' : 's'} · ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`);
-    if (note) doc.moveDown(0.6).fillColor(COLORS.ink).fontSize(10.5).text(note, { width });
+    const left = doc.page.margins.left;
+    const width = doc.page.width - left - doc.page.margins.right;
+    const rule = (weight, color) => {
+      doc.moveTo(left, doc.y).lineTo(left + width, doc.y).strokeColor(color).lineWidth(weight).stroke();
+    };
+
+    // Header: site name, then who referred these lawyers.
+    doc.fillColor(primary).font('Helvetica-Bold').fontSize(24).text(s.site_name);
+    if (referredBy) {
+      doc.moveDown(0.5);
+      doc.font('Helvetica-Bold').fontSize(11).fillColor(COLORS.muted).text('REFERRED BY', { characterSpacing: 1 });
+      doc.moveDown(0.15);
+      doc.font('Helvetica-Bold').fontSize(15).fillColor(COLORS.ink).text(referredBy.name);
+      if (referredBy.firm) doc.font('Helvetica').fontSize(12.5).fillColor(COLORS.ink).text(referredBy.firm);
+      const contact = [referredBy.phone, referredBy.email].filter(Boolean).join('   ·   ');
+      if (contact) doc.font('Helvetica').fontSize(12.5).fillColor(COLORS.muted).text(contact);
+    }
+    if (note) doc.moveDown(0.6).font('Helvetica-Oblique').fillColor(COLORS.ink).fontSize(12.5).text(note, { width });
     doc.moveDown(0.8);
+    rule(3, primary);
+    doc.moveDown(1);
 
     const line = (label, value, link) => {
       if (!value) return;
-      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(COLORS.muted).text(`${label}  `, { continued: true });
+      doc.font('Helvetica-Bold').fontSize(12).fillColor(COLORS.muted).text(`${label}  `, { continued: true });
       doc.font('Helvetica').fillColor(link ? primary : COLORS.ink).text(value, link ? { link, underline: false } : {});
+      doc.moveDown(0.15);
     };
 
     rows.forEach((r, i) => {
-      if (doc.y > doc.page.height - 170) doc.addPage();
-      if (i > 0) {
-        doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.margins.left + width, doc.y).strokeColor(COLORS.line).lineWidth(1).stroke();
-        doc.moveDown(0.7);
+      // Keep each lawyer on one page: name, firm, areas, then one line per detail.
+      const details = [r.address, r.phone, r.email, r.website, ...r.social, r.profileUrl].filter(Boolean).length;
+      const needed = 95 + details * 17;
+      if (doc.y + needed > doc.page.height - doc.page.margins.bottom) doc.addPage();
+      else if (i > 0) {
+        rule(2.5, COLORS.ink);
+        doc.moveDown(0.9);
       }
-      doc.font('Helvetica-Bold').fontSize(13).fillColor(COLORS.ink).text(r.name, { link: r.profileUrl });
-      if (r.firm) doc.font('Helvetica').fontSize(10.5).fillColor(COLORS.muted).text(r.firm);
-      if (r.areas.length) doc.fontSize(9.5).fillColor(COLORS.muted).text(r.areas.join(' · '));
-      doc.moveDown(0.3);
+      doc.font('Helvetica-Bold').fontSize(17).fillColor(COLORS.ink).text(r.name, { link: r.profileUrl });
+      if (r.firm) doc.moveDown(0.1).font('Helvetica').fontSize(13.5).fillColor(COLORS.muted).text(r.firm);
+      if (r.areas.length) doc.moveDown(0.1).fontSize(12).fillColor(COLORS.muted).text(r.areas.join(' · '));
+      doc.moveDown(0.5);
       line('Address', r.address);
       line('Phone', r.phone, r.phone ? `tel:${r.phone.replace(/[^\d+]/g, '')}` : null);
       line('Email', r.email, r.email ? `mailto:${r.email}` : null);
       line('Website', r.website, r.website || null);
       for (const so of r.social) line(so.label, so.url, so.url);
       line('Profile', r.profileUrl, r.profileUrl);
-      doc.moveDown(0.8);
+      doc.moveDown(0.9);
     });
 
-    doc.moveDown(0.5).font('Helvetica').fontSize(8).fillColor(COLORS.muted).text(s.disclaimer || '', { width });
+    rule(2.5, COLORS.ink);
+    doc.moveDown(0.8).font('Helvetica').fontSize(9.5).fillColor(COLORS.muted).text(s.disclaimer || '', { width });
     doc.end();
   });
 }

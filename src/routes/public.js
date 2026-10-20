@@ -92,7 +92,7 @@ router.post('/lawyers/export.pdf', requireMember, exportLimit, async (req, res) 
     flash(req, 'error', 'Select at least one lawyer to export.');
     return res.redirect('/lawyers');
   }
-  const pdf = await buildPdf(rows);
+  const pdf = await buildPdf(rows, { referredBy: referrer(req) });
   const stamp = new Date().toISOString().slice(0, 10);
   res.type('application/pdf').attachment(`lawyers-${stamp}.pdf`).send(pdf);
 });
@@ -111,7 +111,7 @@ router.post('/lawyers/email-results', requireMember, shareLimit, async (req, res
   if (!rows.length) return res.status(400).json({ error: 'Select at least one lawyer first.' });
   try {
     const { subject, text, html } = resultsEmail(rows, { fromName, note });
-    const pdf = await buildPdf(rows, { note });
+    const pdf = await buildPdf(rows, { note, referredBy: referrer(req) });
     await sendMail({ to, subject, text, html, attachments: [{ filename: 'lawyers.pdf', content: pdf, contentType: 'application/pdf' }] });
     logShare(req.ip, to, rows.length);
     res.json({ ok: true, count: rows.length });
