@@ -77,6 +77,13 @@ Set `PUBLIC_URL=https://chaldeanlaw.com` in production so links always use your 
 
 If the database has no users, the server creates the default practice areas and an admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` on start-up. Change the password after your first login. Set `DATA_DIR` to keep the database and uploads outside the code folder.
 
+## Deploying with cPanel Web Apps (current setup)
+
+chaldeanlaw.com runs as a cPanel **Web App** named `chaldeanlaw`, built from this repository's `main` branch on Node 22.
+- **Updating:** redeploy the app in cPanel. It pulls from GitHub, then runs `npm install` and `npm run start`.
+- **Settings:** environment variables are set in the Web App's settings (`NODE_ENV`, `SESSION_SECRET`, `PUBLIC_URL`, `NOINDEX`, `ANTHROPIC_API_KEY`, and the SMTP variables).
+- **Do not set `DATA_DIR`** to a path in the home directory. Web Apps run in a container, so such a path lives inside the container and is wiped on every redeploy. The default `data/` and `public/uploads/` folders inside the app persist across redeploys; this was tested.
+
 ## Deploying on cPanel
 
 Use **Setup Node.js App**. Set the application startup file to `app.cjs`, choose Node.js 22 or newer, and add the environment variables from `.env.example` in that screen. Then run `npm install` and `node src/seed.js --no-demo` from the app's virtual environment.
