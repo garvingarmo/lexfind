@@ -3,6 +3,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import crypto from 'node:crypto';
 import path from 'node:path';
+import os from 'node:os';
 import { ROOT, db } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
 import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
@@ -33,6 +34,11 @@ app.use(helmet({
     },
   },
 }));
+// Health check: which app instance answered (helps spot stale duplicate processes behind a proxy).
+const instance = crypto.createHash('sha256').update(`${os.hostname()}:${process.pid}:${Date.now()}`).digest('hex').slice(0, 8);
+const startedAt = new Date().toISOString();
+app.get('/healthz', (req, res) => res.set('Cache-Control', 'no-store').json({ ok: true, instance, startedAt, commit: process.env.GIT_COMMIT || null }));
+
 // NOINDEX=1 keeps a test or staging site out of search engines.
 const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
