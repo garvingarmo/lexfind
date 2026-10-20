@@ -7,6 +7,7 @@ import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middlew
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled } from '../ai/client.js';
 import multer from 'multer';
+import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, templateCsv } from '../importer.js';
 
 const router = Router();
@@ -24,6 +25,7 @@ router.get('/', (req, res) => {
     ads: count('SELECT COUNT(*) n FROM ads WHERE active = 1'),
     adImpr: count('SELECT COALESCE(SUM(impressions),0) n FROM ads'),
     adClicks: count('SELECT COALESCE(SUM(clicks),0) n FROM ads'),
+    unclaimed: count('SELECT COUNT(*) n FROM lawyers WHERE user_id IS NULL'),
   };
   const pending = listLawyers({ status: 'pending' }).slice(0, 8);
   const jobs = db.prepare(`SELECT e.*, l.name FROM enrichments e JOIN lawyers l ON l.id = e.lawyer_id
@@ -36,7 +38,7 @@ router.get('/', (req, res) => {
 router.get('/lawyers', (req, res) => {
   const status = ['pending', 'active', 'suspended'].includes(req.query.status) ? req.query.status : '';
   const q = (req.query.q || '').toString().slice(0, 100);
-  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q });
+  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses() });
 });
 
 router.get('/lawyers/new', (req, res) => {
@@ -84,7 +86,11 @@ router.get('/lawyers/:id', (req, res, next) => {
   const l = getLawyer('id', req.params.id);
   if (!l) return next();
   const login = l.user_id ? db.prepare('SELECT email FROM users WHERE id = ?').get(l.user_id) : null;
-  res.render('admin/lawyer-edit', { title: `Edit ${l.name}`, l, areas: listAreas(), selected: new Set(l.areas.map((a) => a.slug)), login });
+  const invite = l.user_id ? null : activeInvite(l.id);
+  res.render('admin/lawyer-edit', {
+    title: `Edit ${l.name}`, l, areas: listAreas(), selected: new Set(l.areas.map((a) => a.slug)), login,
+    invite, inviteLink: invite ? inviteUrl(req, invite.token) : null, mailOn: mailEnabled(),
+  });
 });
 
 router.post('/lawyers/:id', upload.single('photo'), verifyCsrf, (req, res, next) => {
@@ -390,6 +396,87 @@ router.post('/sample-data/delete', (req, res) => {
   const r = deleteSampleData();
   flash(req, 'success', `Removed ${r.lawyers} sample lawyers, ${r.ads} sample ads and ${r.posts} sample blog posts.`);
   res.redirect('/admin/import');
+});
+
+// --- Invitations ------------------------------------------------------------------
+
+router.get('/invites', (req, res) => {
+  const filter = ['none', 'invited', 'expired', 'login'].includes(req.query.status) ? req.query.status : 'unclaimed';
+  const statuses = inviteStatuses();
+  const rows = listLawyers({ q: (req.query.q || '').toString().slice(0, 100) })
+    .map((l) => ({ ...l, inv: statuses.get(l.id), invite: activeInvite(l.id) }))
+    .filter((l) => (filter === 'unclaimed' ? l.inv.status !== 'login' : l.inv.status === filter))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const counts = { none: 0, invited: 0, expired: 0, login: 0 };
+  for (const v of statuses.values()) counts[v.status]++;
+  res.render('admin/invites', {
+    title: 'Invitations', rows, counts, filter, q: req.query.q || '', mailOn: mailEnabled(),
+    linkFor: (inv) => inviteUrl(req, inv.token),
+  });
+});
+
+const selectedIds = (body) => [].concat(body.ids || []).map(Number).filter(Boolean);
+
+router.post('/invites/create', (req, res) => {
+  let ids = selectedIds(req.body);
+  if (req.body.scope === 'all_new') {
+    const statuses = inviteStatuses();
+    ids = [...statuses].filter(([, v]) => v.status === 'none' || v.status === 'expired').map(([id]) => id);
+  }
+  if (!ids.length) { flash(req, 'error', 'Select at least one lawyer.'); return res.redirect('/admin/invites'); }
+  for (const id of ids) createInvite(id, req.user.id);
+  flash(req, 'success', `Created ${ids.length} invitation link${ids.length === 1 ? '' : 's'}. Copy them below, download them as a spreadsheet${mailEnabled() ? ', or email them' : ''}.`);
+  res.redirect('/admin/invites?status=invited');
+});
+
+router.post('/invites/send', (req, res) => {
+  if (!mailEnabled()) { flash(req, 'error', 'Email sending is not set up. Add the SMTP settings first.'); return res.redirect('/admin/invites'); }
+  let ids = selectedIds(req.body);
+  if (req.body.scope === 'all_unsent') {
+    ids = db.prepare("SELECT lawyer_id FROM invites WHERE used_at IS NULL AND revoked = 0 AND sent_at IS NULL AND expires_at > datetime('now')").all().map((r) => r.lawyer_id);
+  }
+  const invites = ids.map((id) => activeInvite(id)).filter((i) => i && i.email);
+  if (!invites.length) { flash(req, 'error', 'None of the selected lawyers have an active invitation and an email address.'); return res.redirect('/admin/invites?status=invited'); }
+  sendInBackground(invites, req);
+  flash(req, 'success', `Sending ${invites.length} invitation email${invites.length === 1 ? '' : 's'} in the background (about ${Math.ceil(invites.length * 1.5 / 60)} min). Refresh this page to see the "Emailed" dates.`);
+  res.redirect('/admin/invites?status=invited');
+});
+
+router.get('/invites/export.csv', (req, res) => {
+  const rows = db.prepare(`SELECT i.*, l.name, l.firm, l.city, l.state, l.phone FROM invites i JOIN lawyers l ON l.id = i.lawyer_id
+    WHERE i.used_at IS NULL AND i.revoked = 0 AND i.expires_at > datetime('now') AND l.user_id IS NULL ORDER BY l.name`).all();
+  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [['Name', 'Firm', 'Email', 'Phone', 'City', 'State', 'Invitation link', 'Expires'].map(q).join(',')];
+  for (const r of rows) lines.push([r.name, r.firm, r.email, r.phone, r.city, r.state, inviteUrl(req, r.token), r.expires_at.slice(0, 10)].map(q).join(','));
+  res.type('text/csv').attachment('invitation-links.csv').send(`${lines.join('\n')}\n`);
+});
+
+router.post('/lawyers/:id/invite', (req, res) => {
+  const l = getLawyer('id', req.params.id);
+  if (l && !l.user_id) {
+    createInvite(l.id, req.user.id);
+    flash(req, 'success', 'New invitation link created. Any earlier link for this lawyer no longer works.');
+  }
+  res.redirect(`/admin/lawyers/${req.params.id}#invite`);
+});
+
+router.post('/lawyers/:id/invite/send', async (req, res) => {
+  const inv = activeInvite(Number(req.params.id));
+  try {
+    if (!inv) throw new Error('Create an invitation link first.');
+    if (!mailEnabled()) throw new Error('Email sending is not set up.');
+    await sendInvite(inv, req);
+    flash(req, 'success', `Invitation emailed to ${inv.email}.`);
+  } catch (e) {
+    flash(req, 'error', `Could not send: ${e.message}`);
+  }
+  res.redirect(`/admin/lawyers/${req.params.id}#invite`);
+});
+
+router.post('/lawyers/:id/invite/revoke', (req, res) => {
+  db.prepare('UPDATE invites SET revoked = 1 WHERE lawyer_id = ? AND used_at IS NULL').run(req.params.id);
+  flash(req, 'success', 'Invitation link cancelled.');
+  res.redirect(`/admin/lawyers/${req.params.id}#invite`);
 });
 
 export default router;

@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card auth-card wide">
+    <% if (typeof problem !== 'undefined' && problem) { %>
+      <h1>Claim your listing</h1>
+      <div class="flash flash-info"><%= problem %></div>
+      <p><% if (typeof claimed !== 'undefined' && claimed) { %><a class="btn btn-primary" href="/login">Sign in</a> <% } %><a class="btn btn-outline" href="/">Go to the home page</a></p>
+    <% } else { %>
+      <h1>Claim your listing</h1>
+      <p class="muted">Set up your login to manage your profile on <%= settings.site_name %>.</p>
+      <div class="claim-listing">
+        <%- include('partials/avatar', { l: lawyer }) %>
+        <div>
+          <strong><%= lawyer.name %></strong>
+          <div class="small muted"><%= [lawyer.firm, [lawyer.city, lawyer.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') %></div>
+          <div class="tags"><% lawyer.areas.forEach(a => { %><span class="tag"><%= a.name %></span><% }) %></div>
+        </div>
+      </div>
+      <form method="post" action="/invite/<%= invite.token %>" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label>Email (you'll use this to sign in) <input name="email" type="email" required value="<%= form.email %>" autocomplete="username"></label>
+        <label>Choose a password <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+        <label>Confirm password <input name="password2" type="password" minlength="8" required autocomplete="new-password"></label>
+        <label class="check"><input type="checkbox" name="confirm" required> I am <%= lawyer.name %>, or I'm authorized to manage this listing on their behalf.</label>
+        <button class="btn btn-primary btn-block">Claim my listing</button>
+      </form>
+      <p class="tiny muted">Not you? Don't use this link. Contact us and we'll sort it out.</p>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/footer') %>

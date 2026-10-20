@@ -137,6 +137,20 @@ CREATE INDEX IF NOT EXISTS idx_lawyers_status ON lawyers(status);
 CREATE INDEX IF NOT EXISTS idx_lawyers_loc ON lawyers(state, city);
 CREATE INDEX IF NOT EXISTS idx_inquiries_lawyer ON inquiries(lawyer_id);
 CREATE INDEX IF NOT EXISTS idx_enrich_lawyer ON enrichments(lawyer_id);
+
+CREATE TABLE IF NOT EXISTS invites (
+  id INTEGER PRIMARY KEY,
+  lawyer_id INTEGER NOT NULL REFERENCES lawyers(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  email TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL,
+  sent_at TEXT,
+  used_at TEXT,
+  revoked INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_invites_lawyer ON invites(lawyer_id);
 `);
 
 // Columns added after the first release, applied to existing databases on start-up.

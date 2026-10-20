@@ -14,6 +14,17 @@
     });
   });
 
+  // Copy the link in the input next to a [data-copy] button.
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const input = btn.parentElement.querySelector('input');
+      try { await navigator.clipboard.writeText(input.value); } catch { input.select(); document.execCommand('copy'); }
+      const label = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = label; }, 1500);
+    });
+  });
+
   // Poll a running AI research job and reload when it finishes.
   const wait = document.getElementById('research-wait');
   if (wait) {

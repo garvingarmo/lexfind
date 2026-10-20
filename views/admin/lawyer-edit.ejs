@@ -22,6 +22,24 @@
       <button class="btn btn-primary span-2">Save</button>
     </form>
     <% if (l.id) { %>
+      <div class="card" id="invite">
+        <h2>Lawyer login</h2>
+        <% if (login) { %>
+          <p class="small">This listing has been claimed. <%= l.name %> signs in as <strong><%= login.email %></strong>.</p>
+        <% } else if (invite) { %>
+          <p class="small">Invitation link, valid until <%= invite.expires_at.slice(0, 10) %><%= invite.sent_at ? ', emailed ' + invite.sent_at.slice(0, 10) : '' %>. Send it to <%= l.name %> so they can set a password and manage this listing.</p>
+          <div class="copy-row"><input readonly value="<%= inviteLink %>" aria-label="Invitation link"><button type="button" class="btn btn-ghost btn-sm" data-copy>Copy</button></div>
+          <div class="actions start">
+            <% if (mailOn && invite.email) { %><form method="post" action="/admin/lawyers/<%= l.id %>/invite/send"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent btn-sm">Email it to <%= invite.email %></button></form><% } %>
+            <% if (invite.email) { %><a class="btn btn-outline btn-sm" href="mailto:<%= invite.email %>?subject=<%= encodeURIComponent('Claim your listing on ' + settings.site_name) %>&body=<%= encodeURIComponent('Hello ' + l.name + ',\n\nYour profile is listed in the ' + settings.site_name + ' attorney directory. Use this personal link to set up your login and manage your listing:\n\n' + inviteLink + '\n\nThe link works once and expires on ' + invite.expires_at.slice(0, 10) + '.') %>">Open in my email app</a><% } %>
+            <form method="post" action="/admin/lawyers/<%= l.id %>/invite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Create a new link</button></form>
+            <form method="post" action="/admin/lawyers/<%= l.id %>/invite/revoke" data-confirm="Cancel this invitation link?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Cancel link</button></form>
+          </div>
+        <% } else { %>
+          <p class="small">No login yet. Create an invitation link so <%= l.name %> can set a password and manage this listing.</p>
+          <form method="post" action="/admin/lawyers/<%= l.id %>/invite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm">Create invitation link</button></form>
+        <% } %>
+      </div>
       <form method="post" action="/admin/lawyers/<%= l.id %>/delete" class="danger-zone" data-confirm="Delete this lawyer and their login permanently?">
         <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Delete lawyer</button>
       </form>

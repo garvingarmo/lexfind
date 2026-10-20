@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { db, tx } from '../db.js';
 import { createLawyer, setAreas, listAreas } from '../models.js';
 import { flash, rateLimit } from '../middleware.js';
+import { checkInvite, acceptInvite } from '../invites.js';
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many attempts. Try again in a few minutes.' });
@@ -85,6 +86,41 @@ router.post('/account/password', (req, res) => {
     flash(req, 'success', 'Password updated.');
   }
   res.redirect('/account/password');
+});
+
+// --- Claim a listing from an invitation link -------------------------------------
+
+router.get('/invite/:token', (req, res) => {
+  const check = checkInvite(req.params.token);
+  res.render('invite', { title: 'Claim your listing', ...check, form: { email: check.invite?.email || check.lawyer?.email || '' } });
+});
+
+router.post('/invite/:token', authLimit, (req, res) => {
+  const check = checkInvite(req.params.token);
+  const email = (req.body.email || '').trim();
+  const errors = [];
+  if (!check.problem) {
+    if (!/^\S+@\S+\.\S+$/.test(email)) errors.push('Please enter a valid email address.');
+    if ((req.body.password || '').length < 8) errors.push('Password must be at least 8 characters.');
+    if (req.body.password !== req.body.password2) errors.push('Passwords do not match.');
+    if (!req.body.confirm) errors.push('Please confirm that you are this lawyer or are authorized to manage the listing.');
+  }
+  if (check.problem || errors.length) {
+    return res.status(check.problem ? 400 : 422).render('invite', {
+      title: 'Claim your listing', ...check, form: { email }, flash: errors.map((msg) => ({ type: 'error', msg })),
+    });
+  }
+  let userId;
+  try {
+    userId = acceptInvite(check.invite, email, req.body.password);
+  } catch (e) {
+    return res.status(422).render('invite', { title: 'Claim your listing', ...check, form: { email }, flash: [{ type: 'error', msg: e.message }] });
+  }
+  req.session.regenerate(() => {
+    req.session.userId = userId;
+    flash(req, 'success', 'Welcome! Your login is set up. Review your profile below and keep it up to date.');
+    res.redirect('/dashboard/profile');
+  });
 });
 
 export default router;

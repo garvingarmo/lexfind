@@ -62,6 +62,17 @@ Go to **Admin → Import lawyers**. Either paste a Google Sheets link (shared as
 
 Importing the same sheet again updates existing lawyers instead of duplicating them; a lawyer counts as existing if the email matches, or the name and city match. There's a CSV template on that page.
 
+## Inviting lawyers to claim their listings
+
+Go to **Admin → Invitations**, or open a lawyer's edit page. Create a personal link for each lawyer, or for everyone without a login at once. A lawyer opens the link, sets a password and gets control of their listing. Each link works once, expires after 30 days, and is cancelled when you create a newer one.
+
+To get the links to lawyers, any of these work:
+- copy a link by hand;
+- download all active links as a spreadsheet for a mail merge;
+- set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM` (see `.env.example`), and the site emails the invitations itself.
+
+Set `PUBLIC_URL=https://chaldeanlaw.com` in production so links always use your domain.
+
 ## Deploying on cPanel
 
 Use **Setup Node.js App**. Set the application startup file to `app.cjs`, choose Node.js 22 or newer, and add the environment variables from `.env.example` in that screen. Then run `npm install` and `node src/seed.js --no-demo` from the app's virtual environment.

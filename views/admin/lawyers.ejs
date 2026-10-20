@@ -10,7 +10,7 @@
     </form>
     <div class="card table-wrap">
       <table class="table">
-        <thead><tr><th>Name</th><th>Location</th><th>Areas</th><th>Status</th><th>Flags</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Location</th><th>Areas</th><th>Status</th><th>Flags</th><th>Login</th><th></th></tr></thead>
         <tbody>
         <% rows.forEach(l => { %>
           <tr>
@@ -18,7 +18,8 @@
             <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
             <td class="tiny"><%= l.areas.map(a => a.name).join(', ') %></td>
             <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
-            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %><%= l.user_id ? ' · Login' : '' %></td>
+            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %></td>
+            <td class="tiny"><% const st = inv.get(l.id).status; %><a href="/admin/lawyers/<%= l.id %>#invite"><%= { none: 'Invite', invited: 'Invited', expired: 'Expired', login: 'Claimed' }[st] %></a></td>
             <td class="right nowrap"><a href="/lawyers/<%= l.slug %>" target="_blank">View</a> · <a href="/admin/lawyers/<%= l.id %>/research">AI</a></td>
           </tr>
         <% }) %>

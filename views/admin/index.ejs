@@ -7,6 +7,7 @@
     <div class="stat-grid">
       <a class="card stat" href="/admin/lawyers?status=active"><span class="stat-n"><%= stats.active %></span><span class="muted small">Active listings</span></a>
       <a class="card stat" href="/admin/lawyers?status=pending"><span class="stat-n"><%= stats.pending %></span><span class="muted small">Pending review</span></a>
+      <a class="card stat" href="/admin/invites"><span class="stat-n"><%= stats.unclaimed %></span><span class="muted small">Listings without a login</span></a>
       <a class="card stat" href="/admin/inquiries"><span class="stat-n"><%= stats.inquiries30 %></span><span class="muted small">Inquiries (30 days)</span></a>
       <a class="card stat" href="/admin/ads"><span class="stat-n"><%= stats.ads %></span><span class="muted small">Active ads · <%= stats.adClicks %> clicks / <%= stats.adImpr %> views</span></a>
     </div>

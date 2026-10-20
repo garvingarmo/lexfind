@@ -1,0 +1,79 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Invitations</h1>
+    <p class="muted">Send lawyers a personal link to claim their listing. They set a password and can then edit their profile and receive inquiries. Each link works once and expires after 30 days. Creating a new link cancels the old one.</p>
+
+    <div class="stat-grid">
+      <a class="card stat" href="/admin/invites?status=none"><span class="stat-n"><%= counts.none %></span><span class="muted small">Not invited yet</span></a>
+      <a class="card stat" href="/admin/invites?status=invited"><span class="stat-n"><%= counts.invited %></span><span class="muted small">Invited, waiting</span></a>
+      <a class="card stat" href="/admin/invites?status=expired"><span class="stat-n"><%= counts.expired %></span><span class="muted small">Invite expired</span></a>
+      <a class="card stat" href="/admin/invites?status=login"><span class="stat-n"><%= counts.login %></span><span class="muted small">Claimed (has login)</span></a>
+    </div>
+
+    <div class="card stack">
+      <h2>Quick actions</h2>
+      <div class="actions start">
+        <form method="post" action="/admin/invites/create" data-confirm="Create invitation links for all <%= counts.none + counts.expired %> lawyers who don't have a login or a valid link?">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="scope" value="all_new">
+          <button class="btn btn-primary btn-sm" <%= counts.none + counts.expired ? '' : 'disabled' %>>Create links for everyone not invited (<%= counts.none + counts.expired %>)</button>
+        </form>
+        <a class="btn btn-outline btn-sm" href="/admin/invites/export.csv">Download all active links (spreadsheet)</a>
+        <% if (mailOn) { %>
+          <form method="post" action="/admin/invites/send" data-confirm="Email every invitation that hasn't been emailed yet?">
+            <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="scope" value="all_unsent">
+            <button class="btn btn-accent btn-sm">Email all unsent invitations</button>
+          </form>
+        <% } %>
+      </div>
+      <% if (!mailOn) { %>
+        <p class="tiny muted">Email sending isn't set up, so send the links yourself: download the spreadsheet and use it for a mail merge, or copy a link into your own email. To send from the site, add the SMTP settings from your email account (see the README).</p>
+      <% } %>
+    </div>
+
+    <form class="toolbar" method="get">
+      <input name="q" value="<%= q %>" placeholder="Search name, firm, email">
+      <select name="status">
+        <option value="unclaimed" <%= filter === 'unclaimed' ? 'selected' : '' %>>All without a login</option>
+        <option value="none" <%= filter === 'none' ? 'selected' : '' %>>Not invited yet</option>
+        <option value="invited" <%= filter === 'invited' ? 'selected' : '' %>>Invited, waiting</option>
+        <option value="expired" <%= filter === 'expired' ? 'selected' : '' %>>Invite expired</option>
+        <option value="login" <%= filter === 'login' ? 'selected' : '' %>>Claimed</option>
+      </select>
+      <button class="btn btn-outline btn-sm">Filter</button>
+    </form>
+
+    <form method="post" class="card table-wrap" id="invite-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="actions start">
+        <button type="button" class="btn btn-ghost btn-sm" data-check-all="ids">Select all</button>
+        <button class="btn btn-outline btn-sm" formaction="/admin/invites/create">Create new links for selected</button>
+        <% if (mailOn) { %><button class="btn btn-outline btn-sm" formaction="/admin/invites/send">Email selected</button><% } %>
+      </div>
+      <table class="table">
+        <thead><tr><th></th><th>Lawyer</th><th>Email</th><th>Status</th><th>Invitation link</th></tr></thead>
+        <tbody>
+        <% rows.forEach(l => { %>
+          <tr>
+            <td><% if (l.inv.status !== 'login') { %><input type="checkbox" name="ids" value="<%= l.id %>" aria-label="Select <%= l.name %>"><% } %></td>
+            <td><a href="/admin/lawyers/<%= l.id %>#invite"><%= l.name %></a><div class="tiny muted"><%= [l.firm, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') %></div></td>
+            <td class="small"><%= l.email || '' %><% if (!l.email) { %><span class="tiny muted">no email</span><% } %></td>
+            <td class="small nowrap">
+              <span class="status status-<%= { none: 'draft', invited: 'running', expired: 'error', login: 'active' }[l.inv.status] %>"><%= { none: 'Not invited', invited: 'Invited', expired: 'Expired', login: 'Claimed' }[l.inv.status] %></span>
+              <% if (l.inv.status === 'invited') { %><div class="tiny muted"><%= l.inv.sent_at ? 'Emailed ' + l.inv.sent_at.slice(0, 10) : 'Not emailed' %> · expires <%= l.inv.expires_at.slice(0, 10) %></div><% } %>
+            </td>
+            <td>
+              <% if (l.invite) { %>
+                <div class="copy-row"><input readonly value="<%= linkFor(l.invite) %>" aria-label="Invitation link for <%= l.name %>"><button type="button" class="btn btn-ghost btn-sm" data-copy>Copy</button></div>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+      <% if (!rows.length) { %><p class="muted">No lawyers in this list.</p><% } %>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>
