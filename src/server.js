@@ -11,7 +11,6 @@ import { bootstrapIfEmpty, applyAdminReset } from './bootstrap.js';
 import { themeCss } from './theme.js';
 import { migrateSlugsToNames, backfillSortNames } from './models.js';
 import { normalizeAllLanguages } from './languages.js';
-import { mailEnabled, diagnoseSmtp } from './mailer.js';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -105,7 +104,6 @@ app.use((err, req, res, next) => {
   res.status(500).render('error', { title: 'Something went wrong', message: `An unexpected error occurred. Please try again.${detail}` });
 });
 
-if (mailEnabled()) diagnoseSmtp().catch((e) => console.error('[smtp-diagnose] failed', e.message));
 
 const port = Number(process.env.PORT) || 3000;
 const server = app.listen(port, () => {

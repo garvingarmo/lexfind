@@ -3,8 +3,14 @@
 import nodemailer from 'nodemailer';
 import { getSecret } from './db.js';
 
-let transport = null;
-let transportKey = '';
+// When the app runs in a container (cPanel Web Apps), the server's own public address is often
+// closed to it, but the same mail server answers on the container host's internal address.
+const HOST_ALIASES = ['host.containers.internal', 'host.docker.internal', '10.0.2.2', '172.17.0.1'];
+const UNREACHABLE = new Set(['ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'ESOCKET', 'ECONNECTION', 'EDNS']);
+
+const transports = new Map();
+let workingHost = null; // the address that last worked for the configured host
+let workingKey = '';
 
 /** Current SMTP settings; environment variables take precedence over the admin page. */
 export function mailConfig() {
@@ -26,41 +32,46 @@ export function mailEnabled() {
   return Boolean(c.host && c.from);
 }
 
-function getTransport() {
-  const c = mailConfig();
-  const key = JSON.stringify(c);
-  if (!transport || key !== transportKey) {
-    transport = nodemailer.createTransport({
-      host: c.host,
+function getTransport(c, connectHost) {
+  const key = JSON.stringify([c, connectHost]);
+  if (!transports.has(key)) {
+    transports.clear();
+    transports.set(key, nodemailer.createTransport({
+      host: connectHost,
       port: c.port,
       secure: c.secure ?? c.port === 465,
       auth: c.user ? { user: c.user, pass: c.pass } : undefined,
-    });
-    transportKey = key;
+      // Check the certificate against the real mail server name, whichever address we connect to.
+      tls: { servername: c.host },
+      connectionTimeout: 10000,
+    }));
   }
-  return transport;
+  return transports.get(key);
 }
 
-/**
- * Log which SMTP host/port combinations this process can open a connection to. Helps when the app
- * runs in a container that can't reach the mail server the way the outside world does.
- */
-export async function diagnoseSmtp() {
-  const net = await import('node:net');
+const isUnreachable = (err) => UNREACHABLE.has(err?.code) && !err.responseCode && !/certificate|self.signed/i.test(err.message || '');
+
+export async function sendMail({ to, subject, text, html, replyTo, attachments }) {
   const c = mailConfig();
-  const hosts = [...new Set([c.host, 'host.containers.internal', 'host.docker.internal', '10.0.2.2', '10.88.0.1', '172.17.0.1'].filter(Boolean))];
-  const ports = [465, 587, 25, 2525];
-  const probe = (host, port) => new Promise((resolve) => {
-    const sock = net.connect({ host, port, timeout: 3000 });
-    const done = (r) => { sock.destroy(); resolve(r); };
-    sock.once('connect', () => done('open'));
-    sock.once('timeout', () => done('timeout'));
-    sock.once('error', (e) => done(e.code || 'error'));
-  });
-  const results = await Promise.all(hosts.flatMap((h) => ports.map(async (p) => `${h}:${p}=${await probe(h, p)}`)));
-  console.log(`[smtp-diagnose] ${results.join(' ')}`);
-}
-
-export function sendMail({ to, subject, text, html, replyTo, attachments }) {
-  return getTransport().sendMail({ from: mailConfig().from, to, subject, text, html, replyTo, attachments });
+  const message = { from: c.from, to, subject, text, html, replyTo, attachments };
+  const key = JSON.stringify(c);
+  if (workingKey !== key) { workingHost = null; workingKey = key; }
+  const extra = (process.env.SMTP_FALLBACK_HOSTS || '').split(',').map((h) => h.trim());
+  const candidates = [...new Set([workingHost, c.host, ...extra, ...HOST_ALIASES].filter(Boolean))];
+  let firstError;
+  for (const host of candidates) {
+    try {
+      const info = await getTransport(c, host).sendMail(message);
+      if (host !== workingHost) {
+        workingHost = host;
+        if (host !== c.host) console.log(`[mail] ${c.host} unreachable from here; sending via ${host}:${c.port}`);
+      }
+      return info;
+    } catch (err) {
+      firstError ??= err;
+      // Only try another address when this one couldn't be reached; a login or recipient error is final.
+      if (!isUnreachable(err)) throw err;
+    }
+  }
+  throw firstError;
 }
