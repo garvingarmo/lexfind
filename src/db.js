@@ -153,6 +153,15 @@ CREATE TABLE IF NOT EXISTS invites (
 );
 CREATE INDEX IF NOT EXISTS idx_invites_lawyer ON invites(lawyer_id);
 
+-- Search results emailed by visitors (for rate limiting).
+CREATE TABLE IF NOT EXISTS result_shares (
+  id INTEGER PRIMARY KEY,
+  ip TEXT,
+  recipient TEXT,
+  lawyer_count INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Old profile addresses, so links keep working after a lawyer's URL changes.
 CREATE TABLE IF NOT EXISTS slug_redirects (
   old_slug TEXT PRIMARY KEY,

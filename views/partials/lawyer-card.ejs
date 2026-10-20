@@ -1,4 +1,6 @@
-<article class="card lawyer-card <%= l.featured ? 'is-featured' : '' %>">
+<% const pick = typeof selectable !== 'undefined' && selectable; %>
+<article class="card lawyer-card <%= l.featured ? 'is-featured' : '' %> <%= pick ? 'selectable' : '' %>" data-id="<%= l.id %>">
+  <% if (pick) { %><label class="lc-select" title="<%= t('results.selectOne') %>"><input type="checkbox" class="result-pick" value="<%= l.id %>" aria-label="<%= t('results.selectOne') %>: <%= l.name %>"></label><% } %>
   <a class="lc-photo" href="/lawyers/<%= l.slug %>" tabindex="-1" aria-hidden="true"><%- include('avatar', { l, size: 'avatar-md' }) %></a>
   <div class="lc-main">
     <% if (l.featured) { %><span class="badge badge-sponsored"><%- e('card.sponsored') %></span><% } %>

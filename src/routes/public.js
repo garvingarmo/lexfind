@@ -12,6 +12,8 @@ import { getLanguageOptions } from '../languages.js';
 import { getProfileSettings, getSearchSettings } from '../profileSettings.js';
 import { mailEnabled, sendMail } from '../mailer.js';
 import { getSettings } from '../db.js';
+import { exportRows, allMatchingIds, buildPdf, resultsEmail, recentShares, logShare, MAX_EXPORT } from '../exportResults.js';
+import { baseUrl } from '../invites.js';
 
 const router = Router();
 
@@ -57,9 +59,64 @@ router.get('/lawyers', (req, res) => {
     return `/lawyers${p.toString() ? `?${p}` : ''}`;
   };
   res.render('search', {
-    title: 'Find a lawyer', f, rows, total, pages: Math.ceil(total / perPage), areas: listAreas({ withLawyersOnly: true }), states, languages,
+    title: 'Find a lawyer', f, rows, total, mailOn: mailEnabled(), maxExport: MAX_EXPORT, pages: Math.ceil(total / perPage), areas: listAreas({ withLawyersOnly: true }), states, languages,
     ad: pickAd('search_sidebar'), qs,
   });
+});
+
+// --- Selected results: select all, PDF export, email ----------------------------------
+
+function searchFilters(src) {
+  return {
+    q: (src.q || '').toString().slice(0, 200),
+    area: (src.area || '').toString(),
+    city: (src.city || '').toString().slice(0, 80),
+    state: (src.state || '').toString().slice(0, 2),
+    language: (src.language || '').toString().slice(0, 40),
+  };
+}
+
+const selectedIds = (body) => [].concat(body.ids || []).flatMap((v) => String(v).split(',')).map(Number).filter(Boolean).slice(0, MAX_EXPORT);
+
+// Ids of every lawyer matching the current filters, for "Select all N results".
+router.get('/lawyers-select-all.json', (req, res) => {
+  res.json({ ids: allMatchingIds(searchLawyers, searchFilters(req.query)), max: MAX_EXPORT });
+});
+
+const exportLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 30, message: 'Too many exports. Please wait a few minutes.' });
+router.post('/lawyers/export.pdf', exportLimit, async (req, res) => {
+  const rows = exportRows(selectedIds(req.body), baseUrl(req));
+  if (!rows.length) {
+    flash(req, 'error', 'Select at least one lawyer to export.');
+    return res.redirect('/lawyers');
+  }
+  const pdf = await buildPdf(rows);
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.type('application/pdf').attachment(`lawyers-${stamp}.pdf`).send(pdf);
+});
+
+const shareLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'You have sent several emails already. Please try again later.' });
+router.post('/lawyers/email-results', shareLimit, async (req, res) => {
+  const b = req.body || {};
+  if (b.website) return res.json({ ok: true }); // honeypot
+  const to = String(b.to || '').trim();
+  const fromName = String(b.from_name || '').trim().slice(0, 80);
+  const note = String(b.note || '').trim().slice(0, 500);
+  if (!mailEnabled()) return res.status(503).json({ error: 'Emailing results is not available on this site yet.' });
+  if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to) || to.length > 200) return res.status(400).json({ error: 'Please enter one valid email address.' });
+  if (recentShares(req.ip) >= 5) return res.status(429).json({ error: 'You have sent several emails already. Please try again later.' });
+  const rows = exportRows(selectedIds(b), baseUrl(req));
+  if (!rows.length) return res.status(400).json({ error: 'Select at least one lawyer first.' });
+  try {
+    const { subject, text, html } = resultsEmail(rows, { fromName, note });
+    const pdf = await buildPdf(rows, { note });
+    await sendMail({ to, subject, text, html, attachments: [{ filename: 'lawyers.pdf', content: pdf, contentType: 'application/pdf' }] });
+    logShare(req.ip, to, rows.length);
+    res.json({ ok: true, count: rows.length });
+  } catch (e) {
+    console.error('email results failed:', e.message);
+    res.status(502).json({ error: 'The email could not be sent right now. Please try again, or use Export PDF instead.' });
+  }
 });
 
 router.get('/practice-areas/:slug', (req, res) => res.redirect(`/lawyers?area=${encodeURIComponent(req.params.slug)}`));

@@ -41,6 +41,6 @@ function getTransport() {
   return transport;
 }
 
-export function sendMail({ to, subject, text, html, replyTo }) {
-  return getTransport().sendMail({ from: mailConfig().from, to, subject, text, html, replyTo });
+export function sendMail({ to, subject, text, html, replyTo, attachments }) {
+  return getTransport().sendMail({ from: mailConfig().from, to, subject, text, html, replyTo, attachments });
 }

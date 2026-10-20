@@ -82,6 +82,10 @@ These admin tools change the site without code:
 - **Profile URLs** are `/lawyers/first-last`: middle names, initials and suffixes like Esq. or Jr. are dropped, and duplicates get `-2`. Admins can set a custom URL on the lawyer's edit page. Old URLs redirect permanently (`slug_redirects`).
 - **Languages** are picked from a checkbox dropdown. The list is managed in **Admin → Lawyer profiles → Languages list** and also drives the search filter. Typed or imported values are matched to the list's spelling.
 
+## Selecting, exporting and emailing search results
+
+On **Find a lawyer**, visitors can tick results, "Select all on this page", or "Select all N results" (up to 200; this follows the current filters). The selection is kept while paging. **Export PDF** downloads the list; **Email results** (shown only when email is set up) sends it to one address with the PDF attached and an optional note. Visitors can send 5 emails an hour. Each entry has name, firm, address, phone, email, website, social profiles and a profile link, but only the details that **Admin → Lawyer profiles** allows on public profiles.
+
 ## Inviting lawyers to claim their listings
 
 Go to **Admin → Invitations**, or open a lawyer's edit page. Create a personal link for each lawyer, or for everyone without a login at once. A lawyer opens the link, sets a password and gets control of their listing. Each link works once, expires after 30 days, and is cancelled when you create a newer one.

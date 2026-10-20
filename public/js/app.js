@@ -259,6 +259,86 @@
     document.addEventListener('click', (ev) => { if (d.open && !d.contains(ev.target)) d.open = false; });
   });
 
+  // --- Find a lawyer: select results, export PDF, email ----------------------------------
+  const resultsBar = document.getElementById('results-bar');
+  if (resultsBar) {
+    const KEY = 'lf-selected-lawyers';
+    const load = () => { try { return new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]')); } catch { return new Set(); } };
+    const selected = load();
+    const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify([...selected])); } catch { /* private mode */ } };
+    const picks = [...document.querySelectorAll('.result-pick')];
+    const pageBox = document.getElementById('select-page');
+    const countEl = document.getElementById('selected-count');
+    const clearBtn = document.getElementById('clear-selection');
+    const pdfBtn = document.getElementById('export-pdf');
+    const emailBtn = document.getElementById('email-results');
+    const allBtn = document.getElementById('select-all-results');
+    const refresh = () => {
+      picks.forEach((c) => { c.checked = selected.has(c.value); c.closest('.lawyer-card').classList.toggle('picked', c.checked); });
+      const onPage = picks.filter((c) => c.checked).length;
+      pageBox.checked = onPage > 0 && onPage === picks.length;
+      pageBox.indeterminate = onPage > 0 && onPage < picks.length;
+      countEl.textContent = selected.size;
+      clearBtn.hidden = !selected.size;
+      pdfBtn.disabled = !selected.size;
+      if (emailBtn) emailBtn.disabled = !selected.size;
+      save();
+    };
+    picks.forEach((c) => c.addEventListener('change', () => { if (c.checked) selected.add(c.value); else selected.delete(c.value); refresh(); }));
+    pageBox.addEventListener('change', () => { picks.forEach((c) => (pageBox.checked ? selected.add(c.value) : selected.delete(c.value))); refresh(); });
+    clearBtn.addEventListener('click', () => { selected.clear(); refresh(); });
+    if (allBtn) {
+      allBtn.addEventListener('click', async () => {
+        allBtn.disabled = true;
+        try {
+          const r = await fetch(`/lawyers-select-all.json?${resultsBar.dataset.query}`, { headers: { Accept: 'application/json' } });
+          const { ids } = await r.json();
+          ids.forEach((id) => selected.add(String(id)));
+          refresh();
+        } finally { allBtn.disabled = false; }
+      });
+    }
+    document.getElementById('export-form').addEventListener('submit', () => {
+      document.getElementById('export-ids').value = [...selected].join(',');
+    });
+
+    const dialog = document.getElementById('share-dialog');
+    if (dialog && emailBtn) {
+      const form = document.getElementById('share-form');
+      const status = document.getElementById('share-status');
+      const sendBtn = document.getElementById('share-send');
+      emailBtn.addEventListener('click', () => {
+        document.getElementById('share-count').textContent = selected.size;
+        status.textContent = '';
+        status.className = 'share-status small';
+        dialog.showModal();
+        form.to.focus();
+      });
+      document.getElementById('share-cancel').addEventListener('click', () => dialog.close());
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        sendBtn.disabled = true;
+        status.textContent = 'Sending…';
+        try {
+          const r = await fetch('/lawyers/email-results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'x-csrf-token': csrf },
+            body: JSON.stringify({ ids: [...selected], to: form.to.value, from_name: form.from_name.value, note: form.note.value, website: form.website.value }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'The email could not be sent.');
+          status.textContent = `Sent to ${form.to.value}.`;
+          status.className = 'share-status small ok';
+          setTimeout(() => { dialog.close(); form.reset(); }, 1500);
+        } catch (e) {
+          status.textContent = e.message;
+          status.className = 'share-status small err';
+        } finally { sendBtn.disabled = false; }
+      });
+    }
+    refresh();
+  }
+
   // Poll a running AI research job and reload when it finishes.
   const wait = document.getElementById('research-wait');
   if (wait) {

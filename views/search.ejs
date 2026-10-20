@@ -41,7 +41,39 @@
           <p class="small muted"><a href="/assistant"><%- e('search.emptyHint') %></a></p>
         </div>
       <% } %>
-      <div class="lawyer-list"><% rows.forEach(l => { %><%- include('partials/lawyer-card', { l }) %><% }) %></div>
+      <% if (rows.length) { %>
+      <div class="results-bar card" id="results-bar" data-total="<%= total %>" data-max="<%= maxExport %>" data-query="<%= new URLSearchParams({ q: f.q, area: f.area, city: f.city, state: f.state, language: f.language }).toString() %>">
+        <label class="check"><input type="checkbox" id="select-page"> <%- e('results.selectPage') %></label>
+        <% if (total > rows.length) { %><button type="button" class="link-btn" id="select-all-results"><%- e('results.selectAllPrefix') %> <%= Math.min(total, maxExport) %> <%- e('results.selectAllSuffix') %></button><% } %>
+        <span class="results-count"><strong id="selected-count">0</strong> <%- e('results.selected') %></span>
+        <button type="button" class="link-btn" id="clear-selection" hidden><%- e('results.clear') %></button>
+        <span class="results-actions">
+          <% if (mailOn) { %><button type="button" class="btn btn-outline btn-sm" id="email-results" disabled>✉ <%- e('results.email') %></button><% } %>
+          <form method="post" action="/lawyers/export.pdf" id="export-form" class="inline">
+            <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="ids" id="export-ids">
+            <button class="btn btn-primary btn-sm" id="export-pdf" disabled>⤓ <%- e('results.pdf') %></button>
+          </form>
+        </span>
+      </div>
+      <% } %>
+      <div class="lawyer-list"><% rows.forEach(l => { %><%- include('partials/lawyer-card', { l, selectable: true }) %><% }) %></div>
+      <% if (mailOn) { %>
+      <dialog class="share-dialog" id="share-dialog">
+        <form method="dialog" class="stack" id="share-form">
+          <h2><%- e('results.emailTitle') %></h2>
+          <p class="small muted"><span id="share-count">0</span> <%- e('results.emailIntro') %></p>
+          <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
+          <label><%- e('results.emailTo') %> <input name="to" type="email" required maxlength="200" placeholder="name@example.com"></label>
+          <label><%- e('results.emailFrom') %> <input name="from_name" maxlength="80"></label>
+          <label><%- e('results.emailNote') %> <textarea name="note" rows="3" maxlength="500"></textarea></label>
+          <p class="share-status small" id="share-status" role="status"></p>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" id="share-cancel"><%- e('results.cancel') %></button>
+            <button class="btn btn-primary" id="share-send"><%- e('results.send') %></button>
+          </div>
+        </form>
+      </dialog>
+      <% } %>
       <% if (pages > 1) { %>
         <nav class="pager">
           <% for (let p = 1; p <= pages; p++) { %><a class="<%= p === f.page ? 'current' : '' %>" href="<%= qs({ page: p }) %>"><%= p %></a><% } %>
