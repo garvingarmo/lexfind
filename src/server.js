@@ -44,6 +44,13 @@ const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
 if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
+// Pages are per-visitor (sessions, CSRF tokens, sign-in state). Forbid shared caches such as the
+// hosting's nginx proxy from storing them, or one visitor's page is served to the next.
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'private, no-store');
+  res.vary('Cookie');
+  next();
+});
 app.use('/uploads', express.static(uploadDir, { maxAge: prod ? '7d' : 0 }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '100kb' }));
