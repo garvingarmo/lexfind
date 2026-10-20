@@ -11,17 +11,58 @@ export const LAWYER_FIELDS = [
 ];
 
 /**
- * Practice areas with lawyer counts. `lawyer_count` counts active lawyers, `total_count` all of them.
- * withLawyersOnly hides areas no active lawyer is listed under (for the public site and the AI assistant).
+ * Practice areas with lawyer counts, in tree order: each main category followed by its sub-categories.
+ * `lawyer_count` counts active lawyers in the area itself, `total_count` all of its lawyers, and
+ * `group_count` active lawyers in the area or any of its sub-categories. Each row also has `depth`
+ * (0 main, 1 sub-category), `parent_name`, `children` (sub-category names) and `label` (indented for menus).
+ * withLawyersOnly hides areas no active lawyer is listed under (for the public site and the AI assistant);
+ * a main category stays when one of its sub-categories has lawyers.
  */
 export function listAreas({ withLawyersOnly = false } = {}) {
   const rows = db.prepare(`
-    SELECT pa.*,
+    SELECT pa.*, parent.name AS parent_name,
       (SELECT COUNT(*) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
        WHERE lpa.area_id = pa.id AND l.status = 'active') AS lawyer_count,
-      (SELECT COUNT(*) FROM lawyer_practice_areas lpa WHERE lpa.area_id = pa.id) AS total_count
-    FROM practice_areas pa ORDER BY pa.name COLLATE NOCASE`).all();
-  return withLawyersOnly ? rows.filter((a) => a.lawyer_count > 0) : rows;
+      (SELECT COUNT(*) FROM lawyer_practice_areas lpa WHERE lpa.area_id = pa.id) AS total_count,
+      (SELECT COUNT(DISTINCT lpa.lawyer_id) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
+       JOIN practice_areas x ON x.id = lpa.area_id
+       WHERE (x.id = pa.id OR x.parent_id = pa.id) AND l.status = 'active') AS group_count
+    FROM practice_areas pa LEFT JOIN practice_areas parent ON parent.id = pa.parent_id
+    ORDER BY pa.name COLLATE NOCASE`).all();
+  const visible = withLawyersOnly ? rows.filter((a) => a.group_count > 0) : rows;
+  const ids = new Set(visible.map((a) => a.id));
+  const tops = visible.filter((a) => !a.parent_id || !ids.has(a.parent_id));
+  const out = [];
+  for (const top of tops) {
+    const subs = top.parent_id ? [] : visible.filter((a) => a.parent_id === top.id);
+    out.push({ ...top, depth: 0, children: subs.map((c) => c.name), label: top.name });
+    for (const c of subs) out.push({ ...c, depth: 1, children: [], label: `\u2003${c.name}` });
+  }
+  return out;
+}
+
+/** Main categories only (areas that are not a sub-category), for "sub-category of" menus. */
+export function mainAreas() {
+  return db.prepare('SELECT * FROM practice_areas WHERE parent_id IS NULL ORDER BY name COLLATE NOCASE').all();
+}
+
+/**
+ * Make an area a sub-category of another (or a main category when parentId is empty).
+ * Only one level deep: the parent must be a main category, and an area with sub-categories can't move under another.
+ * Returns an error message, or null when saved.
+ */
+export function setAreaParent(id, parentId) {
+  id = Number(id);
+  parentId = Number(parentId) || null;
+  if (parentId) {
+    if (parentId === id) return 'An area cannot be a sub-category of itself.';
+    const parent = db.prepare('SELECT * FROM practice_areas WHERE id = ?').get(parentId);
+    if (!parent) return 'That main category no longer exists.';
+    if (parent.parent_id) return `"${parent.name}" is itself a sub-category, so it cannot have sub-categories.`;
+    if (db.prepare('SELECT 1 FROM practice_areas WHERE parent_id = ?').get(id)) return 'This area has its own sub-categories, so it must stay a main category.';
+  }
+  db.prepare('UPDATE practice_areas SET parent_id = ? WHERE id = ?').run(parentId, id);
+  return null;
 }
 
 /** Move every lawyer from one practice area to another, then delete the first. */
@@ -29,13 +70,19 @@ export function mergeAreas(fromId, intoId) {
   if (Number(fromId) === Number(intoId)) return;
   tx(() => {
     db.prepare('INSERT OR IGNORE INTO lawyer_practice_areas (lawyer_id, area_id) SELECT lawyer_id, ? FROM lawyer_practice_areas WHERE area_id = ?').run(intoId, fromId);
+    // Sub-categories of the merged area move under the area it was merged into (if that is a main category).
+    const into = db.prepare('SELECT parent_id FROM practice_areas WHERE id = ?').get(intoId);
+    db.prepare('UPDATE practice_areas SET parent_id = ? WHERE parent_id = ?').run(into?.parent_id ? null : intoId, fromId);
     db.prepare('DELETE FROM practice_areas WHERE id = ?').run(fromId);
   });
 }
 
-/** Delete practice areas that no lawyer (in any status) is listed under. Returns how many. */
+/** Delete practice areas that no lawyer (in any status) is listed under, keeping main categories that still have sub-categories. Returns how many. */
 export function deleteUnusedAreas() {
-  return db.prepare('DELETE FROM practice_areas WHERE id NOT IN (SELECT DISTINCT area_id FROM lawyer_practice_areas)').run().changes;
+  const del = db.prepare(`DELETE FROM practice_areas WHERE id NOT IN (SELECT DISTINCT area_id FROM lawyer_practice_areas)
+    AND id NOT IN (SELECT parent_id FROM practice_areas WHERE parent_id IS NOT NULL)`);
+  // Twice: removing empty sub-categories can leave their main category empty too.
+  return del.run().changes + del.run().changes;
 }
 
 export function areasFor(lawyerId) {
@@ -92,8 +139,9 @@ export function searchLawyers({ q, area, city, state, language, sort = 'relevanc
   }
   if (area) {
     where.push(`EXISTS (SELECT 1 FROM lawyer_practice_areas x JOIN practice_areas p ON p.id = x.area_id
-                WHERE x.lawyer_id = l.id AND (p.slug = ? OR p.name LIKE ?))`);
-    params.push(area, area);
+                WHERE x.lawyer_id = l.id AND (p.slug = ? OR p.name LIKE ?
+                  OR p.parent_id IN (SELECT id FROM practice_areas WHERE slug = ? OR name LIKE ?)))`);
+    params.push(area, area, area, area);
   }
   if (city) { where.push('l.city LIKE ?'); params.push(city); }
   if (state) { where.push('UPPER(l.state) = UPPER(?)'); params.push(state); }

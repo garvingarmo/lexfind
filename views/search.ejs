@@ -6,7 +6,7 @@
       <label><%- e('search.keywords') %> <input name="q" value="<%= f.q %>" placeholder="<%= t('search.keywordsPlaceholder') %>"></label>
       <label><%- e('search.area') %>
         <select name="area"><option value=""><%= t('search.any') %></option>
-          <% areas.forEach(a => { %><option value="<%= a.slug %>" <%= f.area === a.slug ? 'selected' : '' %>><%= a.name %></option><% }) %>
+          <% areas.forEach(a => { %><option value="<%= a.slug %>" <%= f.area === a.slug ? 'selected' : '' %>><%= a.label %></option><% }) %>
         </select>
       </label>
       <label><%- e('search.city') %> <input name="city" value="<%= f.city %>"></label>

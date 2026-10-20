@@ -2,11 +2,12 @@
 <section class="container section">
   <h2><%- e('home.areasTitle') %></h2>
   <div class="area-grid">
-    <% areas.forEach(a => { %>
+    <% areas.filter(a => a.depth === 0).forEach(a => { %>
       <a class="area-tile" href="/lawyers?area=<%= a.slug %>">
         <strong><%= a.name %></strong>
         <% if (a.description) { %><span class="small muted"><%= a.description %></span><% } %>
-        <span class="tiny"><%= a.lawyer_count %> lawyer<%= a.lawyer_count === 1 ? '' : 's' %></span>
+        <% if (a.children.length) { %><span class="tiny muted area-subs"><%= a.children.join(' · ') %></span><% } %>
+        <span class="tiny"><%= a.group_count %> lawyer<%= a.group_count === 1 ? '' : 's' %></span>
       </a>
     <% }) %>
   </div>

@@ -13,9 +13,8 @@
       <label>State (2 letters)* <input name="state" required maxlength="2" value="<%= form.state || '' %>"></label>
       <label class="span-2">Bar number* <input name="bar_number" required value="<%= form.bar_number || '' %>"></label>
       <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
-        <% const sel = [].concat(form.areas || []).map(String); areas.forEach(a => { %>
-          <label class="check"><input type="checkbox" name="areas" value="<%= a.id %>" <%= sel.includes(String(a.id)) ? 'checked' : '' %>> <%= a.name %></label>
-        <% }) %>
+        <% const sel = [].concat(form.areas || []).map(String); %>
+        <%- include('partials/area-checks', { areas, isChecked: (a) => sel.includes(String(a.id)) }) %>
       </fieldset>
       <label>Password* <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
       <label>Confirm password* <input name="password2" type="password" minlength="8" required autocomplete="new-password"></label>

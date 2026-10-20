@@ -38,7 +38,7 @@
   </div>
 </fieldset>
 <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
-  <% areas.forEach(a => { %><label class="check"><input type="checkbox" name="areas" value="<%= a.id %>" <%= selected.has(a.slug) ? 'checked' : '' %>> <%= a.name %></label><% }) %>
+  <%- include('area-checks', { areas, isChecked: (a) => selected.has(a.slug) }) %>
 </fieldset>
 <div class="span-2 photo-field">
   <%- include('avatar', { l: { name: l.name || '?', photo: l.photo }, size: 'avatar-lg' }) %>

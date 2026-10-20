@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { parse } from 'csv-parse/sync';
 import { db, tx, DATA_DIR, uniqueSlug } from './db.js';
-import { createLawyer, updateLawyer, setAreas, cleanLawyerInput, listAreas } from './models.js';
+import { createLawyer, updateLawyer, setAreas, setAreaParent, cleanLawyerInput, listAreas } from './models.js';
 import { STATES } from './ai/agent.js';
 
 const importDir = path.join(DATA_DIR, 'imports');
@@ -164,6 +164,13 @@ export function rowToLawyer(row, mapping) {
 export function runImport(staged, mapping, { status = 'active', mode = 'update', createAreas = true, verified = false, deleteSample = false } = {}) {
   const result = { created: 0, updated: 0, skipped: 0, errors: [], newAreas: [] };
   const areaByName = new Map(listAreas().map((a) => [a.name.toLowerCase(), a.id]));
+  const findArea = (name) => areaByName.get(name.toLowerCase());
+  const newArea = (name) => {
+    const id = Number(db.prepare('INSERT INTO practice_areas (name, slug) VALUES (?, ?)').run(name.slice(0, 80), uniqueSlug('practice_areas', name)).lastInsertRowid);
+    areaByName.set(name.toLowerCase(), id);
+    result.newAreas.push(name);
+    return id;
+  };
   const findByEmail = db.prepare('SELECT id FROM lawyers WHERE email = ? COLLATE NOCASE');
   const findByNameCity = db.prepare('SELECT id FROM lawyers WHERE name = ? COLLATE NOCASE AND IFNULL(city, \'\') = ? COLLATE NOCASE');
 
@@ -176,12 +183,16 @@ export function runImport(staged, mapping, { status = 'active', mode = 'update',
       if (!data.name) { result.errors.push(`Row ${line}: no name, skipped.`); result.skipped++; return; }
 
       const areaIds = [];
-      for (const a of areas) {
-        let id = areaByName.get(a.toLowerCase());
-        if (!id && createAreas) {
-          id = Number(db.prepare('INSERT INTO practice_areas (name, slug) VALUES (?, ?)').run(a.slice(0, 80), uniqueSlug('practice_areas', a)).lastInsertRowid);
-          areaByName.set(a.toLowerCase(), id);
-          result.newAreas.push(a);
+      for (const entry of areas) {
+        // "Family Law > Divorce" puts the lawyer in the Divorce sub-category of Family Law.
+        const [parentName, a] = entry.includes('>') ? entry.split('>').map((x) => x.trim()).slice(-2) : [null, entry];
+        if (!a) continue;
+        let id = findArea(a);
+        if (!id && createAreas) id = newArea(a);
+        if (id && parentName) {
+          const parentId = findArea(parentName) || (createAreas ? newArea(parentName) : null);
+          const current = db.prepare('SELECT parent_id FROM practice_areas WHERE id = ?').get(id);
+          if (parentId && !current.parent_id) setAreaParent(id, parentId); // keeps an existing grouping
         }
         if (id) areaIds.push(id);
       }

@@ -1,0 +1,7 @@
+<%# Practice-area checkboxes grouped by main category, with sub-categories indented below. %>
+<% areas.filter(a => a.depth === 0).forEach(main => { const subs = areas.filter(a => a.depth === 1 && a.parent_id === main.id); %>
+  <div class="area-group">
+    <label class="check <%= subs.length ? 'area-group-head' : '' %>"><input type="checkbox" name="areas" value="<%= main.id %>" <%= isChecked(main) ? 'checked' : '' %>> <%= main.name %></label>
+    <% subs.forEach(a => { %><label class="check area-sub-check"><input type="checkbox" name="areas" value="<%= a.id %>" <%= isChecked(a) ? 'checked' : '' %>> <%= a.name %></label><% }) %>
+  </div>
+<% }) %>

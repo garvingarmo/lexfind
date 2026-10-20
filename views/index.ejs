@@ -10,7 +10,7 @@
         <label class="sr-only" for="harea"><%= t('search.area') %></label>
         <select id="harea" name="area">
           <option value=""><%= t('home.anyArea') %></option>
-          <% areas.forEach(a => { %><option value="<%= a.slug %>"><%= a.name %></option><% }) %>
+          <% areas.forEach(a => { %><option value="<%= a.slug %>"><%= a.label %></option><% }) %>
         </select>
         <label class="sr-only" for="hstate"><%= t('search.state') %></label>
         <select id="hstate" name="state">

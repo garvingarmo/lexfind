@@ -36,7 +36,7 @@
         </select>
         <select name="area_id" id="bulk-area" aria-label="Practice area" hidden>
           <option value="">Choose practice area…</option>
-          <% areas.forEach(a => { %><option value="<%= a.id %>"><%= a.name %></option><% }) %>
+          <% areas.forEach(a => { %><option value="<%= a.id %>"><%= a.label %></option><% }) %>
         </select>
         <button class="btn btn-primary btn-sm" id="bulk-apply" disabled>Apply</button>
       </div>

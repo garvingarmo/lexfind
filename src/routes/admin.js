@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, tx, getSettings, setSetting, getSecret, setSecret, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
-import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas, setLawyerSlug, nameSlug } from '../models.js';
+import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas, mainAreas, setAreaParent, setLawyerSlug, nameSlug } from '../models.js';
 import { requireRole, flash, upload, uploadTwo, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
@@ -228,15 +228,18 @@ router.post('/lawyers/:id/research/:jobId/reject', job, (req, res) => {
 
 // --- Practice areas ------------------------------------------------------------
 
-router.get('/areas', (req, res) => res.render('admin/areas', { title: 'Practice areas', rows: listAreas() }));
+router.get('/areas', (req, res) => res.render('admin/areas', { title: 'Practice areas', rows: listAreas(), mains: mainAreas() }));
 
 router.post('/areas', (req, res) => {
   const name = (req.body.name || '').trim();
   if (!name) { flash(req, 'error', 'Name is required.'); return res.redirect('/admin/areas'); }
   try {
-    if (req.body.id) db.prepare('UPDATE practice_areas SET name = ?, description = ? WHERE id = ?').run(name, req.body.description || null, req.body.id);
-    else db.prepare('INSERT INTO practice_areas (name, slug, description) VALUES (?, ?, ?)').run(name, uniqueSlug('practice_areas', name), req.body.description || null);
-    flash(req, 'success', 'Practice area saved.');
+    let id = Number(req.body.id);
+    if (id) db.prepare('UPDATE practice_areas SET name = ?, description = ? WHERE id = ?').run(name, req.body.description || null, id);
+    else id = Number(db.prepare('INSERT INTO practice_areas (name, slug, description) VALUES (?, ?, ?)').run(name, uniqueSlug('practice_areas', name), req.body.description || null).lastInsertRowid);
+    const err = setAreaParent(id, req.body.parent_id);
+    if (err) flash(req, 'error', `Saved "${name}", but ${err.charAt(0).toLowerCase()}${err.slice(1)}`);
+    else flash(req, 'success', 'Practice area saved.');
   } catch {
     flash(req, 'error', 'A practice area with that name already exists.');
   }

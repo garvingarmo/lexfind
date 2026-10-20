@@ -3,18 +3,20 @@
   <%- include('../partials/side-nav') %>
   <div>
     <h1>Practice areas</h1>
-    <p class="muted small">Visitors only see areas with at least one active lawyer. The AI assistant uses these names and descriptions to match visitors to lawyers, so keep the list tidy and descriptions specific.</p>
+    <p class="muted small">Group areas into main categories with sub-categories (e.g. <em>Family Law</em> → <em>Divorce</em>, <em>Child Custody</em>) using the <strong>Sub-category of</strong> menu. Searching a main category also finds lawyers in its sub-categories. Visitors only see areas with at least one active lawyer. The AI assistant uses these names and descriptions to match visitors to lawyers, so keep the list tidy and descriptions specific.</p>
 
     <div class="card">
       <h2>Tidy up</h2>
-      <p class="small"><strong><%= rows.length %></strong> practice areas, <strong><%= rows.filter(a => a.total_count === 0).length %></strong> with no lawyers.</p>
+      <p class="small"><strong><%= rows.length %></strong> practice areas, <strong><%= rows.filter(a => a.depth === 0).length %></strong> main categories, <strong><%= rows.filter(a => a.total_count === 0 && !a.children.length).length %></strong> with no lawyers.</p>
       <ul class="small">
         <li><strong>Merge</strong> duplicates (e.g. "Business" into "Business Law"): the lawyers move to the area you pick and the duplicate is deleted.</li>
         <li><strong>Rename</strong> by editing the name and clicking Save.</li>
+        <li><strong>Organise</strong> by choosing a main category under <strong>Sub-category of</strong> and clicking Save. Choose "— Main category —" to move it back to the top level.</li>
+        <li>In an import sheet, write <em>Family Law &gt; Divorce</em> to put a lawyer in a sub-category (both are created if needed).</li>
       </ul>
       <form method="post" action="/admin/areas/delete-unused" data-confirm="Delete every practice area that has no lawyers?">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
-        <button class="btn btn-outline btn-sm" <%= rows.some(a => a.total_count === 0) ? '' : 'disabled' %>>Delete areas with no lawyers</button>
+        <button class="btn btn-outline btn-sm" <%= rows.some(a => a.total_count === 0 && !a.children.length) ? '' : 'disabled' %>>Delete areas with no lawyers</button>
       </form>
     </div>
 
@@ -22,24 +24,33 @@
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <label>New area name <input name="name" required></label>
       <label>Description <input name="description"></label>
+      <label>Sub-category of
+        <select name="parent_id"><option value="">— Main category —</option>
+          <% mains.forEach(m => { %><option value="<%= m.id %>"><%= m.name %></option><% }) %>
+        </select>
+      </label>
       <button class="btn btn-primary span-2">Add practice area</button>
     </form>
 
     <div class="card">
     <% rows.forEach(a => { %>
-      <div class="area-row <%= a.total_count === 0 ? 'dim' : '' %>">
+      <div class="area-row <%= a.depth ? 'area-sub' : 'area-main' %> <%= a.total_count === 0 && !a.children.length ? 'dim' : '' %>">
         <form method="post" action="/admin/areas" class="area-edit">
           <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= a.id %>">
           <input name="name" value="<%= a.name %>" aria-label="Name">
           <input name="description" value="<%= a.description || '' %>" placeholder="Description (helps the AI assistant)" aria-label="Description">
-          <span class="tiny muted nowrap" title="Active lawyers / all lawyers"><%= a.lawyer_count %> active<%= a.total_count !== a.lawyer_count ? ` / ${a.total_count}` : '' %></span>
+          <select name="parent_id" aria-label="Sub-category of" <%= a.children.length ? 'disabled title="Has its own sub-categories"' : '' %>>
+            <option value=""><%= a.children.length ? `Main · ${a.children.length} sub-categor${a.children.length === 1 ? 'y' : 'ies'}` : '— Main category —' %></option>
+            <% mains.forEach(m => { if (m.id !== a.id) { %><option value="<%= m.id %>" <%= a.parent_id === m.id ? 'selected' : '' %>>Under <%= m.name %></option><% } }) %>
+          </select>
+          <span class="tiny muted nowrap" title="Active lawyers / all lawyers"><%= a.lawyer_count %> active<%= a.total_count !== a.lawyer_count ? ` / ${a.total_count}` : '' %><%= a.children.length ? ` · ${a.group_count} incl. sub` : '' %></span>
           <button class="btn btn-outline btn-sm">Save</button>
         </form>
         <form method="post" action="/admin/areas/<%= a.id %>/merge" class="area-merge" data-confirm="Merge <%= a.name %> into the selected area? <%= a.name %> will be deleted.">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <select name="into" aria-label="Merge <%= a.name %> into" required>
             <option value="">Merge into…</option>
-            <% rows.forEach(b => { if (b.id !== a.id) { %><option value="<%= b.id %>"><%= b.name %></option><% } }) %>
+            <% rows.forEach(b => { if (b.id !== a.id) { %><option value="<%= b.id %>"><%= b.label %></option><% } }) %>
           </select>
           <button class="btn btn-ghost btn-sm">Merge</button>
         </form>
