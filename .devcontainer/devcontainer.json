@@ -10,10 +10,15 @@
       "description": "Optional. Your Claude API key, to turn on the AI assistant and AI profile research."
     }
   },
-  "postCreateCommand": "npm install && npm run seed",
+  "postCreateCommand": "npm ci --no-audit --no-fund && npm run seed",
   "postAttachCommand": "npm start",
-  "forwardPorts": [3000],
+  "forwardPorts": [
+    3000
+  ],
   "portsAttributes": {
-    "3000": { "label": "Chaldean Law", "onAutoForward": "openBrowser" }
+    "3000": {
+      "label": "Chaldean Law",
+      "onAutoForward": "openBrowser"
+    }
   }
 }

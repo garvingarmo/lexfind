@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --no-warnings=ExperimentalWarning src/server.js",
     "dev": "node --watch --no-warnings=ExperimentalWarning src/server.js",
-    "seed": "node --no-warnings=ExperimentalWarning src/seed.js"
+    "seed": "node --no-warnings=ExperimentalWarning src/seed.js",
+    "update": "bash scripts/update.sh"
   },
   "keywords": [],
   "author": "",

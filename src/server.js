@@ -63,11 +63,20 @@ app.use((req, res) => res.status(404).render('error', { title: 'Not found', mess
 app.use((err, req, res, next) => {
   console.error(err);
   if (res.headersSent) return next(err);
-  res.status(500).render('error', { title: 'Something went wrong', message: 'An unexpected error occurred. Please try again.' });
+  // Admins see the actual error so problems can be reported; visitors get a generic message.
+  const detail = req.user?.role === 'admin' ? ` Error details: ${err.message}` : '';
+  res.status(500).render('error', { title: 'Something went wrong', message: `An unexpected error occurred. Please try again.${detail}` });
 });
 
 const port = Number(process.env.PORT) || 3000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Chaldean Law running at http://localhost:${port}`);
   console.log(aiEnabled() ? `AI features enabled (${MODEL}).` : 'AI features in offline mode: set ANTHROPIC_API_KEY to enable Claude.');
+});
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use: the site is probably already running in another terminal. Stop it there, or run "npm run update" to restart it.`);
+    process.exit(1);
+  }
+  throw err;
 });
