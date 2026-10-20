@@ -174,7 +174,6 @@ export function applyEnrichment(enrichment, fields) {
     picked[f] = p[f];
   }
   const data = cleanLawyerInput(picked);
-  delete data.free_consultation; // cleanLawyerInput always sets it; research never proposes it
   updateLawyer(lawyer.id, data);
   if (fields.includes('practice_areas') && Array.isArray(p.practice_areas) && p.practice_areas.length) {
     const byName = new Map(listAreas().map((a) => [a.name.toLowerCase(), a.id]));

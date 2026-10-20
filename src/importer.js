@@ -34,7 +34,6 @@ export const IMPORT_FIELDS = [
   ['bio', 'Bio', ['bio', 'biography', 'about', 'description', 'profile', 'summary']],
   ['fee_structure', 'Fee structure', ['fees', 'fee structure', 'fee', 'billing']],
   ['hourly_rate', 'Hourly rate', ['hourly rate', 'rate', 'hourly']],
-  ['free_consultation', 'Free consultation (yes/no)', ['free consultation', 'free consult', 'consultation']],
   ['photo', 'Photo URL', ['photo', 'photo url', 'image', 'image url', 'headshot', 'picture']],
   ['social_linkedin', 'LinkedIn', ['linkedin', 'linkedin url', 'linked in']],
   ['social_facebook', 'Facebook', ['facebook', 'facebook url', 'fb']],
@@ -145,10 +144,8 @@ export function rowToLawyer(row, mapping) {
   const raw = {};
   for (const [key] of IMPORT_FIELDS) if (!['name', 'first_name', 'last_name', 'practice_areas', 'photo', 'featured'].includes(key)) raw[key] = get(key);
   raw.name = name;
-  raw.free_consultation = yes(get('free_consultation')) ? '1' : '';
   if (raw.years_experience) raw.years_experience = (raw.years_experience.match(/\d+/) || [''])[0];
   const data = cleanLawyerInput(raw);
-  if (mapping.free_consultation == null || mapping.free_consultation === '') delete data.free_consultation;
   for (const k of Object.keys(data)) if (data[k] === null || data[k] === '') delete data[k];
   if (data.state) data.state = normState(data.state);
   if (data.email && !/^\S+@\S+\.\S+$/.test(data.email)) delete data.email;
@@ -233,10 +230,10 @@ export function deleteAllLawyers({ areas = false } = {}) {
 
 export function templateCsv() {
   const headers = ['Name', 'Firm', 'Title', 'Email', 'Phone', 'Website', 'Address', 'City', 'State', 'ZIP', 'Bar Number', 'Bar Admissions',
-    'Years Experience', 'Languages', 'Education', 'Practice Areas', 'Free Consultation', 'Fee Structure', 'Hourly Rate', 'Bio', 'Photo URL'];
+    'Years Experience', 'Languages', 'Education', 'Practice Areas', 'Fee Structure', 'Hourly Rate', 'Bio', 'Photo URL'];
   const example = ['Jane Example', 'Example Law PLLC', 'Attorney', 'jane@examplelaw.com', '(248) 555-0100', 'https://examplelaw.com', '123 Main St',
     'Southfield', 'MI', '48075', 'P12345', 'Michigan (2010)', '15', 'English, Arabic, Chaldean (Sureth)', 'J.D., Wayne State University',
-    'Family Law, Immigration', 'Yes', 'Hourly', '$250', 'Jane represents families in Metro Detroit.', ''];
+    'Family Law, Immigration', 'Hourly', '$250', 'Jane represents families in Metro Detroit.', ''];
   const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
   return `${headers.map(q).join(',')}\n${example.map(q).join(',')}\n`;
 }

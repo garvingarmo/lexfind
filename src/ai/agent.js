@@ -21,9 +21,8 @@ const tools = [
         city: { type: 'string', description: 'City name. Empty string for any.' },
         language: { type: 'string', description: 'Language the lawyer must speak, e.g. "Spanish". Empty string for any.' },
         keywords: { type: 'string', description: 'Free-text keywords matched against name, firm and bio. Empty string for none.' },
-        free_consultation_only: { type: 'boolean' },
       },
-      required: ['practice_area', 'state', 'city', 'language', 'keywords', 'free_consultation_only'],
+      required: ['practice_area', 'state', 'city', 'language', 'keywords'],
       additionalProperties: false,
     },
   },
@@ -76,7 +75,7 @@ How to work:
 - If the matter is vague, still search, using the most likely practice areas or keywords from what they wrote, and recommend the best fits; you can invite them to add detail afterwards.
 - Use search_lawyers to find candidates (try related practice areas if the first search is thin), get_lawyer_profile when you need detail to choose, then call recommend_lawyers with your best 1-5 matches.
 - After recommending, write a brief reply: a plain-language summary of what kind of lawyer they need and why, and any useful next steps (e.g. documents to gather before a consultation). Keep it under about 150 words; the cards show the lawyer details.
-- Respect stated preferences: language, budget/free consultation, location.
+- Respect stated preferences such as language, budget and location.
 - Only recommend lawyers returned by the tools. Never invent lawyers, credentials, or outcomes. If there are no suitable lawyers in the directory, say so and suggest the visitor contact their state or local bar association's lawyer referral service.
 
 Boundaries:
@@ -97,7 +96,6 @@ function summarize(l) {
     practice_areas: (l.areas || []).map((a) => a.name),
     years_experience: l.years_experience,
     languages: l.languages,
-    free_consultation: Boolean(l.free_consultation),
     verified: Boolean(l.verified),
   };
 }
@@ -110,7 +108,6 @@ function runTool(name, input, state) {
       city: input.city || undefined,
       language: input.language || undefined,
       q: input.keywords || undefined,
-      freeConsult: input.free_consultation_only,
       perPage: 15,
     });
     return JSON.stringify({ total_matches: total, results: rows.map(summarize) });

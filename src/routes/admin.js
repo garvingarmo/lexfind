@@ -58,8 +58,6 @@ const BULK = {
   unverify: ["UPDATE lawyers SET verified = 0 WHERE id = ?", 'marked not verified'],
   feature: ["UPDATE lawyers SET featured = 1 WHERE id = ?", 'marked sponsored'],
   unfeature: ["UPDATE lawyers SET featured = 0 WHERE id = ?", 'no longer sponsored'],
-  free_on: ["UPDATE lawyers SET free_consultation = 1 WHERE id = ?", 'marked as offering a free consultation'],
-  free_off: ["UPDATE lawyers SET free_consultation = 0 WHERE id = ?", 'marked as not offering a free consultation'],
   add_area: ['INSERT OR IGNORE INTO lawyer_practice_areas (lawyer_id, area_id) VALUES (?, ?)', 'given the practice area'],
   remove_area: ['DELETE FROM lawyer_practice_areas WHERE lawyer_id = ? AND area_id = ?', 'removed from the practice area'],
 };

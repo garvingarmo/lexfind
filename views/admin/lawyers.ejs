@@ -24,8 +24,6 @@
             <option value="unverify">Remove verified</option>
             <option value="feature">Mark sponsored</option>
             <option value="unfeature">Remove sponsored</option>
-            <option value="free_on">Offers free consultation</option>
-            <option value="free_off">No free consultation</option>
           </optgroup>
           <optgroup label="Practice areas">
             <option value="add_area">Add practice area…</option>
@@ -52,7 +50,7 @@
             <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
             <td class="tiny"><%= l.areas.map(a => a.name).join(', ') %></td>
             <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
-            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %><%= l.free_consultation ? ' Free consult' : '' %></td>
+            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %></td>
             <td class="tiny"><% const st = inv.get(l.id).status; %><a href="/admin/lawyers/<%= l.id %>#invite"><%= { none: 'Invite', invited: 'Invited', expired: 'Expired', login: 'Claimed' }[st] %></a></td>
             <td class="right nowrap"><a href="/lawyers/<%= l.slug %>" target="_blank">View</a> · <a href="/admin/lawyers/<%= l.id %>/research">AI</a></td>
           </tr>

@@ -42,7 +42,6 @@ router.get('/lawyers', (req, res) => {
     city: (req.query.city || '').toString().slice(0, 80),
     state: (req.query.state || '').toString().slice(0, 2),
     language: (req.query.language || '').toString().slice(0, 40),
-    freeConsult: req.query.free === '1',
     sort: (req.query.sort || 'relevance').toString(),
     page: Math.max(1, parseInt(req.query.page, 10) || 1),
   };
@@ -52,7 +51,7 @@ router.get('/lawyers', (req, res) => {
   const languages = getLanguageOptions();
   const qs = (overrides) => {
     const p = new URLSearchParams();
-    const merged = { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, free: f.freeConsult ? '1' : '', sort: f.sort, page: f.page, ...overrides };
+    const merged = { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, sort: f.sort, page: f.page, ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v && !(k === 'sort' && v === 'relevance') && !(k === 'page' && v === 1)) p.set(k, v);
     return `/lawyers${p.toString() ? `?${p}` : ''}`;
   };
@@ -140,7 +139,7 @@ router.post('/api/assistant', chatLimit, async (req, res) => {
       reply,
       recommendations: recommendations.map(({ lawyer: l, reason }) => ({
         reason, name: l.name, firm: l.firm, slug: l.slug, city: l.city, state: l.state, photo: l.photo,
-        years_experience: l.years_experience, free_consultation: !!l.free_consultation, verified: !!l.verified,
+        years_experience: l.years_experience, verified: !!l.verified,
         languages: l.languages, areas: l.areas.map((a) => a.name),
       })),
     });

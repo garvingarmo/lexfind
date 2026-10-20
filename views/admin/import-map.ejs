@@ -37,7 +37,7 @@
               <td><%= [d.city, d.state].filter(Boolean).join(', ') %></td>
               <td><%= a.join(', ') %></td>
               <td class="tiny"><%= d.email || '' %><br><%= d.phone || '' %></td>
-              <td class="tiny"><%= [d.years_experience ? d.years_experience + ' yrs' : '', d.languages, d.free_consultation ? 'Free consult' : ''].filter(Boolean).join(' · ') %></td>
+              <td class="tiny"><%= [d.years_experience ? d.years_experience + ' yrs' : '', d.languages].filter(Boolean).join(' · ') %></td>
             </tr>
           <% }) %>
           </tbody>

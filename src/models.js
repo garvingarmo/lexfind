@@ -6,7 +6,7 @@ import { normalizeLanguages } from './languages.js';
 export const LAWYER_FIELDS = [
   'name', 'firm', 'title', 'bio', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip',
   'bar_number', 'bar_admissions', 'years_experience', 'languages', 'education', 'fee_structure',
-  'hourly_rate', 'free_consultation',
+  'hourly_rate',
   'social_linkedin', 'social_facebook', 'social_instagram', 'social_x', 'social_youtube', 'social_tiktok',
 ];
 
@@ -68,7 +68,7 @@ function attachAreas(rows) {
  * Search active lawyers. Every filter is optional.
  * Returns { rows, total } — featured (sponsored) listings sort first.
  */
-export function searchLawyers({ q, area, city, state, language, freeConsult, sort = 'relevance', page = 1, perPage = 12 } = {}) {
+export function searchLawyers({ q, area, city, state, language, sort = 'relevance', page = 1, perPage = 12 } = {}) {
   const where = ["l.status = 'active'"];
   const params = [];
   if (q) {
@@ -89,7 +89,6 @@ export function searchLawyers({ q, area, city, state, language, freeConsult, sor
   if (city) { where.push('l.city LIKE ?'); params.push(city); }
   if (state) { where.push('UPPER(l.state) = UPPER(?)'); params.push(state); }
   if (language) { where.push('l.languages LIKE ?'); params.push(`%${language}%`); }
-  if (freeConsult) where.push('l.free_consultation = 1');
 
   const order = {
     relevance: 'l.featured DESC, l.verified DESC, l.years_experience DESC',
@@ -126,10 +125,9 @@ export function listLawyers({ status, q } = {}) {
 export function cleanLawyerInput(body) {
   const out = {};
   for (const f of LAWYER_FIELDS) {
-    if (!(f in body) && f !== 'free_consultation') continue;
+    if (!(f in body)) continue;
     let v = body[f];
-    if (f === 'free_consultation') v = v === 'on' || v === '1' || v === 1 || v === true ? 1 : 0;
-    else if (f === 'languages') v = normalizeLanguages(v);
+    if (f === 'languages') v = normalizeLanguages(v);
     else if (f === 'years_experience') v = v === '' || v == null ? null : Math.max(0, Math.min(80, parseInt(v, 10) || 0));
     else v = v == null ? null : String(v).trim().slice(0, f === 'bio' ? 6000 : 500) || null;
     out[f] = v;

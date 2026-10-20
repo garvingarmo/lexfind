@@ -346,7 +346,6 @@
     const facts = el('ul', 'facts small');
     if (r.years_experience) facts.appendChild(el('li', null, `${r.years_experience} yrs experience`));
     if (r.languages) facts.appendChild(el('li', null, r.languages));
-    if (r.free_consultation) facts.appendChild(el('li', 'ok', 'Free consultation'));
     card.appendChild(facts);
     const btn = el('a', 'btn btn-primary btn-block', 'View profile & contact');
     btn.href = `/lawyers/${r.slug}?from=ai#contact`;

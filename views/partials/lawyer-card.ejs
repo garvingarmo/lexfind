@@ -14,7 +14,6 @@
   <ul class="facts small">
     <% if (l.years_experience) { %><li><%= l.years_experience %> <%- e('card.experience') %></li><% } %>
     <% if (l.languages) { %><li><%= l.languages %></li><% } %>
-    <% if (l.free_consultation) { %><li class="ok"><%- e('card.free') %></li><% } %>
   </ul>
   <a class="btn btn-outline btn-block" href="/lawyers/<%= l.slug %>"><%- e('card.view') %></a>
 </article>

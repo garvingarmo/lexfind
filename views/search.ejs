@@ -20,7 +20,6 @@
           <% languages.forEach(s => { %><option <%= f.language === s ? 'selected' : '' %>><%= s %></option><% }) %>
         </select>
       </label>
-      <label class="check"><input type="checkbox" name="free" value="1" <%= f.freeConsult ? 'checked' : '' %>> <%- e('search.free') %></label>
       <label><%- e('search.sortBy') %>
         <select name="sort">
           <% [['relevance',t('search.sortBest')],['experience',t('search.sortExperience')],['name',t('search.sortName')],['newest',t('search.sortNewest')]].forEach(([v, t]) => { %>
