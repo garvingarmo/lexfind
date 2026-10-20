@@ -44,7 +44,7 @@
           </div>
         </form>
       <% } %>
-      <form method="post" action="/admin/integrations/mail/test"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-outline btn-sm" <%= mail.on ? '' : 'disabled' %>>Send test email to <%= user.email %></button></form>
+      <form method="post" action="/admin/integrations/mail/test"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="tiny" for="test-to">Send a test email to</label> <input id="test-to" type="email" name="to" value="<%= user.email %>" required> <button class="btn btn-outline btn-sm" <%= mail.on ? '' : 'disabled' %>>Send test email</button></form>
     </div>
   </div>
 </section>

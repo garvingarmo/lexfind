@@ -630,15 +630,18 @@ router.post('/integrations/mail', (req, res) => {
 });
 
 router.post('/integrations/mail/test', async (req, res) => {
+  const to = String(req.body.to || '').trim() || req.user.email;
   try {
     if (!smtpEnabled()) throw new Error('Email is not set up yet.');
-    await sendMail({
-      to: req.user.email,
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error(`"${to}" is not an email address.`);
+    const info = await sendMail({
+      to,
       subject: `${getSettings().site_name}: test email`,
       text: 'This test email confirms your website can send email (password resets and lawyer invitations).',
       html: '<p>This test email confirms your website can send email (password resets and lawyer invitations).</p>',
     });
-    flash(req, 'success', `Test email sent to ${req.user.email}. Check your inbox (and spam folder).`);
+    console.log(`[mail] test email to ${to}: ${info.response}`);
+    flash(req, 'success', `Test email handed to the mail server for ${to} (server reply: ${info.response}). Check the inbox and spam folder; if it hasn't arrived in a few minutes, look it up in cPanel → Email → Track Delivery.`);
   } catch (e) {
     flash(req, 'error', `Could not send: ${e.message}`);
   }
