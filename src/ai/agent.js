@@ -67,7 +67,7 @@ const tools = [
 
 function systemPrompt() {
   const s = getSettings();
-  const areas = listAreas().map((a) => `- ${a.slug}: ${a.name}${a.description ? ` — ${a.description}` : ''}`).join('\n');
+  const areas = listAreas({ withLawyersOnly: true }).map((a) => `- ${a.slug}: ${a.name}${a.description ? ` — ${a.description}` : ''}`).join('\n');
   return `You are the matching assistant for ${s.site_name}, an online directory of lawyers. Visitors describe their legal matter in their own words; your job is to understand it and recommend lawyers from this directory who fit.
 
 How to work:

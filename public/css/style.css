@@ -289,3 +289,6 @@ div.card.inquiry { padding: 20px; }
 .claim-listing { display: flex; gap: 14px; align-items: center; background: var(--bg); border-radius: 10px; padding: 14px; margin-bottom: 18px; }
 .claim-listing .tags { margin-top: 6px; }
 .auth-card.wide { max-width: 520px; }
+.area-row { flex-wrap: wrap; }
+.area-merge { display: flex; gap: 6px; align-items: center; }
+.area-merge select { width: 170px; padding: 6px 8px; font-size: .85rem; }

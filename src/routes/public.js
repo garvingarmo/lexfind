@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
   const posts = db.prepare("SELECT * FROM posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 3").all();
   const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   res.render('index', {
-    title: null, areas: listAreas(), featured: featuredLawyers(4), posts, states,
+    title: null, areas: listAreas({ withLawyersOnly: true }), featured: featuredLawyers(4), posts, states,
     ad: pickAd('home_banner'), aiOn: aiEnabled(),
   });
 });
@@ -46,7 +46,7 @@ router.get('/lawyers', (req, res) => {
     return `/lawyers${p.toString() ? `?${p}` : ''}`;
   };
   res.render('search', {
-    title: 'Find a lawyer', f, rows, total, pages: Math.ceil(total / perPage), areas: listAreas(), states, languages,
+    title: 'Find a lawyer', f, rows, total, pages: Math.ceil(total / perPage), areas: listAreas({ withLawyersOnly: true }), states, languages,
     ad: pickAd('search_sidebar'), qs,
   });
 });

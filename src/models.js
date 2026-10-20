@@ -7,11 +7,32 @@ export const LAWYER_FIELDS = [
   'hourly_rate', 'free_consultation',
 ];
 
-export function listAreas() {
-  return db.prepare(`
-    SELECT pa.*, (SELECT COUNT(*) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
-                  WHERE lpa.area_id = pa.id AND l.status = 'active') AS lawyer_count
-    FROM practice_areas pa ORDER BY pa.name`).all();
+/**
+ * Practice areas with lawyer counts. `lawyer_count` counts active lawyers, `total_count` all of them.
+ * withLawyersOnly hides areas no active lawyer is listed under (for the public site and the AI assistant).
+ */
+export function listAreas({ withLawyersOnly = false } = {}) {
+  const rows = db.prepare(`
+    SELECT pa.*,
+      (SELECT COUNT(*) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
+       WHERE lpa.area_id = pa.id AND l.status = 'active') AS lawyer_count,
+      (SELECT COUNT(*) FROM lawyer_practice_areas lpa WHERE lpa.area_id = pa.id) AS total_count
+    FROM practice_areas pa ORDER BY pa.name COLLATE NOCASE`).all();
+  return withLawyersOnly ? rows.filter((a) => a.lawyer_count > 0) : rows;
+}
+
+/** Move every lawyer from one practice area to another, then delete the first. */
+export function mergeAreas(fromId, intoId) {
+  if (Number(fromId) === Number(intoId)) return;
+  tx(() => {
+    db.prepare('INSERT OR IGNORE INTO lawyer_practice_areas (lawyer_id, area_id) SELECT lawyer_id, ? FROM lawyer_practice_areas WHERE area_id = ?').run(intoId, fromId);
+    db.prepare('DELETE FROM practice_areas WHERE id = ?').run(fromId);
+  });
+}
+
+/** Delete practice areas that no lawyer (in any status) is listed under. Returns how many. */
+export function deleteUnusedAreas() {
+  return db.prepare('DELETE FROM practice_areas WHERE id NOT IN (SELECT DISTINCT area_id FROM lawyer_practice_areas)').run().changes;
 }
 
 export function areasFor(lawyerId) {

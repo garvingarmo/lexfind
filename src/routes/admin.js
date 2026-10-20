@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, tx, getSettings, setSetting, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
-import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas } from '../models.js';
+import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas } from '../models.js';
 import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled } from '../ai/client.js';
@@ -180,6 +180,24 @@ router.post('/areas', (req, res) => {
   } catch {
     flash(req, 'error', 'A practice area with that name already exists.');
   }
+  res.redirect('/admin/areas');
+});
+
+router.post('/areas/:id/merge', (req, res) => {
+  const from = db.prepare('SELECT * FROM practice_areas WHERE id = ?').get(req.params.id);
+  const into = db.prepare('SELECT * FROM practice_areas WHERE id = ?').get(req.body.into);
+  if (!from || !into || from.id === into.id) {
+    flash(req, 'error', 'Choose a different practice area to merge into.');
+  } else {
+    mergeAreas(from.id, into.id);
+    flash(req, 'success', `Merged "${from.name}" into "${into.name}". Its lawyers are now listed under "${into.name}".`);
+  }
+  res.redirect('/admin/areas');
+});
+
+router.post('/areas/delete-unused', (req, res) => {
+  const n = deleteUnusedAreas();
+  flash(req, 'success', n ? `Deleted ${n} practice area${n === 1 ? '' : 's'} with no lawyers.` : 'There were no unused practice areas.');
   res.redirect('/admin/areas');
 });
 

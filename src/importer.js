@@ -113,6 +113,25 @@ function normState(v) {
 
 const yes = (v) => /^(y|yes|true|1|x|✓|✔|free)$/i.test(String(v || '').trim());
 
+/**
+ * Split a cell like "Family Law, Licensing (ABC, Tobacco, etc.) / Probate" into practice areas.
+ * Separators are , ; | / and new lines, except inside brackets.
+ */
+export function splitAreas(text) {
+  const out = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of String(text || '')) {
+    if (ch === '(' || ch === '[') depth++;
+    if ((ch === ')' || ch === ']') && depth > 0) depth--;
+    if (depth === 0 && /[,;|/\n]/.test(ch)) { out.push(cur); cur = ''; } else cur += ch;
+  }
+  out.push(cur);
+  const seen = new Set();
+  return out.map((a) => a.replace(/\s+/g, ' ').trim())
+    .filter((a) => a && !seen.has(a.toLowerCase()) && seen.add(a.toLowerCase()));
+}
+
 /** Convert one spreadsheet row into listing data using the column mapping. */
 export function rowToLawyer(row, mapping) {
   const get = (key) => (mapping[key] != null && mapping[key] !== '' ? String(row[mapping[key]] ?? '').trim() : '');
@@ -130,7 +149,7 @@ export function rowToLawyer(row, mapping) {
   const photo = get('photo');
   if (/^https:\/\/\S+$/i.test(photo)) data.photo = photo.slice(0, 500);
   if (mapping.featured != null && mapping.featured !== '') data.featured = yes(get('featured')) ? 1 : 0;
-  const areas = get('practice_areas').split(/[,;|\/\n]+/).map((a) => a.trim()).filter(Boolean);
+  const areas = splitAreas(get('practice_areas'));
   return { data, areas };
 }
 
