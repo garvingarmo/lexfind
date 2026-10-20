@@ -3,6 +3,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import crypto from 'node:crypto';
 import path from 'node:path';
+import fs from 'node:fs';
 import os from 'node:os';
 import { ROOT, db } from './db.js';
 import { SqliteStore, locals, csrfUnlessMultipart, uploadDir } from './middleware.js';
@@ -22,6 +23,12 @@ if (prod) app.set('trust proxy', 1);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(ROOT, 'views'));
+// Version stamp for CSS/JS URLs: changes whenever those files change, so browsers never keep a
+// stale copy after an update (they are cached for 7 days otherwise).
+app.locals.assetV = crypto.createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'css', 'style.css')))
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'js', 'app.js')))
+  .digest('hex').slice(0, 10);
 
 app.use(helmet({
   contentSecurityPolicy: {
