@@ -194,8 +194,21 @@ export const DEFAULT_SETTINGS = {
 export function getSettings() {
   const rows = db.prepare('SELECT key, value FROM settings').all();
   const out = { ...DEFAULT_SETTINGS };
-  for (const r of rows) out[r.key] = r.value;
+  for (const r of rows) if (!r.key.startsWith('secret_')) out[r.key] = r.value;
   return out;
+}
+
+/**
+ * Credentials saved from Admin → Integrations (API key, SMTP). Kept out of getSettings() so they
+ * never reach page templates. Environment variables take precedence over these.
+ */
+export function getSecret(name) {
+  return db.prepare('SELECT value FROM settings WHERE key = ?').get(`secret_${name}`)?.value || '';
+}
+
+export function setSecret(name, value) {
+  if (value) setSetting(`secret_${name}`, value);
+  else db.prepare('DELETE FROM settings WHERE key = ?').run(`secret_${name}`);
 }
 
 export function setSetting(key, value) {

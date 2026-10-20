@@ -1,0 +1,50 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Integrations</h1>
+
+    <div class="card stack">
+      <div class="section-head"><h2>Claude AI</h2><span class="status status-<%= ai.on ? 'active' : 'draft' %>"><%= ai.on ? 'On' : 'Off' %></span></div>
+      <p class="small muted">Powers the AI lawyer-match assistant and AI profile research. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com → API Keys</a> (add some credit under Billing first).</p>
+      <% if (ai.fromEnv) { %>
+        <p class="small">The key is set by the server's <code>ANTHROPIC_API_KEY</code> setting (<%= ai.masked %>), which takes priority over this page.</p>
+      <% } else { %>
+        <form method="post" action="/admin/integrations/ai" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <label>Anthropic API key <% if (ai.masked) { %><span class="tiny muted">(saved: <%= ai.masked %>; paste a new one to replace it)</span><% } %>
+            <input name="api_key" type="password" autocomplete="off" placeholder="sk-ant-…">
+          </label>
+          <div class="actions start">
+            <button class="btn btn-primary btn-sm">Save key</button>
+            <% if (ai.masked) { %><button class="btn btn-ghost btn-sm" name="remove" value="1" data-confirm="Remove the API key? AI features will switch off.">Remove key</button><% } %>
+          </div>
+        </form>
+      <% } %>
+      <form method="post" action="/admin/integrations/ai/test"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-outline btn-sm" <%= ai.on ? '' : 'disabled' %>>Test connection</button> <span class="tiny muted">Model: <%= ai.model %></span></form>
+    </div>
+
+    <div class="card stack">
+      <div class="section-head"><h2>Email</h2><span class="status status-<%= mail.on ? 'active' : 'draft' %>"><%= mail.on ? 'On' : 'Off' %></span></div>
+      <p class="small muted">Used for "Forgot password" and lawyer invitation emails. Use the details of a mailbox from cPanel → Email Accounts.</p>
+      <% if (mail.fromEnv) { %>
+        <p class="small">Email is set by the server's <code>SMTP_*</code> settings, which take priority over this page.</p>
+      <% } else { %>
+        <form method="post" action="/admin/integrations/mail" class="form-grid">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <label>Mail server (SMTP host) <input name="smtp_host" value="<%= mail.host %>" placeholder="ecoserver.ecomobile.com"></label>
+          <label>Port <input name="smtp_port" type="number" value="<%= mail.port %>"></label>
+          <label>Username <input name="smtp_user" value="<%= mail.user %>" placeholder="noreply@chaldeanlaw.com" autocomplete="off"></label>
+          <label>Password <% if (mail.passMasked) { %><span class="tiny muted">(saved; leave blank to keep)</span><% } %><input name="smtp_pass" type="password" autocomplete="new-password"></label>
+          <label class="span-2">Send emails as <input name="mail_from" value="<%= mail.from %>" placeholder="Chaldean Law <noreply@chaldeanlaw.com>"></label>
+          <div class="actions start span-2">
+            <button class="btn btn-primary btn-sm">Save email settings</button>
+            <% if (mail.on) { %><button class="btn btn-ghost btn-sm" name="remove" value="1" data-confirm="Remove the email settings?">Remove</button><% } %>
+          </div>
+        </form>
+      <% } %>
+      <form method="post" action="/admin/integrations/mail/test"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-outline btn-sm" <%= mail.on ? '' : 'disabled' %>>Send test email to <%= user.email %></button></form>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

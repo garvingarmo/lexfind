@@ -1,11 +1,12 @@
 // Site administration: listings, practice areas, sponsored ads, blog, inquiries, settings, AI research.
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { db, tx, getSettings, setSetting, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
+import { db, tx, getSettings, setSetting, getSecret, setSecret, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
 import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas } from '../models.js';
 import { requireRole, flash, upload, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
-import { aiEnabled } from '../ai/client.js';
+import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
+import { mailConfig, mailEnabled as smtpEnabled, sendMail } from '../mailer.js';
 import multer from 'multer';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -559,6 +560,74 @@ router.post('/lawyers/:id/invite/revoke', (req, res) => {
   db.prepare('UPDATE invites SET revoked = 1 WHERE lawyer_id = ? AND used_at IS NULL').run(req.params.id);
   flash(req, 'success', 'Invitation link cancelled.');
   res.redirect(`/admin/lawyers/${req.params.id}#invite`);
+});
+
+// --- Integrations: Anthropic API key and outgoing email ------------------------------
+
+const mask = (v) => (v ? `••••${String(v).slice(-4)}` : '');
+
+router.get('/integrations', (req, res) => {
+  const mail = mailConfig();
+  res.render('admin/integrations', {
+    title: 'Integrations',
+    ai: { on: aiEnabled(), fromEnv: Boolean(process.env.ANTHROPIC_API_KEY), masked: mask(apiKey()), model: MODEL },
+    mail: { ...mail, pass: undefined, passMasked: mask(mail.pass), on: smtpEnabled(), fromEnv: Boolean(process.env.SMTP_HOST) },
+  });
+});
+
+router.post('/integrations/ai', (req, res) => {
+  const key = (req.body.api_key || '').trim();
+  if (req.body.remove) { setSecret('anthropic_api_key', ''); flash(req, 'success', 'Anthropic API key removed.'); }
+  else if (!key) flash(req, 'error', 'Paste your API key first.');
+  else if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(key)) flash(req, 'error', 'That does not look like an Anthropic API key (it should start with sk-ant-).');
+  else { setSecret('anthropic_api_key', key); flash(req, 'success', 'API key saved. Click "Test connection" to check it.'); }
+  res.redirect('/admin/integrations');
+});
+
+router.post('/integrations/ai/test', async (req, res) => {
+  try {
+    if (!aiEnabled()) throw new Error('No API key saved yet.');
+    const m = await getClient().models.retrieve(MODEL);
+    flash(req, 'success', `Connected to Claude (${m.display_name || m.id}). The AI assistant and profile research are on.`);
+  } catch (e) {
+    const msg = e.status === 401 ? 'The key was rejected. Check you copied all of it, or create a new key.'
+      : e.status === 403 ? 'The key has no access. Check your Anthropic account billing.'
+      : e.message;
+    flash(req, 'error', `Could not connect: ${msg}`);
+  }
+  res.redirect('/admin/integrations');
+});
+
+router.post('/integrations/mail', (req, res) => {
+  const b = req.body;
+  if (b.remove) {
+    for (const k of ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'mail_from']) setSecret(k, '');
+    flash(req, 'success', 'Email settings removed.');
+    return res.redirect('/admin/integrations');
+  }
+  setSecret('smtp_host', (b.smtp_host || '').trim());
+  setSecret('smtp_port', String(parseInt(b.smtp_port, 10) || 465));
+  setSecret('smtp_user', (b.smtp_user || '').trim());
+  if (b.smtp_pass) setSecret('smtp_pass', b.smtp_pass);
+  setSecret('mail_from', (b.mail_from || '').trim());
+  flash(req, 'success', 'Email settings saved. Click "Send test email" to check them.');
+  res.redirect('/admin/integrations');
+});
+
+router.post('/integrations/mail/test', async (req, res) => {
+  try {
+    if (!smtpEnabled()) throw new Error('Email is not set up yet.');
+    await sendMail({
+      to: req.user.email,
+      subject: `${getSettings().site_name}: test email`,
+      text: 'This test email confirms your website can send email (password resets and lawyer invitations).',
+      html: '<p>This test email confirms your website can send email (password resets and lawyer invitations).</p>',
+    });
+    flash(req, 'success', `Test email sent to ${req.user.email}. Check your inbox (and spam folder).`);
+  } catch (e) {
+    flash(req, 'error', `Could not send: ${e.message}`);
+  }
+  res.redirect('/admin/integrations');
 });
 
 export default router;

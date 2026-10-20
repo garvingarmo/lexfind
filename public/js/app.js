@@ -3,7 +3,7 @@
 
   // Confirm before destructive form submits.
   document.addEventListener('submit', (e) => {
-    const msg = e.target.dataset.confirm;
+    const msg = e.submitter?.dataset.confirm || e.target.dataset.confirm;
     if (msg && !confirm(msg)) e.preventDefault();
   });
 

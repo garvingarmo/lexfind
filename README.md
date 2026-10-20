@@ -81,6 +81,7 @@ If the database has no users, the server creates the default practice areas and 
 
 chaldeanlaw.com runs as a cPanel **Web App** named `chaldeanlaw`, built from this repository's `main` branch on Node 22.
 - **Updating:** redeploy the app in cPanel. It pulls from GitHub, then runs `npm install` and `npm run start`.
+- **Integrations:** the Anthropic API key and the SMTP email settings can be entered in **Admin → Integrations**, with test buttons; no cPanel access needed. Environment variables, if set, take priority.
 - **Settings:** environment variables are set in the Web App's settings (`NODE_ENV`, `SESSION_SECRET`, `PUBLIC_URL`, `NOINDEX`, `ANTHROPIC_API_KEY`, and the SMTP variables).
 - **NGINX caching must stay off** for this account (cPanel → NGINX Manager). When it was on, the proxy served one visitor's cached page, CSRF token included, to everyone. The app now also sends `Cache-Control: private, no-store`.
 - **Do not set `DATA_DIR`** to a path in the home directory. Web Apps run in a container, so such a path lives inside the container and is wiped on every redeploy. The default `data/` and `public/uploads/` folders inside the app persist across redeploys; this was tested.
