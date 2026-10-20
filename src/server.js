@@ -59,6 +59,8 @@ const noindex = Boolean(process.env.NOINDEX && process.env.NOINDEX !== '0');
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(noindex ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /invite\n'));
 if (noindex) app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
+// Third-party browser scripts, served from our own domain (the CSP only allows our own scripts).
+app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'public, max-age=604800').sendFile(path.join(ROOT, 'node_modules', 'sortablejs', 'Sortable.min.js')));
 // Appearance settings as a stylesheet; the URL carries a version, so it can be cached long-term.
 app.get('/theme.css', (req, res) => res.type('text/css').set('Cache-Control', 'public, max-age=31536000, immutable').send(themeCss()));
 

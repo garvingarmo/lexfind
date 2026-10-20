@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, tx, getSettings, setSetting, getSecret, setSecret, DEFAULT_SETTINGS, uniqueSlug, slugify } from '../db.js';
-import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas, mainAreas, setAreaParent, setLawyerSlug, nameSlug } from '../models.js';
+import { listAreas, listLawyers, getLawyer, cleanLawyerInput, createLawyer, updateLawyer, setAreas, mergeAreas, deleteUnusedAreas, mainAreas, setAreaParent, saveAreaTree, setLawyerSlug, nameSlug } from '../models.js';
 import { requireRole, flash, upload, uploadTwo, uploadedPath, verifyCsrf } from '../middleware.js';
 import { startEnrichment, getEnrichment, diffRows, applyEnrichment } from '../ai/enrich.js';
 import { aiEnabled, apiKey, getClient, MODEL } from '../ai/client.js';
@@ -246,13 +246,19 @@ router.post('/areas', (req, res) => {
     let id = Number(req.body.id);
     if (id) db.prepare('UPDATE practice_areas SET name = ?, description = ? WHERE id = ?').run(name, req.body.description || null, id);
     else id = Number(db.prepare('INSERT INTO practice_areas (name, slug, description) VALUES (?, ?, ?)').run(name, uniqueSlug('practice_areas', name), req.body.description || null).lastInsertRowid);
-    const err = setAreaParent(id, req.body.parent_id);
+    const err = 'parent_id' in req.body ? setAreaParent(id, req.body.parent_id) : null;
     if (err) flash(req, 'error', `Saved "${name}", but ${err.charAt(0).toLowerCase()}${err.slice(1)}`);
     else flash(req, 'success', 'Practice area saved.');
   } catch {
     flash(req, 'error', 'A practice area with that name already exists.');
   }
   res.redirect('/admin/areas');
+});
+
+router.post('/areas/order.json', (req, res) => {
+  const err = saveAreaTree(req.body?.tree);
+  if (err) return res.status(400).json({ error: err });
+  res.json({ ok: true });
 });
 
 router.post('/areas/:id/merge', (req, res) => {

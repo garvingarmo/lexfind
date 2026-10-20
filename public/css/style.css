@@ -244,11 +244,17 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 div.inquiry { padding: 10px 0; border-bottom: 1px solid var(--line); }
 div.card.inquiry { padding: 20px; }
 .area-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.area-row.area-main input[name="name"] { font-weight: 600; }
-.area-row.area-sub { padding-left: 28px; position: relative; }
-.area-row.area-sub::before { content: "↳"; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.area-tree, .area-tree-subs { list-style: none; margin: 0; padding: 0; }
+.area-tree > li > .area-row input[name="name"] { font-weight: 600; }
+.area-tree-subs { margin-left: 34px; padding-left: 10px; border-left: 2px solid var(--line); min-height: 6px; }
+.area-tree.is-dragging .area-tree-subs { min-height: 34px; border-left-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, transparent); border-radius: 0 6px 6px 0; }
+.drag-handle { cursor: grab; color: var(--muted); font-size: 1.2rem; line-height: 1; padding: 6px 4px; user-select: none; touch-action: none; }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle-demo { color: var(--muted); }
+.area-ghost { opacity: .4; }
+.area-chosen > .area-row { background: var(--surface); box-shadow: var(--shadow); border-radius: 8px; }
 .area-edit select { padding: 6px 8px; font-size: .85rem; }
-.area-edit { display: grid; grid-template-columns: minmax(150px, 1fr) 1.6fr 190px auto auto; flex: 1 1 100%; gap: 8px; align-items: center; }
+.area-edit { display: grid; grid-template-columns: minmax(150px, 1fr) 1.6fr auto auto; flex: 1 1 calc(100% - 40px); gap: 8px; align-items: center; }
 .thumb { max-width: 220px; border-radius: 8px; display: block; margin-bottom: 8px; }
 .sources li { margin-bottom: 6px; word-break: break-word; }
 .auth-card { max-width: 440px; margin: 0 auto; }

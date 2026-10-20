@@ -18,6 +18,8 @@ export const LAWYER_FIELDS = [
  * withLawyersOnly hides areas no active lawyer is listed under (for the public site and the AI assistant);
  * a main category stays when one of its sub-categories has lawyers.
  */
+const AREA_ORDER = 'pa.sort_order IS NULL, pa.sort_order, pa.name COLLATE NOCASE';
+
 export function listAreas({ withLawyersOnly = false } = {}) {
   const rows = db.prepare(`
     SELECT pa.*, parent.name AS parent_name,
@@ -28,7 +30,7 @@ export function listAreas({ withLawyersOnly = false } = {}) {
        JOIN practice_areas x ON x.id = lpa.area_id
        WHERE (x.id = pa.id OR x.parent_id = pa.id) AND l.status = 'active') AS group_count
     FROM practice_areas pa LEFT JOIN practice_areas parent ON parent.id = pa.parent_id
-    ORDER BY pa.name COLLATE NOCASE`).all();
+    ORDER BY ${AREA_ORDER}`).all();
   const visible = withLawyersOnly ? rows.filter((a) => a.group_count > 0) : rows;
   const ids = new Set(visible.map((a) => a.id));
   const tops = visible.filter((a) => !a.parent_id || !ids.has(a.parent_id));
@@ -43,7 +45,43 @@ export function listAreas({ withLawyersOnly = false } = {}) {
 
 /** Main categories only (areas that are not a sub-category), for "sub-category of" menus. */
 export function mainAreas() {
-  return db.prepare('SELECT * FROM practice_areas WHERE parent_id IS NULL ORDER BY name COLLATE NOCASE').all();
+  return db.prepare(`SELECT * FROM practice_areas pa WHERE parent_id IS NULL ORDER BY ${AREA_ORDER}`).all();
+}
+
+/**
+ * Save the organiser's arrangement: [{ id, children: [id, …] }, …] in display order. Areas listed at
+ * the top level become main categories, children become their sub-categories. Areas not mentioned keep
+ * their place. Returns an error message, or null when saved.
+ */
+export function saveAreaTree(tree) {
+  if (!Array.isArray(tree)) return 'Nothing to save.';
+  const exists = new Set(db.prepare('SELECT id FROM practice_areas').all().map((a) => a.id));
+  const seen = new Set();
+  const plan = [];
+  for (const node of tree) {
+    const id = Number(node?.id);
+    if (!exists.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    const children = [];
+    for (const c of Array.isArray(node.children) ? node.children : []) {
+      const cid = Number(c);
+      if (!exists.has(cid) || seen.has(cid)) continue;
+      seen.add(cid);
+      children.push(cid);
+    }
+    plan.push({ id, children });
+  }
+  // One level only: an area with sub-categories can't itself be placed under another.
+  const parents = new Set(plan.filter((n) => n.children.length).map((n) => n.id));
+  if (plan.some((n) => n.children.some((c) => parents.has(c)))) return 'An area with sub-categories cannot be moved under another area.';
+  tx(() => {
+    const set = db.prepare('UPDATE practice_areas SET parent_id = ?, sort_order = ? WHERE id = ?');
+    plan.forEach((n, i) => {
+      set.run(null, i, n.id);
+      n.children.forEach((c, j) => set.run(n.id, j, c));
+    });
+  });
+  return null;
 }
 
 /**
@@ -61,7 +99,8 @@ export function setAreaParent(id, parentId) {
     if (parent.parent_id) return `"${parent.name}" is itself a sub-category, so it cannot have sub-categories.`;
     if (db.prepare('SELECT 1 FROM practice_areas WHERE parent_id = ?').get(id)) return 'This area has its own sub-categories, so it must stay a main category.';
   }
-  db.prepare('UPDATE practice_areas SET parent_id = ? WHERE id = ?').run(parentId, id);
+  // A newly grouped area goes to the end of its new list.
+  db.prepare('UPDATE practice_areas SET sort_order = CASE WHEN parent_id IS ? THEN sort_order ELSE NULL END, parent_id = ? WHERE id = ?').run(parentId, parentId, id);
   return null;
 }
 

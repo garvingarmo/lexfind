@@ -210,6 +210,7 @@ if (addColumn('ads', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
 }
 addColumn('lawyers', 'sort_name', 'TEXT'); // "last first", for sorting by surname
 for (const n of ['linkedin', 'facebook', 'instagram', 'x', 'youtube', 'tiktok']) addColumn('lawyers', `social_${n}`, 'TEXT');
+addColumn('practice_areas', 'sort_order', 'INTEGER'); // admin's drag-and-drop order; unsorted areas follow alphabetically
 addColumn('practice_areas', 'parent_id', 'INTEGER REFERENCES practice_areas(id) ON DELETE SET NULL'); // sub-category of
 addColumn('posts', 'format', "TEXT NOT NULL DEFAULT 'markdown'");
 if (addColumn('posts', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {

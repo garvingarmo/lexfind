@@ -30,6 +30,61 @@
   const refer = document.getElementById('refer');
   if (refer && location.hash === '#refer') refer.open = true;
 
+  // Admin → Practice areas: drag-and-drop main categories and sub-categories (one level deep).
+  const areaTree = document.getElementById('area-tree');
+  if (areaTree && window.Sortable) {
+    const status = document.getElementById('area-order-status');
+    const show = (msg) => { if (status) status.textContent = msg; };
+    const subLists = () => areaTree.querySelectorAll(':scope > li > .area-tree-subs');
+    const options = {
+      group: 'areas', handle: '.drag-handle', animation: 150, forceFallback: true, fallbackOnBody: true, swapThreshold: 0.6,
+      ghostClass: 'area-ghost', chosenClass: 'area-chosen',
+      // A main category with its own sub-categories can't be dropped under another one.
+      onMove: (ev) => !(ev.to.classList.contains('area-tree-subs') && ev.dragged.querySelector('.area-tree-subs > li')),
+      onStart: () => areaTree.classList.add('is-dragging'),
+      onEnd: () => { areaTree.classList.remove('is-dragging'); normalise(); save(); },
+    };
+    // Every main category has a (possibly empty) sub-list to drop into; sub-categories have none.
+    const normalise = () => {
+      areaTree.querySelectorAll(':scope > li').forEach((li) => {
+        if (!li.querySelector(':scope > .area-tree-subs')) {
+          const ul = document.createElement('ul');
+          ul.className = 'area-tree-subs';
+          li.appendChild(ul);
+          Sortable.create(ul, options);
+        }
+        li.classList.remove('is-sub');
+      });
+      subLists().forEach((ul) => {
+        ul.dataset.parent = ul.parentElement.dataset.id;
+        ul.querySelectorAll(':scope > li').forEach((li) => {
+          li.classList.add('is-sub');
+          li.querySelector(':scope > .area-tree-subs')?.remove();
+        });
+      });
+    };
+    const save = async () => {
+      const tree = [...areaTree.querySelectorAll(':scope > li')].map((li) => ({
+        id: Number(li.dataset.id),
+        children: [...li.querySelectorAll(':scope > .area-tree-subs > li')].map((c) => Number(c.dataset.id)),
+      }));
+      show('Saving…');
+      try {
+        const r = await fetch(areaTree.dataset.save, {
+          method: 'POST', headers: { 'content-type': 'application/json', 'x-csrf-token': csrf }, body: JSON.stringify({ tree }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || 'Could not save.');
+        show('Saved ✓');
+      } catch (e) {
+        show(`${e.message} Reload the page to see the saved order.`);
+      }
+    };
+    Sortable.create(areaTree, options);
+    subLists().forEach((ul) => Sortable.create(ul, options));
+    normalise();
+  }
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {
