@@ -17,6 +17,7 @@ import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings, SORT_LABELS, 
 import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
 import { watchApprovals } from '../members.js';
 import { allReferrals } from '../referrals.js';
+import { listBackups, backupPath, streamFullBackup } from '../backup.js';
 import { baseUrl } from '../invites.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -374,6 +375,20 @@ router.post('/posts/:id/delete', (req, res) => {
 });
 
 // --- Inquiries ---------------------------------------------------------------------
+
+router.get('/backups', (req, res) => res.render('admin/backups', { title: 'Backups', rows: listBackups() }));
+
+router.get('/backups/download', (req, res) => {
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.set('Content-Type', 'application/gzip').attachment(`chaldean-law-backup-${stamp}.tar.gz`);
+  streamFullBackup(res);
+});
+
+router.get('/backups/:name', (req, res, next) => {
+  const file = backupPath(req.params.name);
+  if (!file) return next();
+  res.download(file, req.params.name, (err) => { if (err && !res.headersSent) next(); });
+});
 
 router.get('/referrals', (req, res) => res.render('admin/referrals', { title: 'Referrals', rows: allReferrals() }));
 

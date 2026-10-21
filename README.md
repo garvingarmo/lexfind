@@ -150,3 +150,13 @@ an Install button in Chrome, Edge and Android, short instructions in iPhone, iPa
 "Not now" hides it for 30 days on that device. Turn it off in **Admin → Homepage → Install as an app**;
 the wording is under **Admin → Texts → Install app prompt**. The service worker caches nothing but an
 offline page, because pages are personal to the signed-in member.
+
+## Backups and self-repair
+
+- **Admin → Backups**: download a full backup (`.tar.gz` with `data/directory.db` and the uploads), and
+  the nightly database copies the site keeps for 14 days in `data/backups/`.
+- **`scripts/watchdog.sh`**: a root cron job for cPanel Web Apps hosting. Every minute it checks the site
+  on its local port; if it is down (and cPanel isn't deploying) it renames the app folder back from
+  `*.bak` and recreates the container with its port published — the two things a cPanel update broke on
+  2026-10-21. Install instructions are at the top of the script; it logs to
+  `/var/log/chaldeanlaw-watchdog.log`.

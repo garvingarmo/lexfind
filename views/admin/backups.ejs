@@ -1,0 +1,38 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Backups</h1>
+
+    <div class="card stack">
+      <h2>Download a full backup</h2>
+      <p class="small muted">One file with everything that isn't in the site's code: all lawyers, members, practice areas, blog posts, settings, inquiries and referrals (the database), plus every uploaded photo and logo. Keep a copy somewhere other than this server — your computer, Google Drive or Dropbox — for example once a week.</p>
+      <div class="actions start"><a class="btn btn-primary" href="/admin/backups/download">Download full backup (.tar.gz)</a></div>
+      <p class="tiny muted">Opens with 7-Zip on Windows, or by double-clicking on a Mac. Contains <code>data/directory.db</code> and the <code>uploads</code> folder.</p>
+    </div>
+
+    <div class="card">
+      <h2>Nightly copies</h2>
+      <p class="small muted">The site saves a copy of its database every day and keeps the last 14 days, so a mistake (or a server problem) can be undone. These are stored on the same server, so also download a full backup now and then.</p>
+      <% if (!rows.length) { %><p class="muted">No copies yet — the first one is made within an hour of the site starting.</p><% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Size</th><th></th></tr></thead>
+          <tbody>
+          <% rows.forEach(b => { %>
+            <tr><td><%= b.date %></td><td class="small"><%= (b.size / 1024 / 1024).toFixed(2) %> MB</td>
+            <td><a class="btn btn-outline btn-sm" href="/admin/backups/<%= b.name %>">Download</a></td></tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="card small">
+      <h2>Restoring</h2>
+      <p class="muted">To roll back to a copy, the database file <code>directory.db</code> in the app's <code>data</code> folder is replaced with the backup while the site is stopped. Ask for help with this — it replaces everything changed since that backup.</p>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

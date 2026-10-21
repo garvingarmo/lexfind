@@ -16,8 +16,10 @@ import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import adminRoutes from './routes/admin.js';
 import { aiEnabled, MODEL } from './ai/client.js';
+import { scheduleBackups } from './backup.js';
 
 bootstrapIfEmpty();
+scheduleBackups();
 applyAdminReset();
 const renamed = migrateSlugsToNames();
 if (renamed) console.log(`Changed ${renamed} lawyer profile URLs to first-last name (old URLs redirect).`);
