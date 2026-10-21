@@ -2,8 +2,10 @@
 # Self-repair for the site on cPanel Web Apps. Run by root's cron every minute (and at boot).
 #
 # If the site doesn't answer on its local port twice in a row, it:
-#   1. renames the app folder back if a cPanel update renamed it to *.bak, and
-#   2. recreates the container with its port published (cPanel updates have dropped it).
+#   1. renames the app folder back if a cPanel update renamed it to *.bak,
+#   2. stops cPanel's systemd service for the container (it would otherwise stop the replacement),
+#   3. recreates the container with its port published (cPanel updates have dropped it), and
+#   4. regenerates that service for the new container, so it restarts the site after a crash or reboot.
 # It does nothing while cPanel is deploying the app, or while the site is healthy.
 #
 # Install (as root):
@@ -28,6 +30,9 @@ DIR="$BASE/$CONTAINER"
 log() { echo "[$(date -u '+%Y-%m-%d %H:%M:%S UTC')] $*" >> "$LOG"; }
 healthy() { curl -fsS -m 10 "http://127.0.0.1:$HOST_PORT/healthz" 2>/dev/null | grep -q '"ok":true'; }
 as_account() { su -s /bin/bash - "$ACCOUNT" -c "$1"; }
+# systemd --user for the account (cPanel runs each container as a user service).
+UNIT="container-$CONTAINER.service"
+user_systemctl() { as_account "export XDG_RUNTIME_DIR=/run/user/\$(id -u); systemctl --user $1"; }
 alert() {
   [ -n "$ALERT_EMAIL" ] && [ -x /usr/sbin/sendmail ] || return 0
   printf 'To: %s\nSubject: [%s] %s\n\n%s\n\nLog: %s on %s\n' "$ALERT_EMAIL" "$APP" "$1" "$2" "$LOG" "$(hostname)" | /usr/sbin/sendmail -t
@@ -58,11 +63,18 @@ if [ ! -f "$DIR/webapp/package.json" ]; then
   exit 1
 fi
 
+# cPanel's service tracks the old container; if left running it stops the new one and restarts its own.
+user_systemctl "stop $UNIT" >> "$LOG" 2>&1
+user_systemctl "reset-failed $UNIT" >> "$LOG" 2>&1
 as_account "podman rm -f $CONTAINER" >> "$LOG" 2>&1
-as_account "podman run -d --name $CONTAINER --restart=always -p 127.0.0.1:$HOST_PORT:$APP_PORT --memory=512m \
+as_account "podman run -d --name $CONTAINER -p 127.0.0.1:$HOST_PORT:$APP_PORT --memory=512m \
   --log-driver=k8s-file --log-opt=path=/home/$ACCOUNT/.cpanel/webapp-logs/$APP/app.log --log-opt=max-size=10m \
   -v $DIR/webapp:/app -w /app --env-file $DIR/webapp/.env -e NODE_ENV=production -e PORT=$APP_PORT \
   --entrypoint /bin/sh $IMAGE -c 'npm run start'" >> "$LOG" 2>&1
+# Point the service at the new container, the same way cPanel generates it, and let it take over.
+as_account "cd ~/.config/systemd/user 2>/dev/null && podman generate systemd --name $CONTAINER --restart-policy=on-failure --restart-sec=5 --start-timeout=70 --stop-timeout=10 > $UNIT.new 2>/dev/null && mv $UNIT.new $UNIT" >> "$LOG" 2>&1
+user_systemctl "daemon-reload" >> "$LOG" 2>&1
+user_systemctl "start $UNIT" >> "$LOG" 2>&1
 
 for _ in 1 2 3 4 5 6; do
   sleep 10
