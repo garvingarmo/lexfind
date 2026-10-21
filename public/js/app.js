@@ -124,6 +124,29 @@
     else if (isMacSafari) show('mac');
   }
 
+  // Bar sizes come from data attributes (the security policy blocks inline style attributes).
+  document.querySelectorAll('[data-width]').forEach((el) => { el.style.width = `${el.dataset.width}%`; });
+  document.querySelectorAll('[data-height]').forEach((el) => { el.style.height = `${el.dataset.height}%`; });
+
+  // Chart tooltips: hover or focus a bar to see its exact numbers.
+  const tip = document.getElementById('chart-tip');
+  if (tip) {
+    const show = (el) => {
+      tip.textContent = el.dataset.tip;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect();
+      const left = Math.min(Math.max(8, r.left + r.width / 2 - tip.offsetWidth / 2), window.innerWidth - tip.offsetWidth - 8);
+      tip.style.left = `${left + window.scrollX}px`;
+      tip.style.top = `${r.top + window.scrollY - tip.offsetHeight - 8}px`;
+    };
+    document.querySelectorAll('[data-tip]').forEach((el) => {
+      el.addEventListener('mouseenter', () => show(el));
+      el.addEventListener('focus', () => show(el));
+      el.addEventListener('mouseleave', () => { tip.hidden = true; });
+      el.addEventListener('blur', () => { tip.hidden = true; });
+    });
+  }
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {

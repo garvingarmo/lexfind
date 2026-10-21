@@ -1,6 +1,6 @@
 <nav class="side-nav card">
 <% if (user.role === 'admin') { %>
-  <% [['/admin','Overview'],['/admin/lawyers','Lawyers'],['/admin/import','Import lawyers'],['/admin/invites','Invitations'],['/admin/areas','Practice areas'],['/admin/ads','Sponsored ads'],['/admin/posts','Blog'],['/admin/inquiries','Inquiries'],['/admin/referrals','Referrals'],['/admin/settings','Site content'],['/admin/texts','Texts'],['/admin/appearance','Appearance'],['/admin/homepage','Homepage'],['/admin/profile-settings','Lawyer profiles'],['/admin/social','Social media'],['/admin/integrations','Integrations'],['/admin/users','Admin users'],['/admin/backups','Backups'],['/account/password','Password']].forEach(([h, t]) => { %>
+  <% [['/admin','Overview'],['/admin/stats','Statistics'],['/admin/lawyers','Lawyers'],['/admin/import','Import lawyers'],['/admin/invites','Invitations'],['/admin/areas','Practice areas'],['/admin/ads','Sponsored ads'],['/admin/posts','Blog'],['/admin/inquiries','Inquiries'],['/admin/referrals','Referrals'],['/admin/settings','Site content'],['/admin/texts','Texts'],['/admin/appearance','Appearance'],['/admin/homepage','Homepage'],['/admin/profile-settings','Lawyer profiles'],['/admin/social','Social media'],['/admin/integrations','Integrations'],['/admin/users','Admin users'],['/admin/backups','Backups'],['/account/password','Password']].forEach(([h, t]) => { %>
     <a href="<%= h %>" class="<%= (path === h || (h !== '/admin' && path.startsWith(h))) ? 'active' : '' %>"><%= t %></a>
   <% }) %>
 <% } else { %>

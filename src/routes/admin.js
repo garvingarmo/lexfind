@@ -18,6 +18,7 @@ import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../l
 import { watchApprovals } from '../members.js';
 import { allReferrals } from '../referrals.js';
 import { listBackups, backupPath, streamFullBackup } from '../backup.js';
+import { usageStats, PERIODS, EVENT_LABELS } from '../stats.js';
 import { baseUrl } from '../invites.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -375,6 +376,22 @@ router.post('/posts/:id/delete', (req, res) => {
 });
 
 // --- Inquiries ---------------------------------------------------------------------
+
+router.get('/stats', (req, res) => {
+  const days = PERIODS[req.query.days] ? Number(req.query.days) : 30;
+  const stats = usageStats(days);
+  // A year of daily bars is too thin to read, so show weeks instead.
+  let bars = stats.daily.map((d) => ({ label: d.date, from: d.date, actions: d.actions, members: d.members }));
+  if (days > 90) {
+    const weeks = [];
+    for (let i = 0; i < bars.length; i += 7) {
+      const chunk = bars.slice(i, i + 7);
+      weeks.push({ label: `Week of ${chunk[0].from}`, from: chunk[0].from, actions: chunk.reduce((s, d) => s + d.actions, 0), members: Math.max(...chunk.map((d) => d.members)) });
+    }
+    bars = weeks;
+  }
+  res.render('admin/stats', { title: 'Statistics', stats, bars, days, PERIODS, EVENT_LABELS });
+});
 
 router.get('/backups', (req, res) => res.render('admin/backups', { title: 'Backups', rows: listBackups() }));
 

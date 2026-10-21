@@ -7,6 +7,7 @@ import { checkInvite, acceptInvite } from '../invites.js';
 import { requestReset, findReset, setPassword } from '../passwords.js';
 import { mailEnabled } from '../mailer.js';
 import { membersOnly } from '../members.js';
+import { track } from '../stats.js';
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many attempts. Try again in a few minutes.' });
@@ -27,6 +28,7 @@ router.post('/login', authLimit, (req, res) => {
   req.session.regenerate((err) => {
     if (err) throw err;
     req.session.userId = user.id;
+    track('login', { user });
     res.redirect(returnTo || (user.role === 'admin' ? '/admin' : '/dashboard'));
   });
 });
@@ -65,6 +67,7 @@ router.post('/register', authLimit, (req, res) => {
     setAreas(lid, [].concat(b.areas || []));
     return uid;
   });
+  track('register', { user: { id: userId, role: 'lawyer' } });
   req.session.regenerate(() => {
     req.session.userId = userId;
     flash(req, 'success', `Welcome! Complete your profile below. Your listing will go live${membersOnly() ? ', and you will get access to the directory and AI tools,' : ''} once our team verifies it.`);

@@ -1,0 +1,103 @@
+<%- include('../partials/header') %>
+<%
+  const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+  const c = stats.counts;
+  const maxBar = Math.max(1, ...bars.map(b => b.actions));
+  const niceMax = (() => { const p = Math.pow(10, Math.floor(Math.log10(maxBar))); return Math.ceil(maxBar / p) * p; })();
+  const shortDate = (iso) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const ranked = (title, rows, empty, link) => { const top = Math.max(1, ...rows.map(r => r.n)); %>
+    <div class="card">
+      <h2><%= title %></h2>
+      <% if (!rows.length) { %><p class="muted small"><%= empty %></p><% } else { %>
+      <ol class="rank-list">
+        <% rows.forEach(r => { %>
+          <li>
+            <span class="rank-label"><% if (link && r.slug) { %><a href="/lawyers/<%= r.slug %>"><%= r.label %></a><% } else { %><%= r.label %><% } %></span>
+            <span class="rank-bar" aria-hidden="true"><span data-width="<%= Math.max(2, Math.round(r.n / top * 100)) %>"></span></span>
+            <span class="rank-n"><%= fmt(r.n) %></span>
+          </li>
+        <% }) %>
+      </ol>
+      <% } %>
+    </div>
+<% } %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <div class="section-head">
+      <h1>Statistics</h1>
+      <nav class="period-tabs" aria-label="Time period">
+        <% Object.entries(PERIODS).forEach(([d, label]) => { %>
+          <a href="/admin/stats?days=<%= d %>" class="<%= Number(d) === days ? 'active' : '' %>" <%= Number(d) === days ? 'aria-current="page"' : '' %>><%= label %></a>
+        <% }) %>
+      </nav>
+    </div>
+    <p class="muted small">How members use the directory. Admins' own activity isn't counted. Tracking started when this page was added, so earlier activity isn't included.</p>
+
+    <div class="stat-grid">
+      <div class="card stat"><span class="stat-n"><%= fmt(stats.activeMembers) %></span><span class="muted small">Active members</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.login) %></span><span class="muted small">Sign-ins</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.search) %></span><span class="muted small">Searches</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.profile_view) %></span><span class="muted small">Profile views</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.ai_message) %></span><span class="muted small">AI questions</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.referral) %></span><span class="muted small">Referrals</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.pdf_export + c.email_results) %></span><span class="muted small">Results exported or emailed</span></div>
+      <div class="card stat"><span class="stat-n"><%= fmt(c.register) %></span><span class="muted small">New registrations</span></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><h2>Member activity <%= days > 90 ? 'per week' : 'per day' %></h2><span class="tiny muted">Searches, profile views, AI questions, referrals, exports and messages</span></div>
+      <div class="bar-chart" role="img" aria-label="Member activity <%= days > 90 ? 'per week' : 'per day' %>, <%= PERIODS[days].toLowerCase() %>. Total <%= fmt(bars.reduce((s, b) => s + b.actions, 0)) %> actions; table below.">
+        <div class="bar-axis" aria-hidden="true"><span><%= fmt(niceMax) %></span><span><%= fmt(niceMax / 2) %></span><span>0</span></div>
+        <div class="bar-plot">
+          <div class="bar-grid" aria-hidden="true"><span></span><span></span></div>
+          <div class="bar-cols <%= bars.length > 60 ? 'dense' : '' %>">
+            <% bars.forEach(b => { %>
+              <div class="bar-col" data-tip="<%= days > 90 ? b.label : shortDate(b.from) %>: <%= fmt(b.actions) %> action<%= b.actions === 1 ? '' : 's' %> by <%= fmt(b.members) %> member<%= b.members === 1 ? '' : 's' %>" tabindex="0">
+                <span class="bar" data-height="<%= (b.actions / niceMax * 100).toFixed(2) %>"></span>
+              </div>
+            <% }) %>
+          </div>
+          <div class="bar-x" aria-hidden="true"><span><%= shortDate(bars[0].from) %></span><span><%= shortDate(bars[Math.floor(bars.length / 2)].from) %></span><span><%= shortDate(bars[bars.length - 1].from) %></span></div>
+        </div>
+      </div>
+      <details class="small">
+        <summary>Show as a table</summary>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th><%= days > 90 ? 'Week of' : 'Date' %></th><th>Actions</th><th>Members</th></tr></thead>
+          <tbody><% bars.slice().reverse().forEach(b => { %><tr><td><%= b.from %></td><td><%= fmt(b.actions) %></td><td><%= fmt(b.members) %></td></tr><% }) %></tbody>
+        </table></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Membership</h2>
+      <div class="stat-grid compact">
+        <div class="stat"><span class="stat-n"><%= fmt(stats.members.approved) %></span><span class="muted small">Approved members</span></div>
+        <a class="stat" href="/admin/lawyers?status=pending"><span class="stat-n"><%= fmt(stats.members.pending) %></span><span class="muted small">Awaiting approval →</span></a>
+        <div class="stat"><span class="stat-n"><%= fmt(stats.members.listed) %></span><span class="muted small">Lawyers listed</span></div>
+      </div>
+    </div>
+
+    <div class="stats-columns">
+      <% ranked('Most searched practice areas', stats.topAreas, 'No practice-area searches yet.') %>
+      <% ranked('Top search words', stats.topKeywords, 'No keyword searches yet.') %>
+      <% ranked('Most viewed lawyers', stats.topViewed, 'No profile views yet.', true) %>
+      <% ranked('Most referred-to lawyers', stats.topReferred, 'No referrals yet.', true) %>
+    </div>
+
+    <div class="card">
+      <h2>Most active members</h2>
+      <% if (!stats.activeList.length) { %><p class="muted small">No member activity yet.</p><% } else { %>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Member</th><th>Actions</th><th>Last active (UTC)</th></tr></thead>
+        <tbody><% stats.activeList.forEach(m => { %>
+          <tr><td><% if (m.slug) { %><a href="/lawyers/<%= m.slug %>"><%= m.label %></a><% } else { %><%= m.label %><% } %></td><td><%= fmt(m.n) %></td><td class="small"><%= m.last_seen %></td></tr>
+        <% }) %></tbody>
+      </table></div>
+      <% } %>
+    </div>
+  </div>
+</section>
+<div class="chart-tip" id="chart-tip" role="tooltip" hidden></div>
+<%- include('../partials/footer') %>

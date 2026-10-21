@@ -7,7 +7,7 @@
     <% if (l.status === 'suspended') { %><div class="flash flash-error">Your listing is suspended. Please contact support.</div><% } %>
     <div class="stat-grid">
       <div class="card stat"><span class="stat-n"><%= l.status %></span><span class="muted small">Listing status</span></div>
-      <div class="card stat"><span class="stat-n"><%= completeness %>%</span><span class="muted small">Profile complete</span><div class="meter"><span style="width:<%= completeness %>%"></span></div></div>
+      <div class="card stat"><span class="stat-n"><%= completeness %>%</span><span class="muted small">Profile complete</span><div class="meter"><span data-width="<%= completeness %>"></span></div></div>
       <div class="card stat"><span class="stat-n"><%= stats.unread %></span><span class="muted small">Unread inquiries</span></div>
       <a class="card stat" href="/dashboard/referrals"><span class="stat-n"><%= stats.referrals %></span><span class="muted small">Referrals received<%= stats.newReferrals ? ` (${stats.newReferrals} new)` : '' %></span></a>
     </div>

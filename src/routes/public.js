@@ -15,6 +15,7 @@ import { getSettings } from '../db.js';
 import { exportRows, allMatchingIds, buildPdf, resultsEmail, recentShares, logShare, MAX_EXPORT } from '../exportResults.js';
 import { baseUrl } from '../invites.js';
 import { requireMember, isMember } from '../members.js';
+import { track } from '../stats.js';
 import { referrer, checkReferral, saveReferral, sendReferral } from '../referrals.js';
 
 const router = Router();
@@ -52,6 +53,7 @@ router.get('/lawyers', requireMember, (req, res) => {
   };
   const perPage = 12;
   const { rows, total } = searchLawyers({ ...f, sponsoredFirst: search.sponsoredFirst, perPage });
+  if (f.page === 1) track('search', { user: req.user, detail: { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, results: total } });
   const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   const languages = getLanguageOptions();
   const qs = (overrides) => {
@@ -94,6 +96,7 @@ router.post('/lawyers/export.pdf', requireMember, exportLimit, async (req, res) 
   }
   const pdf = await buildPdf(rows, { referredBy: referrer(req) });
   const stamp = new Date().toISOString().slice(0, 10);
+  track('pdf_export', { user: req.user, detail: { lawyers: rows.length } });
   res.type('application/pdf').attachment(`lawyers-${stamp}.pdf`).send(pdf);
 });
 
@@ -114,6 +117,7 @@ router.post('/lawyers/email-results', requireMember, shareLimit, async (req, res
     const pdf = await buildPdf(rows, { note, referredBy: referrer(req) });
     await sendMail({ to, subject, text, html, attachments: [{ filename: 'lawyers.pdf', content: pdf, contentType: 'application/pdf' }] });
     logShare(req.ip, to, rows.length);
+    track('email_results', { user: req.user, detail: { lawyers: rows.length } });
     res.json({ ok: true, count: rows.length });
   } catch (e) {
     console.error('email results failed:', e.message);
@@ -135,6 +139,7 @@ router.get('/lawyers/:slug', ownProfileOrMember, (req, res, next) => {
   }
   const isOwner = req.lawyer && lawyer && req.lawyer.id === lawyer.id;
   if (!lawyer || (lawyer.status !== 'active' && !isOwner && req.user?.role !== 'admin')) return next();
+  if (!isOwner) track('profile_view', { user: req.user, lawyerId: lawyer.id });
   res.render('lawyer', { title: lawyer.name, lawyer, canRefer: isMember(req) && !isOwner && lawyer.status === 'active', referDraft: (() => { const d = req.session.referDraft || {}; delete req.session.referDraft; return d; })(), bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
 });
 
@@ -179,6 +184,7 @@ router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, ne
   db.prepare('INSERT INTO inquiries (lawyer_id, name, email, phone, message, source) VALUES (?, ?, ?, ?, ?, ?)')
     .run(lawyer.id, inquiry.name, inquiry.email, inquiry.phone, inquiry.message, inquiry.source);
   notifyInquiry(lawyer, inquiry);
+  track('inquiry', { user: req.user, lawyerId: lawyer.id });
   flash(req, 'success', `Your message was sent to ${lawyer.name}. They will contact you directly.`);
   res.redirect(`/lawyers/${lawyer.slug}`);
 });
@@ -197,6 +203,7 @@ router.post('/lawyers/:slug/refer', requireMember, referLimit, async (req, res, 
   }
   const from = referrer(req);
   const id = saveReferral(lawyer, from, data);
+  track('referral', { user: req.user, lawyerId: lawyer.id });
   let emailed = false;
   try { emailed = await sendReferral(id, lawyer, from, data, baseUrl(req)); } catch (e) { console.error('referral email failed:', e.message); }
   flash(req, 'success', emailed
@@ -220,6 +227,7 @@ router.post('/api/assistant', requireMember, chatLimit, async (req, res) => {
   try {
     const { reply, recommendations, history: next } = await chat(history, text);
     req.session.assistant = next;
+    track('ai_message', { user: req.user, detail: { recommended: recommendations.length } });
     res.json({
       reply,
       recommendations: recommendations.map(({ lawyer: l, reason }) => ({
