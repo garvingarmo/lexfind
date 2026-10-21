@@ -63,6 +63,15 @@ if [ ! -f "$DIR/webapp/package.json" ]; then
   exit 1
 fi
 
+# The account's systemd --user manager must keep running when nobody is logged in ("lingering"),
+# or it stops the site's service ~10 seconds after this script's su session ends.
+if [ "$(loginctl show-user "$ACCOUNT" -p Linger --value 2>/dev/null)" != "yes" ]; then
+  loginctl enable-linger "$ACCOUNT" && log "enabled lingering for $ACCOUNT"
+  sleep 2
+fi
+# Clear stale podman locks left by earlier interrupted runs ("acquiring lock ... file exists").
+as_account "podman ps -q --filter name=^$CONTAINER\$ | grep -q . || podman system renumber" >> "$LOG" 2>&1
+
 # cPanel's service tracks the old container; if left running it stops the new one and restarts its own.
 user_systemctl "stop $UNIT" >> "$LOG" 2>&1
 user_systemctl "reset-failed $UNIT" >> "$LOG" 2>&1
@@ -84,7 +93,8 @@ fi
 
 for _ in 1 2 3 4 5 6; do
   sleep 10
-  if healthy; then
+  # Healthy, and still healthy half a minute later (a service that stops the site would show by then).
+  if healthy && sleep 30 && healthy; then
     log "repaired: site is answering again"
     alert "site was down and has been repaired" "The site stopped answering and the watchdog recreated its container. It is up again."
     exit 0
