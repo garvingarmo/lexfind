@@ -67,14 +67,20 @@ fi
 user_systemctl "stop $UNIT" >> "$LOG" 2>&1
 user_systemctl "reset-failed $UNIT" >> "$LOG" 2>&1
 as_account "podman rm -f $CONTAINER" >> "$LOG" 2>&1
-as_account "podman run -d --name $CONTAINER -p 127.0.0.1:$HOST_PORT:$APP_PORT --memory=512m \
+# Create (not start) the container; the service starts it, so it tracks the right process.
+as_account "podman create --name $CONTAINER -p 127.0.0.1:$HOST_PORT:$APP_PORT --memory=512m \
   --log-driver=k8s-file --log-opt=path=/home/$ACCOUNT/.cpanel/webapp-logs/$APP/app.log --log-opt=max-size=10m \
   -v $DIR/webapp:/app -w /app --env-file $DIR/webapp/.env -e NODE_ENV=production -e PORT=$APP_PORT \
   --entrypoint /bin/sh $IMAGE -c 'npm run start'" >> "$LOG" 2>&1
-# Point the service at the new container, the same way cPanel generates it, and let it take over.
-as_account "cd ~/.config/systemd/user 2>/dev/null && podman generate systemd --name $CONTAINER --restart-policy=on-failure --restart-sec=5 --start-timeout=70 --stop-timeout=10 > $UNIT.new 2>/dev/null && mv $UNIT.new $UNIT" >> "$LOG" 2>&1
-user_systemctl "daemon-reload" >> "$LOG" 2>&1
-user_systemctl "start $UNIT" >> "$LOG" 2>&1
+# Point the service at the new container, the same way cPanel generates it, and start it through the service.
+as_account "mkdir -p ~/.config/systemd/user && cd ~/.config/systemd/user && podman generate systemd --name $CONTAINER --restart-policy=on-failure --restart-sec=5 --start-timeout=70 --stop-timeout=10 > $UNIT.new 2>/dev/null && mv $UNIT.new $UNIT; rm -f $UNIT.new" >> "$LOG" 2>&1
+if user_systemctl "daemon-reload" >> "$LOG" 2>&1 && user_systemctl "start $UNIT" >> "$LOG" 2>&1; then
+  log "started through $UNIT"
+else
+  # No user service manager available (e.g. no session bus): start the container directly.
+  log "service unavailable; starting the container directly"
+  as_account "podman start $CONTAINER" >> "$LOG" 2>&1
+fi
 
 for _ in 1 2 3 4 5 6; do
   sleep 10
