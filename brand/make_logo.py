@@ -201,6 +201,13 @@ def favicon():
     return svg(S, S, body)
 
 
+def app_icon(h=64, weight=1.5):
+    # full-bleed navy square with the gold scales, for app icons; the renderer rounds the corners.
+    # The maskable version uses a smaller h so the scales stay inside the central safe zone.
+    S = 100
+    return svg(S, S, f'<rect width="{S}" height="{S}" fill="{INK}"/>' + scales(S / 2, S / 2 + h * 0.48, h, GOLD, weight=weight))
+
+
 def emblem_only():
     # the flag emblem alone, unaltered, for favicons and avatars
     return svg(300, 300, flag_emblem(150, 150, 141))
@@ -216,6 +223,8 @@ write("chaldeanlaw-mark.svg", mark_only())
 write("chaldeanlaw-mark-reverse.svg", mark_only(True))
 write("chaldeanlaw-emblem.svg", emblem_only())
 write("chaldeanlaw-favicon.svg", favicon())
+write("chaldeanlaw-app-icon.svg", app_icon())
+write("chaldeanlaw-app-icon-maskable.svg", app_icon(h=54))
 with open(os.path.join(OUT, "..", "favicon.svg"), "w") as fh:  # served at /favicon.svg
     fh.write(favicon())
 print("ok")

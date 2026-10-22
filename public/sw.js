@@ -1,7 +1,7 @@
 // Service worker: makes the site installable as an app. Pages are personal (sign-in, members-only
 // content), so nothing is cached except a small "you're offline" page shown when there's no connection.
-const CACHE = 'offline-v2';
-const OFFLINE = ['/offline.html', '/css/style.css', '/icons/icon-192.png'];
+const CACHE = 'offline-v3';
+const OFFLINE = ['/offline.html', '/css/style.css', '/icons/icon-192.png?v=2'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(OFFLINE)).then(() => self.skipWaiting()));
