@@ -1,6 +1,6 @@
 <%- include('partials/header') %>
 <section class="container page-pad">
-  <% if (lawyer.status !== 'active') { %><div class="flash flash-info">This listing is <strong><%= lawyer.status %></strong> and is not visible to the public yet.</div><% } %>
+  <% if (lawyer.status !== 'active') { %><div class="flash flash-info">This listing is <strong><%= lawyer.status %></strong> and is not visible to the public yet.</div><% } else if (lawyer.hidden) { %><div class="flash flash-info">This listing is <strong>hidden from the directory</strong>. Only you<%= isOwner ? '' : ' (as an admin)' %> can see it.</div><% } %>
   <% if (isOwner) { %><div class="flash flash-info">This is your public profile. <a href="/dashboard/profile">Edit it</a>.</div><% } %>
   <div class="profile-layout">
     <div>

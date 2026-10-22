@@ -34,7 +34,7 @@ export const renderPost = (post) => (post.format === 'html' ? cleanHtml(post.bod
 
 router.get('/', (req, res) => {
   const posts = db.prepare("SELECT * FROM posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 3").all();
-  const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
+  const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND hidden = 0 AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   res.render('index', {
     title: null, areas: listAreas({ withLawyersOnly: true }), featured: featuredLawyers(4), posts, states,
     ad: pickAd('home_banner'), aiOn: aiEnabled(), sections: getSections(),
@@ -55,7 +55,7 @@ router.get('/lawyers', requireMember, (req, res) => {
   const perPage = 12;
   const { rows, total } = searchLawyers({ ...f, sponsoredFirst: search.sponsoredFirst, perPage });
   if (f.page === 1) track('search', { user: req.user, detail: { q: f.q, area: f.area, city: f.city, state: f.state, language: f.language, results: total } });
-  const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
+  const states = db.prepare("SELECT DISTINCT state FROM lawyers WHERE status = 'active' AND hidden = 0 AND state IS NOT NULL ORDER BY state").all().map((r) => r.state);
   const languages = getLanguageOptions();
   const qs = (overrides) => {
     const p = new URLSearchParams();
@@ -139,9 +139,9 @@ router.get('/lawyers/:slug', ownProfileOrMember, (req, res, next) => {
     if (moved) return res.redirect(301, `/lawyers/${moved.slug}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`);
   }
   const isOwner = req.lawyer && lawyer && req.lawyer.id === lawyer.id;
-  if (!lawyer || (lawyer.status !== 'active' && !isOwner && req.user?.role !== 'admin')) return next();
+  if (!lawyer || ((lawyer.status !== 'active' || lawyer.hidden) && !isOwner && req.user?.role !== 'admin')) return next();
   if (!isOwner) track('profile_view', { user: req.user, lawyerId: lawyer.id });
-  res.render('lawyer', { title: lawyer.name, lawyer, canRefer: isMember(req) && !isOwner && lawyer.status === 'active', referDraft: (() => { const d = req.session.referDraft || {}; delete req.session.referDraft; return d; })(), bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
+  res.render('lawyer', { title: lawyer.name, lawyer, canRefer: isMember(req) && !isOwner && lawyer.status === 'active' && !lawyer.hidden, referDraft: (() => { const d = req.session.referDraft || {}; delete req.session.referDraft; return d; })(), bioHtml: renderMarkdown(lawyer.bio), ad: pickAd('profile_sidebar'), isOwner, query: req.query, social: lawyerSocial(lawyer) });
 });
 
 const inquiryLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
@@ -168,7 +168,7 @@ function notifyInquiry(lawyer, q, siteUrl) {
 
 router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
-  if (!lawyer || lawyer.status !== 'active') return next();
+  if (!lawyer || lawyer.status !== 'active' || lawyer.hidden) return next();
   const { name, email, phone, message, website } = req.body;
   if (website) return res.redirect(`/lawyers/${lawyer.slug}`); // honeypot
   if (!name?.trim() || !/^\S+@\S+\.\S+$/.test(email || '') || !message?.trim()) {
@@ -190,7 +190,7 @@ router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, ne
 const referLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: 'You have sent a lot of referrals. Please wait a while and try again.' });
 router.post('/lawyers/:slug/refer', requireMember, referLimit, async (req, res, next) => {
   const lawyer = getLawyer('slug', req.params.slug);
-  if (!lawyer || lawyer.status !== 'active') return next();
+  if (!lawyer || lawyer.status !== 'active' || lawyer.hidden) return next();
   const back = `/lawyers/${lawyer.slug}`;
   if (req.lawyer && req.lawyer.id === lawyer.id) { flash(req, 'error', 'You cannot refer a client to yourself.'); return res.redirect(back); }
   const { errors, data } = checkReferral(req.body);

@@ -23,11 +23,11 @@ export function listAreas({ withLawyersOnly = false } = {}) {
   const rows = db.prepare(`
     SELECT pa.*, parent.name AS parent_name,
       (SELECT COUNT(*) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
-       WHERE lpa.area_id = pa.id AND l.status = 'active') AS lawyer_count,
+       WHERE lpa.area_id = pa.id AND l.status = 'active' AND l.hidden = 0) AS lawyer_count,
       (SELECT COUNT(*) FROM lawyer_practice_areas lpa WHERE lpa.area_id = pa.id) AS total_count,
       (SELECT COUNT(DISTINCT lpa.lawyer_id) FROM lawyer_practice_areas lpa JOIN lawyers l ON l.id = lpa.lawyer_id
        JOIN practice_areas x ON x.id = lpa.area_id
-       WHERE (x.id = pa.id OR x.parent_id = pa.id) AND l.status = 'active') AS group_count
+       WHERE (x.id = pa.id OR x.parent_id = pa.id) AND l.status = 'active' AND l.hidden = 0) AS group_count
     FROM practice_areas pa LEFT JOIN practice_areas parent ON parent.id = pa.parent_id
     ORDER BY ${AREA_ORDER}`).all();
   const visible = withLawyersOnly ? rows.filter((a) => a.group_count > 0) : rows;
@@ -163,7 +163,7 @@ export const SORTS = {
 };
 
 export function searchLawyers({ q, area, city, state, language, sort = 'relevance', sponsoredFirst = true, page = 1, perPage = 12 } = {}) {
-  const where = ["l.status = 'active'"];
+  const where = ["l.status = 'active' AND l.hidden = 0"];
   const params = [];
   if (q) {
     const terms = String(q).trim().split(/\s+/).filter(Boolean).slice(0, 8);
@@ -206,7 +206,8 @@ export function getLawyer(where, value) {
 export function listLawyers({ status, q } = {}) {
   const where = ['1=1'];
   const params = [];
-  if (status) { where.push('status = ?'); params.push(status); }
+  if (status === 'hidden') where.push('hidden = 1');
+  else if (status) { where.push('status = ?'); params.push(status); }
   if (q) { where.push('(name LIKE ? OR firm LIKE ? OR email LIKE ?)'); params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
   return attachAreas(db.prepare(`SELECT * FROM lawyers WHERE ${where.join(' AND ')} ORDER BY created_at DESC`).all(...params));
 }
@@ -320,5 +321,5 @@ export function pickAd(placement) {
 }
 
 export function featuredLawyers(limit = 4) {
-  return attachAreas(db.prepare(`SELECT * FROM lawyers WHERE status = 'active' AND featured = 1 ORDER BY RANDOM() LIMIT ?`).all(limit));
+  return attachAreas(db.prepare(`SELECT * FROM lawyers WHERE status = 'active' AND hidden = 0 AND featured = 1 ORDER BY RANDOM() LIMIT ?`).all(limit));
 }

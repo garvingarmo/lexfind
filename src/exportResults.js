@@ -18,7 +18,7 @@ export function exportRows(ids, baseUrl) {
     if (seen.has(id) || rows.length >= MAX_EXPORT) continue;
     seen.add(id);
     const l = getLawyer('id', id);
-    if (!l || l.status !== 'active') continue;
+    if (!l || l.status !== 'active' || l.hidden) continue;
     rows.push({
       name: l.name,
       firm: l.firm || '',

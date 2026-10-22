@@ -78,7 +78,7 @@ export function usageStats(days) {
   const members = db.prepare(`SELECT
       (SELECT COUNT(*) FROM users u JOIN lawyers l ON l.user_id = u.id WHERE u.role = 'lawyer' AND l.status = 'active') approved,
       (SELECT COUNT(*) FROM users u JOIN lawyers l ON l.user_id = u.id WHERE u.role = 'lawyer' AND l.status = 'pending') pending,
-      (SELECT COUNT(*) FROM lawyers WHERE status = 'active') listed`).get();
+      (SELECT COUNT(*) FROM lawyers WHERE status = 'active' AND hidden = 0) listed`).get();
 
   return {
     days, counts, activeMembers, daily, members,

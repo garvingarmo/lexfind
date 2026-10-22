@@ -5,7 +5,7 @@
     <div class="section-head"><h1>Lawyers</h1><div><a class="btn btn-outline btn-sm" href="/admin/import">Import from Google Sheets</a> <a class="btn btn-primary btn-sm" href="/admin/lawyers/new">+ Add lawyer</a></div></div>
     <form class="toolbar" method="get">
       <input name="q" value="<%= q %>" placeholder="Search name, firm, email">
-      <select name="status"><option value="">All statuses</option><% ['pending','active','suspended'].forEach(s => { %><option <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+      <select name="status"><option value="">All statuses</option><% ['pending','active','suspended'].forEach(s => { %><option <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %><option value="hidden" <%= status === 'hidden' ? 'selected' : '' %>>hidden from directory</option></select>
       <button class="btn btn-outline btn-sm">Filter</button>
     </form>
     <form method="post" action="/admin/lawyers/bulk" class="card table-wrap" id="bulk-form">
@@ -24,6 +24,10 @@
             <option value="unverify">Remove verified</option>
             <option value="feature">Mark sponsored</option>
             <option value="unfeature">Remove sponsored</option>
+          </optgroup>
+          <optgroup label="Directory">
+            <option value="hide">Hide from directory</option>
+            <option value="unhide">Show in directory</option>
           </optgroup>
           <optgroup label="Practice areas">
             <option value="add_area">Add practice area…</option>
@@ -50,7 +54,7 @@
             <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
             <td class="tiny"><%= l.areas.map(a => a.name).join(', ') %></td>
             <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
-            <td class="tiny"><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %></td>
+            <td class="tiny"><% if (l.hidden) { %><span class="status status-suspended">Hidden</span> <% } %><%= l.featured ? 'Sponsored ' : '' %><%= l.verified ? 'Verified' : '' %></td>
             <td class="tiny"><% const st = inv.get(l.id).status; %><a href="/admin/lawyers/<%= l.id %>#invite"><%= { none: 'Invite', invited: 'Invited', expired: 'Expired', login: 'Claimed' }[st] %></a></td>
             <td class="right nowrap"><a href="/lawyers/<%= l.slug %>" target="_blank">View</a> · <a href="/admin/lawyers/<%= l.id %>/research">AI</a></td>
           </tr>

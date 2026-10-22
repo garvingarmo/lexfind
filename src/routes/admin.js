@@ -31,7 +31,7 @@ const count = (sql, ...p) => db.prepare(sql).get(...p).n;
 
 router.get('/', (req, res) => {
   const stats = {
-    active: count("SELECT COUNT(*) n FROM lawyers WHERE status = 'active'"),
+    active: count("SELECT COUNT(*) n FROM lawyers WHERE status = 'active' AND hidden = 0"),
     pending: count("SELECT COUNT(*) n FROM lawyers WHERE status = 'pending'"),
     featured: count('SELECT COUNT(*) n FROM lawyers WHERE featured = 1'),
     inquiries30: count("SELECT COUNT(*) n FROM inquiries WHERE created_at > datetime('now','-30 days')"),
@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
 // --- Lawyers ---------------------------------------------------------------
 
 router.get('/lawyers', (req, res) => {
-  const status = ['pending', 'active', 'suspended'].includes(req.query.status) ? req.query.status : '';
+  const status = ['pending', 'active', 'suspended', 'hidden'].includes(req.query.status) ? req.query.status : '';
   const q = (req.query.q || '').toString().slice(0, 100);
   res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses(), areas: listAreas() });
 });
@@ -63,6 +63,8 @@ const BULK = {
   verify: ["UPDATE lawyers SET verified = 1 WHERE id = ?", 'marked verified'],
   unverify: ["UPDATE lawyers SET verified = 0 WHERE id = ?", 'marked not verified'],
   feature: ["UPDATE lawyers SET featured = 1 WHERE id = ?", 'marked sponsored'],
+  hide: ["UPDATE lawyers SET hidden = 1, updated_at = datetime('now') WHERE id = ?", 'hidden from the directory'],
+  unhide: ["UPDATE lawyers SET hidden = 0, updated_at = datetime('now') WHERE id = ?", 'shown in the directory again'],
   unfeature: ["UPDATE lawyers SET featured = 0 WHERE id = ?", 'no longer sponsored'],
   add_area: ['INSERT OR IGNORE INTO lawyer_practice_areas (lawyer_id, area_id) VALUES (?, ?)', 'given the practice area'],
   remove_area: ['DELETE FROM lawyer_practice_areas WHERE lawyer_id = ? AND area_id = ?', 'removed from the practice area'],
@@ -118,6 +120,7 @@ function adminFields(body) {
   if (data.state) data.state = data.state.toUpperCase().slice(0, 2);
   data.status = ['pending', 'active', 'suspended'].includes(body.status) ? body.status : 'pending';
   data.featured = body.featured ? 1 : 0;
+  data.hidden = body.hidden ? 1 : 0;
   data.verified = body.verified ? 1 : 0;
   return data;
 }

@@ -115,7 +115,7 @@ function runTool(name, input, state) {
   }
   if (name === 'get_lawyer_profile') {
     const l = getLawyer('id', input.lawyer_id);
-    if (!l || l.status !== 'active') return JSON.stringify({ error: 'No active lawyer with that id.' });
+    if (!l || l.status !== 'active' || l.hidden) return JSON.stringify({ error: 'No active lawyer with that id.' });
     return JSON.stringify({
       ...summarize(l), title: l.title, bio: l.bio, education: l.education, bar_admissions: l.bar_admissions,
     });
@@ -124,7 +124,7 @@ function runTool(name, input, state) {
     const accepted = [];
     for (const r of input.recommendations || []) {
       const l = getLawyer('id', r.lawyer_id);
-      if (l && l.status === 'active' && !state.recommendations.some((x) => x.lawyer.id === l.id)) {
+      if (l && l.status === 'active' && !l.hidden && !state.recommendations.some((x) => x.lawyer.id === l.id)) {
         state.recommendations.push({ lawyer: l, reason: String(r.reason || '').slice(0, 600) });
         accepted.push(l.id);
       }
