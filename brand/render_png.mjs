@@ -40,3 +40,14 @@ for (const [file, [w0, h], bg, svg, scale, radius] of JOBS) {
   console.log('wrote', file, `${w}x${h}`);
 }
 await browser.close();
+
+// Copies at the site root, which some browsers and iOS request without reading the page.
+for (const f of ['apple-touch-icon.png', 'apple-touch-icon-precomposed.png']) fs.copyFileSync(out('icons/apple-touch-icon.png'), out(f));
+// favicon.ico: an ICO file holding the 32px PNG.
+const png = fs.readFileSync(out('icons/favicon-32.png'));
+const ico = Buffer.alloc(22);
+ico.writeUInt16LE(1, 2); ico.writeUInt16LE(1, 4); // type icon, 1 image
+ico.writeUInt8(32, 6); ico.writeUInt8(32, 7); ico.writeUInt16LE(1, 10); ico.writeUInt16LE(32, 12);
+ico.writeUInt32LE(png.length, 14); ico.writeUInt32LE(22, 18);
+fs.writeFileSync(out('favicon.ico'), Buffer.concat([ico, png]));
+console.log('wrote apple-touch-icon.png, apple-touch-icon-precomposed.png, favicon.ico');

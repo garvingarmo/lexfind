@@ -41,6 +41,12 @@ app.locals.assetV = crypto.createHash('sha256')
   .update(fs.readFileSync(path.join(ROOT, 'public', 'css', 'style.css')))
   .update(fs.readFileSync(path.join(ROOT, 'public', 'js', 'app.js')))
   .digest('hex').slice(0, 10);
+// Version for the favicon and app icons, so devices fetch new ones (and a fresh manifest) when they change.
+app.locals.iconV = crypto.createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'favicon.svg')))
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'icons', 'icon-512.png')))
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'icons', 'apple-touch-icon.png')))
+  .digest('hex').slice(0, 10);
 // Version for the logo files (long-cached), so a new logo shows up straight away.
 app.locals.brandV = crypto.createHash('sha256')
   .update(fs.readFileSync(path.join(ROOT, 'public', 'brand', 'chaldeanlaw-logo-horizontal.svg')))
@@ -75,7 +81,7 @@ app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'publi
 app.get('/manifest.webmanifest', (req, res) => {
   const s = getSettings();
   const theme = getTheme();
-  res.type('application/manifest+json').set('Cache-Control', 'public, max-age=3600').send(JSON.stringify({
+  res.type('application/manifest+json').set('Cache-Control', 'no-cache').send(JSON.stringify({
     name: s.site_name,
     short_name: s.site_name.length > 12 ? s.site_name.split(' ')[0] : s.site_name,
     description: s.tagline,
@@ -85,9 +91,9 @@ app.get('/manifest.webmanifest', (req, res) => {
     background_color: '#ffffff',
     theme_color: theme.theme_primary,
     icons: [
-      { src: '/icons/icon-192.png?v=2', sizes: '192x192', type: 'image/png' },
-      { src: '/icons/icon-512.png?v=2', sizes: '512x512', type: 'image/png' },
-      { src: '/icons/maskable-512.png?v=2', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: `/icons/icon-192.png?v=${app.locals.iconV}`, sizes: '192x192', type: 'image/png' },
+      { src: `/icons/icon-512.png?v=${app.locals.iconV}`, sizes: '512x512', type: 'image/png' },
+      { src: `/icons/maskable-512.png?v=${app.locals.iconV}`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   }));
 });
