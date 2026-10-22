@@ -78,7 +78,7 @@ app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
 // Third-party browser scripts, served from our own domain (the CSP only allows our own scripts).
 app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'public, max-age=604800').sendFile(path.join(ROOT, 'node_modules', 'sortablejs', 'Sortable.min.js')));
 // The installed app's name on phones (iPhone reads it from the apple-mobile-web-app-title tag).
-const APP_SHORT_NAME = 'Law Directory';
+const APP_SHORT_NAME = 'Chaldean Law';
 app.locals.appShortName = APP_SHORT_NAME;
 // Install as an app (progressive web app): the manifest names the app after the site and uses its colours.
 app.get('/manifest.webmanifest', (req, res) => {
