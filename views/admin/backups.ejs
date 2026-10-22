@@ -21,7 +21,7 @@
           <tbody>
           <% rows.forEach(b => { %>
             <tr><td><%= b.date %></td><td class="small"><%= (b.size / 1024 / 1024).toFixed(2) %> MB</td>
-            <td><a class="btn btn-outline btn-sm" href="/admin/backups/<%= b.name %>">Download</a></td></tr>
+            <td class="nowrap"><a class="btn btn-outline btn-sm" href="/admin/backups/<%= b.name %>/deleted">Deleted lawyers</a> <a class="btn btn-ghost btn-sm" href="/admin/backups/<%= b.name %>">Download</a></td></tr>
           <% }) %>
           </tbody>
         </table>
@@ -31,7 +31,8 @@
 
     <div class="card small">
       <h2>Restoring</h2>
-      <p class="muted">To roll back to a copy, the database file <code>directory.db</code> in the app's <code>data</code> folder is replaced with the backup while the site is stopped. Ask for help with this — it replaces everything changed since that backup.</p>
+      <p class="muted"><strong>Deleted a lawyer by mistake?</strong> Click <strong>Deleted lawyers</strong> next to a nightly copy made before the deletion, and restore them from there. Everything else on the site stays as it is.</p>
+      <p class="muted">To roll back the whole site to a copy, the database file <code>directory.db</code> in the app's <code>data</code> folder is replaced with the backup while the site is stopped. Ask for help with this — it replaces everything changed since that backup.</p>
     </div>
   </div>
 </section>

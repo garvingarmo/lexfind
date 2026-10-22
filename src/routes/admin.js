@@ -17,7 +17,7 @@ import { PROFILE_OPTIONS, getProfileSettings, saveProfileSettings, SORT_LABELS, 
 import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../languages.js';
 import { watchApprovals } from '../members.js';
 import { allReferrals } from '../referrals.js';
-import { listBackups, backupPath, streamFullBackup } from '../backup.js';
+import { listBackups, backupPath, streamFullBackup, deletedLawyers, restoreLawyer } from '../backup.js';
 import { usageStats, PERIODS, EVENT_LABELS } from '../stats.js';
 import { EMAILS, COMMON_VARS, DEFAULT_FOOTER, getTemplate, saveTemplate, resetTemplate, getFooter, renderEmail, sampleValues } from '../emails.js';
 import { baseUrl } from '../invites.js';
@@ -499,6 +499,25 @@ router.get('/backups/download', (req, res) => {
   const stamp = new Date().toISOString().slice(0, 10);
   res.set('Content-Type', 'application/gzip').attachment(`chaldean-law-backup-${stamp}.tar.gz`);
   streamFullBackup(res);
+});
+
+router.get('/backups/:name/deleted', (req, res, next) => {
+  if (!backupPath(req.params.name)) return next();
+  let rows;
+  try { rows = deletedLawyers(req.params.name); } catch (e) { flash(req, 'error', e.message); return res.redirect('/admin/backups'); }
+  res.render('admin/backup-deleted', { title: 'Restore deleted lawyers', name: req.params.name, date: req.params.name.slice(10, 20), rows });
+});
+
+router.post('/backups/:name/restore/:id', (req, res, next) => {
+  if (!backupPath(req.params.name)) return next();
+  try {
+    const r = restoreLawyer(req.params.name, Number(req.params.id));
+    flash(req, 'success', `Restored ${r.name} (${r.notes.join(', ')}). Check the listing's status and details below.`);
+    res.redirect(`/admin/lawyers/${Number(req.params.id)}`);
+  } catch (e) {
+    flash(req, 'error', `Could not restore: ${e.message}`);
+    res.redirect(`/admin/backups/${req.params.name}/deleted`);
+  }
 });
 
 router.get('/backups/:name', (req, res, next) => {

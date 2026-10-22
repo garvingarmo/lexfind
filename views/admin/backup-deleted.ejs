@@ -1,0 +1,34 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <p class="small"><a href="/admin/backups">← Backups</a></p>
+    <h1>Deleted lawyers</h1>
+    <p class="muted small">Lawyers in the nightly copy from <strong><%= date %></strong> who are no longer on the site. Restoring brings back the listing, its practice areas, its login (if the email isn't used by another account now), and its inquiries and referrals. Nothing else on the site changes.</p>
+    <div class="card table-wrap">
+      <% if (!rows.length) { %>
+        <p class="muted">No lawyers have been deleted since this copy was made. If you're looking for someone deleted earlier, try an older copy.</p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Lawyer</th><th>Location</th><th>Status then</th><th>Login</th><th></th></tr></thead>
+        <tbody>
+        <% rows.forEach(l => { %>
+          <tr>
+            <td><strong><%= l.name %></strong><div class="tiny muted"><%= l.firm || '' %><%= l.email ? ' · ' + l.email : '' %></div></td>
+            <td class="small"><%= [l.city, l.state].filter(Boolean).join(', ') %></td>
+            <td><span class="status status-<%= l.status %>"><%= l.status %></span></td>
+            <td class="tiny"><%= l.login_email || '—' %></td>
+            <td class="right">
+              <form method="post" action="/admin/backups/<%= name %>/restore/<%= l.id %>" data-confirm="Restore <%= l.name %> from the <%= date %> copy?">
+                <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm">Restore</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>
