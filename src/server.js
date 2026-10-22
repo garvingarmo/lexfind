@@ -77,13 +77,16 @@ app.get('/sw.js', (req, res) => res.set('Cache-Control', 'no-cache').sendFile(pa
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: prod ? '7d' : 0 }));
 // Third-party browser scripts, served from our own domain (the CSP only allows our own scripts).
 app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'public, max-age=604800').sendFile(path.join(ROOT, 'node_modules', 'sortablejs', 'Sortable.min.js')));
+// The installed app's name on phones (iPhone reads it from the apple-mobile-web-app-title tag).
+const APP_SHORT_NAME = 'Law Directory';
+app.locals.appShortName = APP_SHORT_NAME;
 // Install as an app (progressive web app): the manifest names the app after the site and uses its colours.
 app.get('/manifest.webmanifest', (req, res) => {
   const s = getSettings();
   const theme = getTheme();
   res.type('application/manifest+json').set('Cache-Control', 'no-cache').send(JSON.stringify({
     name: s.site_name,
-    short_name: s.site_name.length > 12 ? s.site_name.split(' ')[0] : s.site_name,
+    short_name: APP_SHORT_NAME, // under the icon on a phone's home screen; desktops show the full name
     description: s.tagline,
     start_url: '/?source=app',
     scope: '/',
