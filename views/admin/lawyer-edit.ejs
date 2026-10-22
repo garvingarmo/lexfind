@@ -26,6 +26,11 @@
         <h2>Lawyer login</h2>
         <% if (login) { %>
           <p class="small">This listing has been claimed. <%= l.name %> signs in as <strong><%= login.email %></strong>.</p>
+          <form method="post" action="/admin/lawyers/<%= l.id %>/unclaim" data-confirm="Remove the login <%= login.email %> from this listing? They will be signed out and can no longer manage it. The listing and its details stay as they are.">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="btn btn-outline btn-sm">Remove login (unclaim listing)</button>
+            <span class="tiny muted">Use this if the wrong person claimed it, or to hand the listing to someone else.</span>
+          </form>
         <% } else if (invite) { %>
           <p class="small">Invitation link, valid until <%= invite.expires_at.slice(0, 10) %><%= invite.sent_at ? ', emailed ' + invite.sent_at.slice(0, 10) : '' %>. Send it to <%= l.name %> so they can set a password and manage this listing.</p>
           <div class="copy-row"><input readonly value="<%= inviteLink %>" aria-label="Invitation link"><button type="button" class="btn btn-ghost btn-sm" data-copy>Copy</button></div>

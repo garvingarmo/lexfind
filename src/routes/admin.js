@@ -177,6 +177,25 @@ router.post('/lawyers/:id', upload.single('photo'), verifyCsrf, (req, res, next)
   res.redirect(`/admin/lawyers/${l.id}`);
 });
 
+// Unclaim: delete the lawyer's login (signing them out everywhere) but keep the listing, so it can be
+// claimed again with a new invitation.
+router.post('/lawyers/:id/unclaim', (req, res, next) => {
+  const l = getLawyer('id', req.params.id);
+  if (!l) return next();
+  const user = l.user_id && db.prepare("SELECT id, email FROM users WHERE id = ? AND role = 'lawyer'").get(l.user_id);
+  if (!user) {
+    flash(req, 'error', 'This listing has no lawyer login to remove.');
+    return res.redirect(`/admin/lawyers/${l.id}#invite`);
+  }
+  tx(() => {
+    db.prepare('UPDATE lawyers SET user_id = NULL WHERE id = ?').run(l.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+    db.prepare("DELETE FROM sessions WHERE data LIKE ? OR data LIKE ?").run(`%"userId":${user.id},%`, `%"userId":${user.id}}%`);
+  });
+  flash(req, 'success', `Removed the login ${user.email} from ${l.name}'s listing. The listing itself is unchanged; create an invitation link below to let someone claim it again.`);
+  res.redirect(`/admin/lawyers/${l.id}#invite`);
+});
+
 router.post('/lawyers/:id/status', (req, res) => {
   const s = ['pending', 'active', 'suspended'].includes(req.body.status) ? req.body.status : null;
   const notify = watchApprovals([req.params.id], baseUrl(req));
