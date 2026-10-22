@@ -323,6 +323,10 @@ div.card.inquiry { padding: 20px; }
 
 /* Logo */
 .brand-logo { height: 40px; width: auto; max-width: 220px; object-fit: contain; }
+/* The Chaldean Law logo (used unless a logo is uploaded in Appearance). */
+.brand-default { display: block; height: 60px; width: auto; margin: -6px 0; }
+.site-footer .brand-default { height: 64px; margin: 0 0 4px -8px; }
+@media (max-width: 600px) { .brand-default { height: 48px; margin: -4px 0; } }
 .site-footer .brand-logo { height: 34px; background: #fff; border-radius: 6px; padding: 3px 6px; }
 
 /* Edit page mode */

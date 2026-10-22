@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
 <link rel="stylesheet" href="/theme.css?v=<%= themeV %>">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="theme-color" content="<%= theme.theme_primary %>">
@@ -30,7 +31,7 @@
 <body class="<%= editMode ? 'edit-mode' : '' %>">
 <header class="site-header">
   <div class="container nav">
-    <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><span class="brand-mark">§</span><%= settings.site_name %><% } %></a>
+    <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><img class="brand-default" src="/brand/chaldeanlaw-logo-horizontal.svg" alt="<%= settings.site_name %>" width="968" height="240"><% } %></a>
     <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Menu">
     <label for="nav-toggle" class="nav-burger" aria-hidden="true"><span></span></label>
     <nav class="nav-links">

@@ -35,7 +35,7 @@
         <p class="tiny muted">Live preview</p>
         <div class="theme-preview" id="theme-preview">
           <div class="pv-header">
-            <span class="brand"><span class="pv-logo" id="pv-logo"><% if (theme.theme_logo) { %><img src="<%= theme.theme_logo %>" alt=""><% } else { %><span class="brand-mark">§</span><% } %></span><span id="pv-name" <%= theme.theme_logo && theme.theme_logo_text !== '1' ? 'hidden' : '' %>><%= settings.site_name %></span></span>
+            <span class="brand"><span class="pv-logo" id="pv-logo"><% if (theme.theme_logo) { %><img src="<%= theme.theme_logo %>" alt=""><% } else { %><img src="/brand/chaldeanlaw-logo-horizontal.svg" alt=""><% } %></span><span id="pv-name" <%= theme.theme_logo && theme.theme_logo_text !== '1' ? 'hidden' : '' %>><%= settings.site_name %></span></span>
             <span class="pv-nav">Find a lawyer · AI match</span>
           </div>
           <div class="pv-hero" id="pv-hero" data-image="<%= theme.theme_hero_image %>">
