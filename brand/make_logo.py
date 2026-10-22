@@ -102,15 +102,17 @@ def cap_height(font, size):
 GOLD = "#B8862B"      # scales of justice
 
 
-def scales(cx, base_y, h, col):
+def scales(cx, base_y, h, col, weight=1):
     """Scales of justice standing on base_y (the text baseline), h tall, centred on cx.
-    Drawn on a 100-unit grid: finial at the top, curved beam, two chained pans, pillar and base."""
+    Drawn on a 100-unit grid: finial at the top, curved beam, two chained pans, pillar and base.
+    weight > 1 thickens the lines, for small sizes such as the favicon."""
     s = h / 100.0
-    sw = 3.2 * s
+    sw = 3.2 * s * weight
+    pw = 4.4 * weight
     X = lambda x: f(cx + x * s)
     Y = lambda y: f(base_y - (100 - y) * s)
     parts = [
-        f'<rect x="{X(-2.2)}" y="{Y(12)}" width="{f(4.4 * s)}" height="{f(80 * s)}" fill="{col}"/>',
+        f'<rect x="{X(-pw / 2)}" y="{Y(12)}" width="{f(pw * s)}" height="{f(80 * s)}" fill="{col}"/>',
         f'<path d="M{X(-20)},{Y(100)} L{X(20)},{Y(100)} L{X(14)},{Y(93)} L{X(-14)},{Y(93)} Z" fill="{col}"/>',
         f'<rect x="{X(-9)}" y="{Y(89)}" width="{f(18 * s)}" height="{f(4 * s)}" fill="{col}"/>',
         f'<circle cx="{X(0)}" cy="{Y(9)}" r="{f(4.6 * s)}" fill="{col}"/>',
@@ -120,7 +122,7 @@ def scales(cx, base_y, h, col):
         ex = 42 * side
         parts.append(f'<circle cx="{X(ex)}" cy="{Y(22)}" r="{f(2.6 * s)}" fill="{col}"/>')
         for dx in (-13, 13):
-            parts.append(f'<line x1="{X(ex)}" y1="{Y(22)}" x2="{X(ex + dx)}" y2="{Y(56)}" stroke="{col}" stroke-width="{f(sw * 0.45)}"/>')
+            parts.append(f'<line x1="{X(ex)}" y1="{Y(22)}" x2="{X(ex + dx)}" y2="{Y(56)}" stroke="{col}" stroke-width="{f(sw * (0.45 if weight == 1 else 0.6))}"/>')
         parts.append(f'<path d="M{X(ex - 17)},{Y(56)} L{X(ex + 17)},{Y(56)} Q{X(ex + 13)},{Y(66)} {X(ex)},{Y(66)} Q{X(ex - 13)},{Y(66)} {X(ex - 17)},{Y(56)} Z" fill="{col}"/>')
     return "".join(parts)
 
@@ -191,6 +193,14 @@ def mark_only(reverse=False):
     return svg(W, H, body, p["bg"] if reverse else None)
 
 
+def favicon():
+    # the gold scales from the wordmark on a navy rounded square, so it reads on light and dark browser tabs
+    S = 100
+    h = 76                                  # scales art is ~118 x 96 units on its 100-unit grid
+    body = f'<rect width="{S}" height="{S}" rx="20" fill="{INK}"/>' + scales(S / 2, S / 2 + h * 0.48, h, GOLD, weight=2.2)
+    return svg(S, S, body)
+
+
 def emblem_only():
     # the flag emblem alone, unaltered, for favicons and avatars
     return svg(300, 300, flag_emblem(150, 150, 141))
@@ -205,4 +215,7 @@ write("chaldeanlaw-logo-horizontal-reverse-transparent.svg", horizontal(True, ba
 write("chaldeanlaw-mark.svg", mark_only())
 write("chaldeanlaw-mark-reverse.svg", mark_only(True))
 write("chaldeanlaw-emblem.svg", emblem_only())
+write("chaldeanlaw-favicon.svg", favicon())
+with open(os.path.join(OUT, "..", "favicon.svg"), "w") as fh:  # served at /favicon.svg
+    fh.write(favicon())
 print("ok")

@@ -16,7 +16,7 @@ const JOBS = [
   // Maskable icons get cropped to a circle or squircle: keep the emblem inside the central safe zone.
   ['icons/maskable-512.png', [512, 512], '#ffffff', 'chaldeanlaw-emblem.svg', 0.72, 0],
   ['icons/apple-touch-icon.png', [180, 180], '#ffffff', 'chaldeanlaw-emblem.svg', 0.82, 0],
-  ['icons/favicon-32.png', [32, 32], null, 'chaldeanlaw-emblem.svg', 1, 0],
+  ['icons/favicon-32.png', [32, 32], null, 'chaldeanlaw-favicon.svg', 1, 0],
   // Email header: the reverse logo on transparent, at 2x for sharp screens (shown 48px tall).
   ['brand/email-logo.png', [null, 96], null, 'chaldeanlaw-logo-horizontal-reverse-transparent.svg', 1, 0],
 ];

@@ -19,7 +19,8 @@ node brand/render_png.mjs        # app icons, favicon fallback, email header PNG
 | `chaldeanlaw-logo-horizontal-reverse-transparent.svg` | Website footer (dark), source of the email header PNG |
 | `chaldeanlaw-logo-stacked(-reverse).svg`, `chaldeanlaw-logo-horizontal-reverse.svg` | Print, social media, documents |
 | `chaldeanlaw-mark(-reverse).svg` | Emblem with padding (avatars) |
-| `chaldeanlaw-emblem.svg` | Emblem alone; also `public/favicon.svg` |
+| `chaldeanlaw-emblem.svg` | Emblem alone; app icons (home screen, install prompt) |
+| `chaldeanlaw-favicon.svg` | Gold scales on navy, bolder for small sizes; also `public/favicon.svg` and `icons/favicon-32.png` (browser tab) |
 
 The fonts in `fonts/` are Cinzel from Google Fonts (SIL Open Font License).
 A logo uploaded in Admin → Appearance replaces the default logo on the website and in emails.
