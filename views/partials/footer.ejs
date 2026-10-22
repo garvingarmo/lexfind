@@ -2,7 +2,7 @@
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
-      <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><img class="brand-default" src="/brand/chaldeanlaw-logo-horizontal-reverse-transparent.svg" alt="<%= settings.site_name %>" width="1061" height="240"><% } %></a>
+      <a class="brand" href="/"><% if (theme.theme_logo) { %><img class="brand-logo" src="<%= theme.theme_logo %>" alt="<%= settings.site_name %>"><% if (theme.theme_logo_text === '1') { %><%= settings.site_name %><% } %><% } else { %><img class="brand-default" src="/brand/chaldeanlaw-logo-horizontal-reverse-transparent.svg?v=<%= brandV %>" alt="<%= settings.site_name %>" width="1061" height="240"><% } %></a>
       <p class="muted small"><%- e('disclaimer') %></p>
       <% if (siteSocial.length) { %>
         <div class="social-links" aria-label="<%= t('footer.follow') %>">

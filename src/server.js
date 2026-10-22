@@ -41,6 +41,10 @@ app.locals.assetV = crypto.createHash('sha256')
   .update(fs.readFileSync(path.join(ROOT, 'public', 'css', 'style.css')))
   .update(fs.readFileSync(path.join(ROOT, 'public', 'js', 'app.js')))
   .digest('hex').slice(0, 10);
+// Version for the logo files (long-cached), so a new logo shows up straight away.
+app.locals.brandV = crypto.createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'public', 'brand', 'chaldeanlaw-logo-horizontal.svg')))
+  .digest('hex').slice(0, 10);
 
 app.use(helmet({
   contentSecurityPolicy: {
