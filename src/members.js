@@ -2,7 +2,8 @@
 // (or an admin). Switched in Admin → Lawyer profiles → Search results; on by default.
 import { db, getSettings } from './db.js';
 import { mailEnabled, sendMail } from './mailer.js';
-import { renderEmail } from './emails.js';
+import { renderEmail, detailsBlock } from './emails.js';
+import { getLawyer } from './models.js';
 
 export function membersOnly() {
   return getSettings().members_only !== '0';
@@ -44,4 +45,29 @@ export function watchApprovals(ids, siteUrl) {
         .catch((e) => console.error('approval email failed:', e.message));
     }
   };
+}
+
+/**
+ * A lawyer registered: email every admin so they can approve them, and confirm receipt to the lawyer.
+ * Runs in the background; failures are logged, never shown to the person registering.
+ */
+export function notifyRegistration(lawyerId, siteUrl) {
+  if (!mailEnabled()) return;
+  const l = getLawyer('id', lawyerId);
+  if (!l) return;
+  const tel = (n) => n && `tel:${n.replace(/[^\d+]/g, '')}`;
+  const details = detailsBlock([
+    ['Name', l.name], ['Firm', l.firm], ['Email', l.email, l.email && `mailto:${l.email}`],
+    ['Phone', l.phone, tel(l.phone)], ['Mobile', l.mobile, tel(l.mobile)],
+    ['Location', [l.city, l.state].filter(Boolean).join(', ')], ['Bar number', l.bar_number],
+    ['Practice areas', (l.areas || []).map((a) => a.name).join(', ')],
+  ]);
+  const toAdmins = renderEmail('registration_admin', { lawyer_name: l.name, review_link: `${siteUrl}/admin/lawyers/${l.id}`, applicant_details: details }, { siteUrl });
+  for (const { email } of db.prepare("SELECT email FROM users WHERE role = 'admin'").all()) {
+    sendMail({ to: email, replyTo: l.email || undefined, ...toAdmins }).catch((e) => console.error('registration email to admin failed:', e.message));
+  }
+  if (l.email) {
+    sendMail({ to: l.email, ...renderEmail('registration_received', { lawyer_name: l.name, profile_link: `${siteUrl}/dashboard/profile` }, { siteUrl }) })
+      .catch((e) => console.error('registration confirmation failed:', e.message));
+  }
 }

@@ -4,6 +4,7 @@
   <div>
     <h1>Overview</h1>
     <% if (!aiOn) { %><div class="flash flash-info">AI features are in offline mode. Set <code>ANTHROPIC_API_KEY</code> to enable Claude for the matching assistant and profile research.</div><% } %>
+    <% if (pendingRegistrations) { %><div class="flash flash-info"><strong><%= pendingRegistrations %> new lawyer registration<%= pendingRegistrations === 1 ? '' : 's' %></strong> waiting for approval. <a href="/admin/lawyers?status=pending">Review now →</a></div><% } %>
     <div class="stat-grid">
       <a class="card stat" href="/admin/lawyers?status=active"><span class="stat-n"><%= stats.active %></span><span class="muted small">Active listings</span></a>
       <a class="card stat" href="/admin/lawyers?status=pending"><span class="stat-n"><%= stats.pending %></span><span class="muted small">Pending review</span></a>

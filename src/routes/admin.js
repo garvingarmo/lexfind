@@ -29,6 +29,13 @@ router.use(requireRole('admin'));
 
 const count = (sql, ...p) => db.prepare(sql).get(...p).n;
 
+// New registrations waiting for approval: shown as a badge in the admin menu on every page.
+const PENDING_REGISTRATIONS = "SELECT COUNT(*) n FROM lawyers WHERE status = 'pending' AND user_id IS NOT NULL";
+router.use((req, res, next) => {
+  res.locals.pendingRegistrations = count(PENDING_REGISTRATIONS);
+  next();
+});
+
 router.get('/', (req, res) => {
   const stats = {
     active: count("SELECT COUNT(*) n FROM lawyers WHERE status = 'active' AND hidden = 0"),

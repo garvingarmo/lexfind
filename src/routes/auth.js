@@ -3,10 +3,10 @@ import bcrypt from 'bcryptjs';
 import { db, tx } from '../db.js';
 import { createLawyer, setAreas, listAreas } from '../models.js';
 import { flash, rateLimit } from '../middleware.js';
-import { checkInvite, acceptInvite } from '../invites.js';
+import { checkInvite, acceptInvite, baseUrl } from '../invites.js';
 import { requestReset, findReset, setPassword } from '../passwords.js';
 import { mailEnabled } from '../mailer.js';
-import { membersOnly } from '../members.js';
+import { membersOnly, notifyRegistration } from '../members.js';
 import { track } from '../stats.js';
 
 const router = Router();
@@ -68,6 +68,8 @@ router.post('/register', authLimit, (req, res) => {
     return uid;
   });
   track('register', { user: { id: userId, role: 'lawyer' } });
+  const lawyerId = db.prepare('SELECT id FROM lawyers WHERE user_id = ?').get(userId)?.id;
+  if (lawyerId) notifyRegistration(lawyerId, baseUrl(req));
   req.session.regenerate(() => {
     req.session.userId = userId;
     flash(req, 'success', `Welcome! Complete your profile below. Your listing will go live${membersOnly() ? ', and you will get access to the directory and AI tools,' : ''} once our team verifies it.`);

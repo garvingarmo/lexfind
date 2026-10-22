@@ -33,6 +33,35 @@ Your profile is listed in the **{{site_name}}** attorney directory. Claim it to 
 This personal link works once and expires on **{{expires}}**. If you weren't expecting this email, you can ignore it.`,
     vars: { lawyer_name: ['Lawyer\'s name', 'Maria Delgado'], claim_link: ['Personal claim link', 'https://chaldeanlaw.com/invite/sample'], expires: ['Link expiry date', 'November 5, 2026'] },
   },
+  registration_admin: {
+    label: 'New registration (to admins)',
+    when: 'Sent to every admin when a lawyer registers through "List your practice", so they can review and approve them.',
+    subject: 'New lawyer awaiting approval: {{lawyer_name}}',
+    body: `# New membership application
+
+**{{lawyer_name}}** has registered on {{site_name}} and is waiting for approval.
+
+{{applicant_details}}
+
+Check their bar number, then set their listing to **Active** to approve them. They'll be emailed when you do.
+
+[[Review and approve|{{review_link}}]]`,
+    vars: { lawyer_name: ['Applicant\'s name', 'Nadia Yousif'], review_link: ['Link to their listing in the admin', 'https://chaldeanlaw.com/admin/lawyers/42'] },
+    blocks: { applicant_details: 'Name, firm, email, phones, location, bar number and practice areas' },
+  },
+  registration_received: {
+    label: 'Registration received (to the lawyer)',
+    when: 'Sent to a lawyer right after they register, confirming their application is being reviewed.',
+    subject: 'We received your {{site_name}} application',
+    body: `# Thanks for registering, {{lawyer_name}}
+
+We've received your application to join **{{site_name}}**. Our team checks every lawyer's details before approving them, which usually takes a day or two.
+
+You'll get an email as soon as you're approved. In the meantime, you can sign in and complete your profile — a full profile helps us approve it quickly.
+
+[[Complete my profile|{{profile_link}}]]`,
+    vars: { lawyer_name: ['Lawyer\'s name', 'Nadia Yousif'], profile_link: ['Link to edit their profile', 'https://chaldeanlaw.com/dashboard/profile'] },
+  },
   password_reset: {
     label: 'Password reset',
     when: 'Sent when someone uses "Forgot password".',
@@ -356,6 +385,7 @@ export function sampleValues(key) {
   const blocks = {
     sender_details: detailsBlock([['Name', 'John Smith'], ['Email', 'john.smith@example.com', 'mailto:john.smith@example.com'], ['Phone', '(313) 555-0142', 'tel:3135550142']]),
     message: quoteBlock('Hello, I was referred to you about a custody matter. Could we set up a consultation this week?', 'Message'),
+    applicant_details: detailsBlock([['Name', 'Nadia Yousif'], ['Firm', 'Yousif Law PLLC'], ['Email', 'nadia@example.com', 'mailto:nadia@example.com'], ['Phone', '(248) 555-0123'], ['Location', 'Troy, MI'], ['Bar number', 'P81234'], ['Practice areas', 'Immigration, Family Law']]),
     client_details: detailsBlock([['Client', 'Sarah Johnson'], ['Email', 'sarah.j@example.com', 'mailto:sarah.j@example.com'], ['Phone', '(248) 555-0187', 'tel:2485550187']]),
     matter: quoteBlock('Needs help with a contested divorce in Oakland County.', 'About the matter'),
     member_details: detailsBlock([['Referred by', 'James Whitaker, Whitaker Defense Group'], ['Email', 'james@example.com', 'mailto:james@example.com'], ['Phone', '(555) 010-6962']]),

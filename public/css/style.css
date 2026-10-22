@@ -509,3 +509,5 @@ div.card.inquiry { padding: 20px; }
 .chip:hover { border-color: var(--primary); }
 .chip-block { border-style: dashed; }
 @media (max-width: 1100px) { .email-editor { grid-template-columns: 1fr; } .email-preview-wrap { position: static; } #email-preview { height: 640px; } }
+
+.nav-badge { display: inline-block; min-width: 20px; padding: 1px 6px; margin-left: 4px; border-radius: 99px; background: #c0392b; color: #fff; font-size: .72rem; font-weight: 700; text-align: center; line-height: 1.5; }
