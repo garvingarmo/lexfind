@@ -147,6 +147,30 @@
     });
   }
 
+  // Admin → Emails editor: insert placeholders at the cursor, and refresh the preview while typing.
+  const emailForm = document.getElementById('email-form');
+  if (emailForm) {
+    const previewBtn = document.getElementById('preview-btn');
+    let lastField = document.getElementById('email-body');
+    let timer;
+    const refresh = () => { clearTimeout(timer); timer = setTimeout(() => previewBtn.click(), 700); };
+    emailForm.querySelectorAll('[data-email-field]').forEach((el) => {
+      el.addEventListener('focus', () => { lastField = el; });
+      el.addEventListener('input', refresh);
+    });
+    emailForm.querySelectorAll('[data-insert]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const el = lastField;
+        const text = el.tagName === 'INPUT' ? chip.dataset.insert.trim() : chip.dataset.insert;
+        const start = el.selectionStart ?? el.value.length;
+        el.value = el.value.slice(0, start) + text + el.value.slice(el.selectionEnd ?? start);
+        el.focus();
+        el.selectionStart = el.selectionEnd = start + text.length;
+        refresh();
+      });
+    });
+  }
+
   // Copy the link in the input next to a [data-copy] button.
   document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {

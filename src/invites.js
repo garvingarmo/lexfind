@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { db, tx, getSettings } from './db.js';
 import { getLawyer } from './models.js';
 import { mailEnabled, sendMail } from './mailer.js';
+import { renderEmail } from './emails.js';
 
 export { mailEnabled };
 
@@ -84,30 +85,9 @@ export function inviteStatuses() {
 
 // --- Email ------------------------------------------------------------------
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
 export function inviteEmail(lawyer, url, expiresAt) {
-  const site = getSettings().site_name;
   const expires = new Date(`${expiresAt.replace(' ', 'T')}Z`).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const subject = `Claim your free listing on ${site}`;
-  const text = `Hello ${lawyer.name},
-
-Your profile is listed in the ${site} attorney directory. Claim it to keep your details up to date, add your photo and bio, and receive inquiries from people looking for a lawyer.
-
-Set up your login here:
-${url}
-
-This personal link works once and expires on ${expires}. If you weren't expecting this email, you can ignore it.
-
-${site}`;
-  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#1b2333;max-width:560px">
-<p>Hello ${esc(lawyer.name)},</p>
-<p>Your profile is listed in the <strong>${esc(site)}</strong> attorney directory. Claim it to keep your details up to date, add your photo and bio, and receive inquiries from people looking for a lawyer.</p>
-<p style="margin:28px 0"><a href="${esc(url)}" style="background:#1f3a5f;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Claim my listing</a></p>
-<p style="font-size:13px;color:#5d6677">Or copy this link into your browser:<br><a href="${esc(url)}">${esc(url)}</a></p>
-<p style="font-size:13px;color:#5d6677">This personal link works once and expires on ${esc(expires)}. If you weren't expecting this email, you can ignore it.</p>
-<p>${esc(site)}</p></div>`;
-  return { subject, text, html };
+  return renderEmail('invite', { lawyer_name: lawyer.name, claim_link: url, expires }, { siteUrl: url.replace(/\/invite\/.*$/, '') });
 }
 
 export async function sendInvite(invite, req) {

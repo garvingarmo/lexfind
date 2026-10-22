@@ -5,6 +5,7 @@ import { db, getSettings } from './db.js';
 import { getLawyer } from './models.js';
 import { getProfileSettings } from './profileSettings.js';
 import { lawyerSocial } from './social.js';
+import { renderEmail, quoteBlock, lawyerListBlock } from './emails.js';
 
 export const MAX_EXPORT = 200;
 
@@ -121,34 +122,14 @@ export function buildPdf(rows, { note, referredBy } = {}) {
   });
 }
 
-const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-/** Email body listing the lawyers (plain text and HTML). */
-export function resultsEmail(rows, { fromName, note }) {
-  const s = getSettings();
-  const who = fromName ? `${fromName} shared` : 'Someone shared';
-  const subject = `${who} ${rows.length} lawyer${rows.length === 1 ? '' : 's'} from ${s.site_name}`;
-  const textRows = rows.map((r) => [
-    r.name, r.firm, r.address, r.phone && `Phone: ${r.phone}`, r.mobile && `Mobile: ${r.mobile}`, r.email && `Email: ${r.email}`, r.website && `Website: ${r.website}`,
-    ...r.social.map((so) => `${so.label}: ${so.url}`), `Profile: ${r.profileUrl}`,
-  ].filter(Boolean).join('\n')).join('\n\n');
-  const text = `${who} this list of lawyers with you from ${s.site_name}.${note ? `\n\nTheir note: ${note}` : ''}\n\n${textRows}\n\nA PDF copy is attached.\n\n${s.disclaimer || ''}`;
-  const htmlRows = rows.map((r) => `<tr><td style="padding:14px 0;border-bottom:1px solid #e3e1da">
-<a href="${esc(r.profileUrl)}" style="font-size:16px;font-weight:bold;color:#1b2333;text-decoration:none">${esc(r.name)}</a>
-${r.firm ? `<div style="color:#5d6677">${esc(r.firm)}</div>` : ''}
-${r.address ? `<div>${esc(r.address)}</div>` : ''}
-${r.phone ? `<div>Phone: <a href="tel:${esc(r.phone.replace(/[^\d+]/g, ''))}">${esc(r.phone)}</a></div>` : ''}
-${r.mobile ? `<div>Mobile: <a href="tel:${esc(r.mobile.replace(/[^\d+]/g, ''))}">${esc(r.mobile)}</a></div>` : ''}
-${r.email ? `<div>Email: <a href="mailto:${esc(r.email)}">${esc(r.email)}</a></div>` : ''}
-${r.website ? `<div>Website: <a href="${esc(r.website)}">${esc(r.website)}</a></div>` : ''}
-${r.social.length ? `<div>${r.social.map((so) => `<a href="${esc(so.url)}">${esc(so.label)}</a>`).join(' · ')}</div>` : ''}
-<div><a href="${esc(r.profileUrl)}">View profile</a></div></td></tr>`).join('');
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#1b2333;max-width:620px">
-<p>${esc(who)} this list of lawyers with you from <strong>${esc(s.site_name)}</strong>.</p>
-${note ? `<p style="background:#f7f6f2;border-left:3px solid #b8862b;padding:8px 12px">${esc(note)}</p>` : ''}
-<table style="width:100%;border-collapse:collapse">${htmlRows}</table>
-<p style="color:#5d6677;font-size:12px">A PDF copy is attached.<br>${esc(s.disclaimer || '')}</p></div>`;
-  return { subject, text, html };
+/** Email body listing the lawyers (template "results" in Admin → Emails). */
+export function resultsEmail(rows, { fromName, note, siteUrl }) {
+  return renderEmail('results', {
+    sender: fromName || 'Someone',
+    count: `${rows.length} lawyer${rows.length === 1 ? '' : 's'}`,
+    note: quoteBlock(note, 'Note'),
+    lawyer_list: lawyerListBlock(rows),
+  }, { siteUrl });
 }
 
 /** Count of results emails sent from an address in the last hour (simple abuse limit). */

@@ -1,0 +1,60 @@
+<%- include('../partials/header') %>
+<section class="container container-wide page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <p class="small"><a href="/admin/emails">← All emails</a></p>
+    <h1><%= def.label %></h1>
+    <p class="muted small"><%= def.when %> <% if (tpl.customized) { %><span class="status status-active">Customized</span><% } %><% if (tpl.draft) { %> <span class="status status-draft">Unsaved changes</span><% } %></p>
+
+    <div class="email-editor">
+      <form method="post" action="/admin/emails/<%= key %>" class="card stack" id="email-form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label>Subject <input name="subject" value="<%= tpl.subject %>" maxlength="300" required data-email-field></label>
+        <label>Message
+          <textarea name="body" rows="18" class="mono" required data-email-field id="email-body"><%= tpl.body %></textarea>
+        </label>
+
+        <details class="small" open>
+          <summary><strong>Placeholders</strong> — click to insert at the cursor</summary>
+          <div class="chip-list">
+            <% Object.entries(def.vars || {}).forEach(([k, [label]]) => { %><button type="button" class="chip" data-insert="{{<%= k %>}}" title="<%= label %>">{{<%= k %>}}</button><% }) %>
+            <% Object.entries(COMMON_VARS).forEach(([k, label]) => { %><button type="button" class="chip" data-insert="{{<%= k %>}}" title="<%= label %>">{{<%= k %>}}</button><% }) %>
+          </div>
+          <% if (Object.keys(def.blocks || {}).length) { %>
+            <p class="tiny muted">Panels — put each on a line of its own:</p>
+            <div class="chip-list">
+              <% Object.entries(def.blocks).forEach(([k, label]) => { %><button type="button" class="chip chip-block" data-insert="&#10;&#10;{{<%= k %>}}&#10;&#10;" title="<%= label %>">{{<%= k %>}}</button><% }) %>
+            </div>
+          <% } %>
+          <ul class="tiny muted">
+            <% Object.entries(def.vars || {}).forEach(([k, [label]]) => { %><li><code>{{<%= k %>}}</code> — <%= label %></li><% }) %>
+            <% Object.entries(def.blocks || {}).forEach(([k, label]) => { %><li><code>{{<%= k %>}}</code> — <%= label %> (panel)</li><% }) %>
+          </ul>
+        </details>
+
+        <details class="small">
+          <summary><strong>Formatting</strong></summary>
+          <ul class="tiny muted">
+            <li><code># Heading</code> for the big title, <code>## Smaller heading</code></li>
+            <li><code>**bold**</code>, <code>*italic*</code>, <code>[link text](https://…)</code></li>
+            <li>Leave a blank line between paragraphs. Start lines with <code>- </code> for a bulleted list.</li>
+            <li>A button: <code>[[Button text|{{link}}]]</code> on a line of its own.</li>
+          </ul>
+        </details>
+
+        <div class="actions start">
+          <button class="btn btn-primary" name="action" value="save">Save</button>
+          <% if (mailOn) { %><button class="btn btn-outline" name="action" value="test">Send me a test</button><% } %>
+          <button type="submit" class="btn btn-ghost" id="preview-btn" formaction="/admin/emails/<%= key %>/preview" formtarget="email-preview" formnovalidate>Update preview</button>
+          <% if (tpl.customized) { %><button class="btn btn-ghost" name="action" value="reset" formnovalidate data-confirm="Go back to the original wording for this email? Your changes will be lost.">Reset to original</button><% } %>
+        </div>
+      </form>
+
+      <div class="email-preview-wrap">
+        <p class="tiny muted">Preview with sample details</p>
+        <iframe name="email-preview" id="email-preview" title="Email preview" src="/admin/emails/<%= key %>/preview" sandbox="allow-same-origin allow-popups"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

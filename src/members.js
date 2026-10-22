@@ -2,6 +2,7 @@
 // (or an admin). Switched in Admin → Lawyer profiles → Search results; on by default.
 import { db, getSettings } from './db.js';
 import { mailEnabled, sendMail } from './mailer.js';
+import { renderEmail } from './emails.js';
 
 export function membersOnly() {
   return getSettings().members_only !== '0';
@@ -35,19 +36,11 @@ export function watchApprovals(ids, siteUrl) {
   const before = new Map(ids.map((id) => [Number(id), db.prepare('SELECT status FROM lawyers WHERE id = ?').get(id)?.status]));
   return () => {
     if (!mailEnabled() || !membersOnly()) return;
-    const s = getSettings();
     for (const [id, was] of before) {
       if (was === 'active') continue;
       const l = db.prepare("SELECT l.name, u.email FROM lawyers l JOIN users u ON u.id = l.user_id WHERE l.id = ? AND l.status = 'active'").get(id);
       if (!l) continue;
-      const text = `Hello ${l.name},
-
-Your ${s.site_name} membership has been approved. You can now sign in to search the directory and use the AI lawyer match:
-
-${siteUrl}/login
-
-Your listing is also now live in the directory.`;
-      sendMail({ to: l.email, subject: `Your ${s.site_name} membership is approved`, text })
+      sendMail({ to: l.email, ...renderEmail('approved', { name: l.name, login_link: `${siteUrl}/login` }, { siteUrl }) })
         .catch((e) => console.error('approval email failed:', e.message));
     }
   };

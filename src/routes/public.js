@@ -16,6 +16,7 @@ import { exportRows, allMatchingIds, buildPdf, resultsEmail, recentShares, logSh
 import { baseUrl } from '../invites.js';
 import { requireMember, isMember } from '../members.js';
 import { track } from '../stats.js';
+import { renderEmail, detailsBlock, quoteBlock } from '../emails.js';
 import { referrer, checkReferral, saveReferral, sendReferral } from '../referrals.js';
 
 const router = Router();
@@ -113,7 +114,7 @@ router.post('/lawyers/email-results', requireMember, shareLimit, async (req, res
   const rows = exportRows(selectedIds(b), baseUrl(req));
   if (!rows.length) return res.status(400).json({ error: 'Select at least one lawyer first.' });
   try {
-    const { subject, text, html } = resultsEmail(rows, { fromName, note });
+    const { subject, text, html } = resultsEmail(rows, { fromName, note, siteUrl: baseUrl(req) });
     const pdf = await buildPdf(rows, { note, referredBy: referrer(req) });
     await sendMail({ to, subject, text, html, attachments: [{ filename: 'lawyers.pdf', content: pdf, contentType: 'application/pdf' }] });
     logShare(req.ip, to, rows.length);
@@ -145,25 +146,22 @@ router.get('/lawyers/:slug', ownProfileOrMember, (req, res, next) => {
 
 const inquiryLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
 /** Email a new inquiry to the lawyer and/or the admins, per Admin → Lawyer profiles. Runs in the background. */
-function notifyInquiry(lawyer, q) {
+function notifyInquiry(lawyer, q, siteUrl) {
   if (!mailEnabled()) return;
   const pf = getProfileSettings();
   const to = [];
   if (pf.notify_lawyer && lawyer.email) to.push(lawyer.email);
   if (pf.notify_admin) to.push(...db.prepare("SELECT email FROM users WHERE role = 'admin'").all().map((u) => u.email));
   if (!to.length) return;
-  const site = getSettings().site_name;
-  const via = q.source === 'assistant' ? ` (via the ${site} AI lawyer match)` : '';
-  const text = `New inquiry for ${lawyer.name} from ${site}${via}
-
-Name: ${q.name}
-Email: ${q.email}${q.phone ? `\nPhone: ${q.phone}` : ''}
-
-${q.message}
-
-Reply directly to this person by email or phone. This message was sent through your directory listing.`;
+  const email = renderEmail('inquiry', {
+    lawyer_name: lawyer.name,
+    sender_name: q.name,
+    via: q.source === 'assistant' ? ' (from the AI lawyer match)' : '',
+    sender_details: detailsBlock([['Name', q.name], ['Email', q.email, `mailto:${q.email}`], ['Phone', q.phone, q.phone && `tel:${q.phone.replace(/[^\d+]/g, '')}`]]),
+    message: quoteBlock(q.message, 'Message'),
+  }, { siteUrl });
   for (const addr of [...new Set(to)]) {
-    sendMail({ to: addr, subject: `New inquiry from ${q.name} via ${site}`, text, replyTo: q.email })
+    sendMail({ to: addr, ...email, replyTo: q.email })
       .catch((e) => console.error('inquiry email failed:', e.message));
   }
 }
@@ -183,7 +181,7 @@ router.post('/lawyers/:slug/contact', requireMember, inquiryLimit, (req, res, ne
   };
   db.prepare('INSERT INTO inquiries (lawyer_id, name, email, phone, message, source) VALUES (?, ?, ?, ?, ?, ?)')
     .run(lawyer.id, inquiry.name, inquiry.email, inquiry.phone, inquiry.message, inquiry.source);
-  notifyInquiry(lawyer, inquiry);
+  notifyInquiry(lawyer, inquiry, baseUrl(req));
   track('inquiry', { user: req.user, lawyerId: lawyer.id });
   flash(req, 'success', `Your message was sent to ${lawyer.name}. They will contact you directly.`);
   res.redirect(`/lawyers/${lawyer.slug}`);

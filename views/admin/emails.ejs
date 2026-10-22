@@ -1,0 +1,29 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <h1>Emails</h1>
+    <p class="muted small">Every email the site sends uses your colours and logo from <a href="/admin/appearance">Appearance</a>. Click an email to change its subject and wording, preview it, and send yourself a test.</p>
+
+    <div class="card">
+      <div class="email-list">
+        <% rows.forEach(r => { %>
+          <a class="email-row" href="/admin/emails/<%= r.key %>">
+            <span><strong><%= r.label %></strong><span class="small muted"><%= r.when %></span></span>
+            <span class="status status-<%= r.customized ? 'active' : 'draft' %>"><%= r.customized ? 'Customized' : 'Original' %></span>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/emails/footer" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2>Footer</h2>
+      <p class="small muted">The line at the bottom of every email. You can use <code>{{site_name}}</code> and <code>{{site_link}}</code>. Your site disclaimer is added below it automatically.</p>
+      <label class="sr-only" for="email-footer">Email footer</label>
+      <input id="email-footer" name="email_footer" value="<%= footer %>" placeholder="<%= DEFAULT_FOOTER %>">
+      <div class="actions start"><button class="btn btn-primary btn-sm">Save footer</button></div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

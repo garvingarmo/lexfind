@@ -3,6 +3,7 @@
 import { db, getSettings } from './db.js';
 import { mailEnabled, sendMail } from './mailer.js';
 import { getProfileSettings } from './profileSettings.js';
+import { renderEmail, detailsBlock, quoteBlock } from './emails.js';
 
 const clean = (v, max) => String(v ?? '').trim().slice(0, max);
 
@@ -49,55 +50,40 @@ export function saveReferral(to, from, data) {
  */
 export async function sendReferral(id, to, from, data, siteUrl) {
   if (!mailEnabled()) return false;
-  const site = getSettings().site_name;
-  const fromLine = [from.name, from.firm].filter(Boolean).join(', ');
-  const fromContact = [from.email, from.phone].filter(Boolean).join(' · ');
-  const details = `Client: ${data.client_name}
-Email: ${data.client_email}
-Phone: ${data.client_phone}
-${data.matter ? `\nAbout the matter:\n${data.matter}\n` : ''}`;
-  const fromProfile = from.slug ? `\nReferring member's profile: ${siteUrl}/lawyers/${from.slug}` : '';
+  const member = [from.name, from.firm].filter(Boolean).join(', ');
+  const lawyer = [to.name, to.firm].filter(Boolean).join(', ');
+  const lawyerLink = `${siteUrl}/lawyers/${to.slug}`;
+  const tel = (n) => n && `tel:${n.replace(/[^\d+]/g, '')}`;
+  const common = {
+    lawyer_name: to.name, lawyer, member_name: from.name, member, client_name: data.client_name, lawyer_link: lawyerLink,
+    client_details: detailsBlock([['Client', data.client_name], ['Email', data.client_email, `mailto:${data.client_email}`], ['Phone', data.client_phone, tel(data.client_phone)]]),
+    matter: quoteBlock(data.matter, 'About the matter'),
+    member_details: detailsBlock([
+      ['Referred by', member, from.slug && `${siteUrl}/lawyers/${from.slug}`],
+      ['Email', from.email, `mailto:${from.email}`], ['Phone', from.phone, tel(from.phone)],
+    ]),
+  };
   const sends = [];
-  let toLawyer = false;
+  const toLawyer = Boolean(to.email);
 
-  if (to.email) {
-    toLawyer = true;
-    sends.push(sendMail({
-      to: to.email,
-      replyTo: from.email,
-      subject: `Client referral from ${from.name} via ${site}`,
-      text: `Hello ${to.name},
-
-${fromLine} has referred a client to you through ${site}.
-
-${details}
-Referred by: ${fromLine}
-Contact: ${fromContact}${fromProfile}
-
-Please contact the client directly. Reply to this email to reach ${from.name}.
-
-Your referrals: ${siteUrl}/dashboard/referrals`,
-    }));
+  if (toLawyer) {
+    sends.push(sendMail({ to: to.email, replyTo: from.email, ...renderEmail('referral_lawyer', { ...common, referrals_link: `${siteUrl}/dashboard/referrals` }, { siteUrl }) }));
   }
   sends.push(sendMail({
     to: from.email,
-    subject: `Your referral of ${data.client_name} to ${to.name}`,
-    text: `You referred a client to ${to.name}${to.firm ? ` (${to.firm})` : ''} through ${site}.
-
-${details}
-${toLawyer ? `${to.name} has been emailed these details.` : `${to.name} has no email address on file, so our team has been asked to pass this on.`}
-
-Lawyer's profile: ${siteUrl}/lawyers/${to.slug}`,
+    ...renderEmail('referral_copy', {
+      ...common,
+      delivery_note: toLawyer ? `${to.name} has been emailed these details.` : `${to.name} has no email address on file, so our team has been asked to pass this on.`,
+    }, { siteUrl }),
   }));
-  if (getProfileSettings().notify_admin || !to.email) {
+  if (getProfileSettings().notify_admin || !toLawyer) {
+    const adminEmail = renderEmail('referral_admin', {
+      ...common,
+      delivery_note: toLawyer ? '' : `${to.name} has no email address on file — please forward this referral to them.`,
+    }, { siteUrl });
     for (const { email } of db.prepare("SELECT email FROM users WHERE role = 'admin'").all()) {
       if (email === from.email) continue;
-      sends.push(sendMail({
-        to: email,
-        replyTo: from.email,
-        subject: `Referral: ${from.name} → ${to.name}${to.email ? '' : ' (lawyer has no email; please forward)'}`,
-        text: `${fromLine} (${fromContact}) referred a client to ${to.name} (${siteUrl}/lawyers/${to.slug}).\n\n${details}`,
-      }));
+      sends.push(sendMail({ to: email, replyTo: from.email, ...adminEmail }));
     }
   }
   const results = await Promise.allSettled(sends);

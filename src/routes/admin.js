@@ -19,6 +19,7 @@ import { watchApprovals } from '../members.js';
 import { allReferrals } from '../referrals.js';
 import { listBackups, backupPath, streamFullBackup } from '../backup.js';
 import { usageStats, PERIODS, EVENT_LABELS } from '../stats.js';
+import { EMAILS, COMMON_VARS, DEFAULT_FOOTER, getTemplate, saveTemplate, resetTemplate, getFooter, renderEmail, sampleValues } from '../emails.js';
 import { baseUrl } from '../invites.js';
 import { createInvite, activeInvite, inviteStatuses, inviteUrl, mailEnabled, sendInvite, sendInBackground } from '../invites.js';
 import { IMPORT_FIELDS, autoMap, fetchSheet, stageCsv, loadStaged, discardStaged, rowToLawyer, runImport, deleteSampleData, deleteAllLawyers, templateCsv } from '../importer.js';
@@ -412,6 +413,76 @@ router.get('/stats', (req, res) => {
   res.render('admin/stats', { title: 'Statistics', stats, bars, days, PERIODS, EVENT_LABELS });
 });
 
+// --- Email templates ---------------------------------------------------------------
+
+router.get('/emails', (req, res) => {
+  const rows = Object.entries(EMAILS).map(([key, def]) => ({ key, label: def.label, when: def.when, customized: getTemplate(key).customized }));
+  res.render('admin/emails', { title: 'Emails', rows, footer: getFooter(), DEFAULT_FOOTER });
+});
+
+router.post('/emails/footer', (req, res) => {
+  const footer = String(req.body.email_footer || '').trim().slice(0, 500);
+  setSetting('email_footer', footer === DEFAULT_FOOTER ? '' : footer);
+  flash(req, 'success', 'Email footer saved.');
+  res.redirect('/admin/emails');
+});
+
+const emailKey = (req, res, next) => (EMAILS[req.params.key] ? next() : next('route'));
+
+router.get('/emails/:key', emailKey, (req, res) => {
+  const def = EMAILS[req.params.key];
+  let tpl = getTemplate(req.params.key);
+  const draft = req.session.emailDraft;
+  if (draft?.key === req.params.key) { tpl = { ...tpl, subject: draft.subject || tpl.subject, body: draft.body || tpl.body, draft: true }; delete req.session.emailDraft; }
+  res.render('admin/email-edit', { title: `Email: ${def.label}`, key: req.params.key, def, tpl, COMMON_VARS, mailOn: smtpEnabled() });
+});
+
+/** Preview with sample values. GET shows the saved version; POST shows the draft being edited. */
+function sendPreview(req, res, template) {
+  const { html } = renderEmail(req.params.key, sampleValues(req.params.key), { siteUrl: baseUrl(req), template });
+  // The email carries its own inline styles and fonts, so relax the site's stylesheet rules for this frame only.
+  res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data:; frame-ancestors 'self'");
+  res.type('html').send(html);
+}
+router.get('/emails/:key/preview', emailKey, (req, res) => sendPreview(req, res, getTemplate(req.params.key)));
+router.post('/emails/:key/preview', emailKey, (req, res) => {
+  const def = EMAILS[req.params.key];
+  sendPreview(req, res, { subject: String(req.body.subject || '') || def.subject, body: String(req.body.body || '').replace(/\r\n/g, '\n') || def.body });
+});
+
+router.post('/emails/:key', emailKey, async (req, res) => {
+  const { key } = req.params;
+  const def = EMAILS[key];
+  const back = `/admin/emails/${key}`;
+  if (req.body.action === 'reset') {
+    resetTemplate(key);
+    flash(req, 'success', `"${def.label}" is back to the original wording.`);
+    return res.redirect(back);
+  }
+  const subject = String(req.body.subject || '').trim();
+  const body = String(req.body.body || '').replace(/\r\n/g, '\n').trim();
+  if (req.body.action === 'test') {
+    try {
+      if (!smtpEnabled()) throw new Error('Email is not set up yet (Admin → Integrations).');
+      const email = renderEmail(key, sampleValues(key), { siteUrl: baseUrl(req), template: { subject: subject || def.subject, body: body || def.body } });
+      await sendMail({ to: req.user.email, ...email, subject: `[Test] ${email.subject}` });
+      flash(req, 'success', `Test sent to ${req.user.email} with sample details. (Changes on this page are not saved until you click Save.)`);
+    } catch (e) {
+      flash(req, 'error', `Could not send the test: ${e.message}`);
+    }
+    req.session.emailDraft = { key, subject, body };
+    return res.redirect(back);
+  }
+  if (!subject || !body) {
+    flash(req, 'error', 'The subject and the message can\'t be empty. Use "Reset to original" to go back to the default wording.');
+    req.session.emailDraft = { key, subject, body };
+    return res.redirect(back);
+  }
+  saveTemplate(key, subject, body);
+  flash(req, 'success', `Saved "${def.label}". Emails sent from now on use this wording.`);
+  res.redirect(back);
+});
+
 router.get('/backups', (req, res) => res.render('admin/backups', { title: 'Backups', rows: listBackups() }));
 
 router.get('/backups/download', (req, res) => {
@@ -728,12 +799,7 @@ router.post('/integrations/mail/test', async (req, res) => {
   try {
     if (!smtpEnabled()) throw new Error('Email is not set up yet.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error(`"${to}" is not an email address.`);
-    const info = await sendMail({
-      to,
-      subject: `${getSettings().site_name}: test email`,
-      text: 'This test email confirms your website can send email (password resets and lawyer invitations).',
-      html: '<p>This test email confirms your website can send email (password resets and lawyer invitations).</p>',
-    });
+    const info = await sendMail({ to, ...renderEmail('test', {}, { siteUrl: baseUrl(req) }) });
     console.log(`[mail] test email to ${to}: ${info.response}`);
     flash(req, 'success', `Test email handed to the mail server for ${to} (server reply: ${info.response}). Check the inbox and spam folder${mailConfig().provider === 'smtp' ? "; if it hasn't arrived in a few minutes, look it up in cPanel → Email → Track Delivery" : ''}.`);
   } catch (e) {
