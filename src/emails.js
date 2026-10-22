@@ -319,7 +319,7 @@ export function renderEmail(key, values = {}, { siteUrl, template } = {}) {
   const logo = theme.theme_logo
     ? `<img src="${esc(/^https?:/.test(theme.theme_logo) ? theme.theme_logo : base + theme.theme_logo)}" alt="${esc(s.site_name)}" height="40" style="display:block;height:40px;max-width:240px;border:0;background:#fff;border-radius:6px;padding:4px 8px">`
     // The Chaldean Law logo (PNG: many email apps, Gmail included, don't show SVG).
-    : `<img src="${esc(base)}/brand/email-logo.png" alt="${esc(s.site_name)}" width="194" height="48" style="display:block;width:194px;height:48px;border:0">`;
+    : `<img src="${esc(base)}/brand/email-logo.png" alt="${esc(s.site_name)}" width="213" height="48" style="display:block;width:213px;height:48px;border:0">`;
 
   // Plain-text version for clients that don't show HTML.
   let text = tpl.body.replace(/^[ \t]*\[\[([^|\]]+)\|([^\]]+)\]\][ \t]*$/gm, (m, label, href) => `${label.trim()}: ${href.trim()}`);

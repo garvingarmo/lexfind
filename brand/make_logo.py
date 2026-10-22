@@ -99,18 +99,52 @@ def cap_height(font, size):
     return font.f["OS/2"].sCapHeight / font.upm * size
 
 
+GOLD = "#B8862B"      # scales of justice
+
+
+def scales(cx, base_y, h, col):
+    """Scales of justice standing on base_y (the text baseline), h tall, centred on cx.
+    Drawn on a 100-unit grid: finial at the top, curved beam, two chained pans, pillar and base."""
+    s = h / 100.0
+    sw = 3.2 * s
+    X = lambda x: f(cx + x * s)
+    Y = lambda y: f(base_y - (100 - y) * s)
+    parts = [
+        f'<rect x="{X(-2.2)}" y="{Y(12)}" width="{f(4.4 * s)}" height="{f(80 * s)}" fill="{col}"/>',
+        f'<path d="M{X(-20)},{Y(100)} L{X(20)},{Y(100)} L{X(14)},{Y(93)} L{X(-14)},{Y(93)} Z" fill="{col}"/>',
+        f'<rect x="{X(-9)}" y="{Y(89)}" width="{f(18 * s)}" height="{f(4 * s)}" fill="{col}"/>',
+        f'<circle cx="{X(0)}" cy="{Y(9)}" r="{f(4.6 * s)}" fill="{col}"/>',
+        f'<path d="M{X(-42)},{Y(22)} Q{X(0)},{Y(14)} {X(42)},{Y(22)}" fill="none" stroke="{col}" stroke-width="{f(sw)}" stroke-linecap="round"/>',
+    ]
+    for side in (-1, 1):
+        ex = 42 * side
+        parts.append(f'<circle cx="{X(ex)}" cy="{Y(22)}" r="{f(2.6 * s)}" fill="{col}"/>')
+        for dx in (-13, 13):
+            parts.append(f'<line x1="{X(ex)}" y1="{Y(22)}" x2="{X(ex + dx)}" y2="{Y(56)}" stroke="{col}" stroke-width="{f(sw * 0.45)}"/>')
+        parts.append(f'<path d="M{X(ex - 17)},{Y(56)} L{X(ex + 17)},{Y(56)} Q{X(ex + 13)},{Y(66)} {X(ex)},{Y(66)} Q{X(ex - 13)},{Y(66)} {X(ex - 17)},{Y(56)} Z" fill="{col}"/>')
+    return "".join(parts)
+
+
 def wordmark(x, top, size, ink, align="center"):
-    """Two-line name; DIRECTORY is centred beneath CHALDEAN LAW.
+    """CHALDEAN [scales] LAW on one line, DIRECTORY centred beneath.
     Returns (svg, width, height). x is the centre (align=center) or left edge."""
     track1 = size * 0.08
-    w1 = CINZEL_SB.measure(LINE1, size, track1)
+    cap = cap_height(CINZEL_SB, size)
+    w_a = CINZEL_SB.measure("CHALDEAN", size, track1)
+    w_b = CINZEL_SB.measure("LAW", size, track1)
+    sc_h = cap * 1.55                 # the scales rise a little above the capitals
+    sc_w = sc_h * 1.18                # beam plus pans span 118 of the 100 height units
+    gap = size * 0.21
+    w1 = w_a + gap + sc_w + gap + w_b
     size2 = size * 0.46
     track2 = size2 * 0.32
     w2 = CINZEL_MD.measure(LINE2, size2, track2)
     left = x - w1 / 2 if align == "center" else x
-    b1 = top + cap_height(CINZEL_SB, size)
+    b1 = top + sc_h
     b2 = b1 + size * 0.36 + cap_height(CINZEL_MD, size2)
-    out = f'<path d="{CINZEL_SB.path(LINE1, size, track1, left, b1)}" fill="{ink}"/>'
+    out = f'<path d="{CINZEL_SB.path("CHALDEAN", size, track1, left, b1)}" fill="{ink}"/>'
+    out += scales(left + w_a + gap + sc_w / 2, b1, sc_h, GOLD)
+    out += f'<path d="{CINZEL_SB.path("LAW", size, track1, left + w_a + gap + sc_w + gap, b1)}" fill="{ink}"/>'
     out += f'<path d="{CINZEL_MD.path(LINE2, size2, track2, left + (w1 - w2) / 2, b2)}" fill="{ink}"/>'
     return out, w1, b2 - top
 

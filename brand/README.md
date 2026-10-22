@@ -1,6 +1,7 @@
 # Chaldean Law logo
 
-The logo is the Chaldean flag emblem with the wordmark "CHALDEAN LAW / DIRECTORY" (Cinzel, converted to
+The logo is the Chaldean flag emblem with the wordmark "CHALDEAN ⚖ LAW / DIRECTORY" (gold scales of justice
+between the words; Cinzel lettering converted to
 outlines). **The flag emblem must not be altered** — only scaled or positioned. Its geometry is in
 `flag_emblem.py`, traced from the official flag artwork (red #DE0000, yellow #FFF000, blue #0241AB, white).
 
