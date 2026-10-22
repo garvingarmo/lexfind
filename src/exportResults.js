@@ -23,6 +23,7 @@ export function exportRows(ids, baseUrl) {
       firm: l.firm || '',
       address: pf.show_office ? [l.address, [l.city, [l.state, l.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(', ') : [l.city, l.state].filter(Boolean).join(', '),
       phone: pf.show_phone ? l.phone || '' : '',
+      mobile: pf.show_mobile ? l.mobile || '' : '',
       email: pf.show_email ? l.email || '' : '',
       website: pf.show_website ? l.website || '' : '',
       social: pf.show_social ? lawyerSocial(l).map((s) => ({ label: s.label, url: s.url })) : [],
@@ -93,7 +94,7 @@ export function buildPdf(rows, { note, referredBy } = {}) {
 
     rows.forEach((r, i) => {
       // Keep each lawyer on one page: name, firm, areas, then one line per detail.
-      const details = [r.address, r.phone, r.email, r.website, ...r.social, r.profileUrl].filter(Boolean).length;
+      const details = [r.address, r.phone, r.mobile, r.email, r.website, ...r.social, r.profileUrl].filter(Boolean).length;
       const needed = 95 + details * 17;
       if (doc.y + needed > doc.page.height - doc.page.margins.bottom) doc.addPage();
       else if (i > 0) {
@@ -106,6 +107,7 @@ export function buildPdf(rows, { note, referredBy } = {}) {
       doc.moveDown(0.5);
       line('Address', r.address);
       line('Phone', r.phone, r.phone ? `tel:${r.phone.replace(/[^\d+]/g, '')}` : null);
+      line('Mobile', r.mobile, r.mobile ? `tel:${r.mobile.replace(/[^\d+]/g, '')}` : null);
       line('Email', r.email, r.email ? `mailto:${r.email}` : null);
       line('Website', r.website, r.website || null);
       for (const so of r.social) line(so.label, so.url, so.url);
@@ -127,7 +129,7 @@ export function resultsEmail(rows, { fromName, note }) {
   const who = fromName ? `${fromName} shared` : 'Someone shared';
   const subject = `${who} ${rows.length} lawyer${rows.length === 1 ? '' : 's'} from ${s.site_name}`;
   const textRows = rows.map((r) => [
-    r.name, r.firm, r.address, r.phone && `Phone: ${r.phone}`, r.email && `Email: ${r.email}`, r.website && `Website: ${r.website}`,
+    r.name, r.firm, r.address, r.phone && `Phone: ${r.phone}`, r.mobile && `Mobile: ${r.mobile}`, r.email && `Email: ${r.email}`, r.website && `Website: ${r.website}`,
     ...r.social.map((so) => `${so.label}: ${so.url}`), `Profile: ${r.profileUrl}`,
   ].filter(Boolean).join('\n')).join('\n\n');
   const text = `${who} this list of lawyers with you from ${s.site_name}.${note ? `\n\nTheir note: ${note}` : ''}\n\n${textRows}\n\nA PDF copy is attached.\n\n${s.disclaimer || ''}`;
@@ -136,6 +138,7 @@ export function resultsEmail(rows, { fromName, note }) {
 ${r.firm ? `<div style="color:#5d6677">${esc(r.firm)}</div>` : ''}
 ${r.address ? `<div>${esc(r.address)}</div>` : ''}
 ${r.phone ? `<div>Phone: <a href="tel:${esc(r.phone.replace(/[^\d+]/g, ''))}">${esc(r.phone)}</a></div>` : ''}
+${r.mobile ? `<div>Mobile: <a href="tel:${esc(r.mobile.replace(/[^\d+]/g, ''))}">${esc(r.mobile)}</a></div>` : ''}
 ${r.email ? `<div>Email: <a href="mailto:${esc(r.email)}">${esc(r.email)}</a></div>` : ''}
 ${r.website ? `<div>Website: <a href="${esc(r.website)}">${esc(r.website)}</a></div>` : ''}
 ${r.social.length ? `<div>${r.social.map((so) => `<a href="${esc(so.url)}">${esc(so.label)}</a>`).join(' · ')}</div>` : ''}

@@ -4,7 +4,7 @@ import { LAWYER_SOCIAL_KEYS, normalizeSocial } from './social.js';
 import { normalizeLanguages } from './languages.js';
 
 export const LAWYER_FIELDS = [
-  'name', 'firm', 'title', 'bio', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip',
+  'name', 'firm', 'title', 'bio', 'email', 'phone', 'mobile', 'website', 'address', 'city', 'state', 'zip',
   'bar_number', 'bar_admissions', 'years_experience', 'languages', 'education',
   'social_linkedin', 'social_facebook', 'social_instagram', 'social_x', 'social_youtube', 'social_tiktok',
 ];

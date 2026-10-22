@@ -124,6 +124,7 @@ export const TEXT_GROUPS = {
     'card.sponsored': 'Sponsored',
     'card.experience': 'yrs experience',
     'card.view': 'View profile',
+    'profile.mobile': 'Mobile',
     'profile.about': 'About',
     'profile.noBio': 'No bio yet.',
     'profile.details': 'Details',

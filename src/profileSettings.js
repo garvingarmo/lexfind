@@ -3,6 +3,7 @@ import { getSettings, setSetting } from './db.js';
 
 export const PROFILE_OPTIONS = {
   show_phone: ['Phone number', true],
+  show_mobile: ['Mobile number', true],
   show_email: ['Email address', false],
   show_website: ['Website button', true],
   show_office: ['Office address', true],
