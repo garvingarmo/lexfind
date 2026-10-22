@@ -39,13 +39,27 @@
             </select>
           </label>
 
-          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="resend brevo sendgrid" <%= mail.provider === 'smtp' ? 'hidden' : '' %>>
+          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="resend brevo sendgrid" <%= ['resend', 'brevo', 'sendgrid'].includes(mail.provider) ? '' : 'hidden' %>>
             <p class="span-2 small muted" data-show-for-provider="resend">Sign up at <a href="https://resend.com" target="_blank" rel="noopener">resend.com</a>, add your domain under <strong>Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>API Keys</strong> (permission "Sending access") and paste it below.</p>
             <p class="span-2 small muted" data-show-for-provider="brevo">Sign up at <a href="https://www.brevo.com" target="_blank" rel="noopener">brevo.com</a>, authenticate your domain under <strong>Senders, Domains &amp; Dedicated IPs → Domains</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>SMTP &amp; API → API Keys</strong> and paste it below.</p>
             <p class="span-2 small muted" data-show-for-provider="sendgrid">Sign up at <a href="https://sendgrid.com" target="_blank" rel="noopener">sendgrid.com</a>, go to <strong>Settings → Sender Authentication → Authenticate Your Domain</strong> and copy its DNS records to your domain's DNS. Then create a key under <strong>Settings → API Keys</strong> ("Restricted Access" with <strong>Mail Send</strong> on) and paste it below.</p>
             <label class="span-2">API key <% if (mail.keyMasked) { %><span class="tiny muted">(saved: <%= mail.keyMasked %>; paste a new one to replace it)</span><% } %>
               <input name="mail_api_key" type="password" autocomplete="off" placeholder="Paste the key from the sending service">
             </label>
+          </div>
+
+          <div class="span-2 form-grid" data-group="mail-provider" data-show-for="gmail" <%= mail.provider === 'gmail' ? '' : 'hidden' %>>
+            <div class="span-2 small muted">
+              <p>Sends through Google's mail servers, so messages reach Gmail and Outlook inboxes reliably. Gmail allows about 500 emails a day (2,000 with Google Workspace).</p>
+              <ol>
+                <li>Sign in to the Gmail account at <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">myaccount.google.com/security</a> and turn on <strong>2-Step Verification</strong> if it isn't on.</li>
+                <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>, type a name such as <em>Chaldean Law website</em>, and click <strong>Create</strong>.</li>
+                <li>Copy the 16-letter password Google shows and paste it below. (Not your normal Gmail password.)</li>
+              </ol>
+            </div>
+            <label>Gmail address <input name="gmail_user" type="email" value="<%= gmail.user %>" placeholder="e.g. yourname@gmail.com" autocomplete="off"></label>
+            <label>App password <% if (gmail.passMasked) { %><span class="tiny muted">(saved; leave blank to keep)</span><% } %><input name="gmail_pass" type="password" autocomplete="new-password" placeholder="abcd efgh ijkl mnop"></label>
+            <p class="span-2 tiny muted">Emails are sent from this Gmail address; Gmail replaces any other "send as" address unless it's added in Gmail under Settings → Accounts → <em>Send mail as</em>. Replies from site emails (inquiries, referrals) still go to the right person.</p>
           </div>
 
           <div class="span-2 form-grid" data-group="mail-provider" data-show-for="smtp" <%= mail.provider === 'smtp' ? '' : 'hidden' %>>

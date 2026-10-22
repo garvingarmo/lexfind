@@ -1,5 +1,5 @@
-// Outgoing email (invitations, password resets, notifications), sent either over SMTP or through
-// a sending service's web API (Resend, Brevo, SendGrid). Configured by MAIL_* / SMTP_* environment
+// Outgoing email (invitations, password resets, notifications), sent over SMTP (your mail server or
+// Gmail) or through a sending service's web API (Resend, Brevo, SendGrid). Configured by MAIL_* / SMTP_* environment
 // variables, or in Admin → Integrations.
 import nodemailer from 'nodemailer';
 import { getSecret } from './db.js';
@@ -11,6 +11,7 @@ const UNREACHABLE = new Set(['ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETU
 
 export const PROVIDERS = {
   smtp: 'Your mail server (SMTP)',
+  gmail: 'Gmail / Google Workspace',
   resend: 'Resend (resend.com)',
   brevo: 'Brevo (brevo.com)',
   sendgrid: 'Twilio SendGrid (sendgrid.com)',
@@ -25,6 +26,13 @@ export function mailConfig() {
   const env = process.env;
   const pick = (envName, secret) => env[envName] || getSecret(secret);
   const provider = pick('MAIL_PROVIDER', 'mail_provider');
+  if (provider === 'gmail') {
+    // Google's SMTP server with an app password; the login is kept apart from the cPanel mailbox settings.
+    return {
+      provider, host: 'smtp.gmail.com', port: 465, secure: true,
+      user: pick('GMAIL_USER', 'gmail_user'), pass: pick('GMAIL_APP_PASSWORD', 'gmail_pass'), from: pick('MAIL_FROM', 'mail_from'),
+    };
+  }
   return {
     provider: PROVIDERS[provider] ? provider : 'smtp',
     apiKey: pick('MAIL_API_KEY', 'mail_api_key'),
@@ -40,6 +48,7 @@ export function mailConfig() {
 /** True when SMTP settings are configured, so the site can send email. */
 export function mailEnabled() {
   const c = mailConfig();
+  if (c.provider === 'gmail') return Boolean(c.from && c.user && c.pass);
   return Boolean(c.from && (c.provider === 'smtp' ? c.host : c.apiKey));
 }
 
@@ -133,6 +142,19 @@ const isUnreachable = (err) => UNREACHABLE.has(err?.code) && !err.responseCode &
 
 export async function sendMail({ to, subject, text, html, replyTo, attachments }) {
   const c = mailConfig();
+  if (c.provider === 'gmail') {
+    try {
+      return await getTransport(c, c.host).sendMail({ from: c.from, to, subject, text, html, replyTo, attachments });
+    } catch (err) {
+      if (err.code === 'EAUTH' || err.responseCode === 535) {
+        throw new Error('Gmail did not accept the login. Use a 16-letter app password (not your normal Gmail password), and check the Gmail address is right.');
+      }
+      if (UNREACHABLE.has(err.code)) {
+        throw new Error(`This server could not connect to smtp.gmail.com on port 465 (${err.code}). The server's firewall or provider may be blocking outgoing mail ports.`);
+      }
+      throw err;
+    }
+  }
   if (c.provider !== 'smtp') return API_SENDERS[c.provider](c, { to, subject, text, html, replyTo, attachments });
   const message = { from: c.from, to, subject, text, html, replyTo, attachments };
   const key = JSON.stringify(c);

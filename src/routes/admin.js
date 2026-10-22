@@ -630,9 +630,12 @@ router.get('/integrations', (req, res) => {
   const suggest = { user: domain ? `noreply@${domain}` : '', from: domain ? `${getSettings().site_name} <noreply@${domain}>` : '' };
   const missing = mail.provider === 'smtp'
     ? [!mail.host && 'mail server', !mail.from && '"send emails as" address', mail.user && !mail.pass && 'password'].filter(Boolean)
-    : [!mail.apiKey && 'API key', !mail.from && '"send emails as" address'].filter(Boolean);
+    : mail.provider === 'gmail'
+      ? [!mail.user && 'Gmail address', !mail.pass && 'app password', !mail.from && '"send emails as" address'].filter(Boolean)
+      : [!mail.apiKey && 'API key', !mail.from && '"send emails as" address'].filter(Boolean);
+  const gmail = { user: getSecret('gmail_user') || '', passMasked: mask(getSecret('gmail_pass')) };
   res.render('admin/integrations', {
-    suggest, missing, PROVIDERS,
+    suggest, missing, PROVIDERS, gmail,
     title: 'Integrations',
     ai: { on: aiEnabled(), fromEnv: Boolean(process.env.ANTHROPIC_API_KEY), masked: mask(apiKey()), model: MODEL },
     mail: { ...mail, pass: undefined, apiKey: undefined, passMasked: mask(mail.pass), keyMasked: mask(mail.apiKey), on: smtpEnabled(), fromEnv: Boolean(process.env.SMTP_HOST || process.env.MAIL_PROVIDER) },
@@ -665,29 +668,36 @@ router.post('/integrations/ai/test', async (req, res) => {
 router.post('/integrations/mail', (req, res) => {
   const b = req.body;
   if (b.remove) {
-    for (const k of ['mail_provider', 'mail_api_key', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'mail_from']) setSecret(k, '');
+    for (const k of ['mail_provider', 'mail_api_key', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'gmail_user', 'gmail_pass', 'mail_from']) setSecret(k, '');
     flash(req, 'success', 'Email settings removed.');
     return res.redirect('/admin/integrations');
   }
   const provider = PROVIDERS[b.mail_provider] ? b.mail_provider : 'smtp';
-  const from = (b.mail_from || '').trim();
-  setSecret('mail_provider', provider);
-  setSecret('mail_from', from);
+  let from = (b.mail_from || '').trim();
   let missing;
-  if (provider === 'smtp') {
+  if (provider === 'gmail') {
+    const user = (b.gmail_user || '').trim().toLowerCase();
+    setSecret('gmail_user', user);
+    // Google shows app passwords in groups of four ("abcd efgh ijkl mnop"); spaces aren't part of it.
+    if (b.gmail_pass) setSecret('gmail_pass', b.gmail_pass.replace(/\s+/g, ''));
+    if (!from && user) from = `${getSettings().site_name} <${user}>`;
+    missing = [!user && 'Gmail address', !getSecret('gmail_pass') && 'App password', !from && 'Send emails as'];
+  } else if (provider === 'smtp') {
     const host = (b.smtp_host || '').trim();
     const user = (b.smtp_user || '').trim();
     setSecret('smtp_host', host);
     setSecret('smtp_port', String(parseInt(b.smtp_port, 10) || 465));
     setSecret('smtp_user', user);
     if (b.smtp_pass) setSecret('smtp_pass', b.smtp_pass);
-    missing = [!host && 'Mail server', !from && 'Send emails as', user && !mailConfig().pass && 'Password'];
+    missing = [!host && 'Mail server', !from && 'Send emails as', user && !getSecret('smtp_pass') && 'Password'];
   } else {
     // Keys are per service, so a new key is needed when switching services.
     const key = (b.mail_api_key || '').trim();
     if (key) setSecret('mail_api_key', key);
-    missing = [!mailConfig().apiKey && 'API key', !from && 'Send emails as'];
+    missing = [!getSecret('mail_api_key') && 'API key', !from && 'Send emails as'];
   }
+  setSecret('mail_provider', provider);
+  setSecret('mail_from', from);
   missing = missing.filter(Boolean);
   if (missing.length) flash(req, 'error', `Saved, but email is still off. Please fill in: ${missing.join(', ')}.`);
   else flash(req, 'success', `Email settings saved (${PROVIDERS[provider]}). Email is on. Click "Send test email" to check them.`);
