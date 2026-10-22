@@ -23,7 +23,8 @@ export function exportRows(ids, baseUrl) {
       name: l.name,
       firm: l.firm || '',
       address: pf.show_office ? [l.address, [l.city, [l.state, l.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(', ') : [l.city, l.state].filter(Boolean).join(', '),
-      phone: pf.show_phone ? l.phone || '' : '',
+      phone: pf.show_phone && l.phone ? `${l.phone}${l.phone_ext ? ` ext. ${l.phone_ext}` : ''}` : '',
+      phoneDial: pf.show_phone && l.phone ? `${l.phone.replace(/[^\d+]/g, '')}${l.phone_ext ? `,${l.phone_ext.replace(/\D/g, '')}` : ''}` : '',
       mobile: pf.show_mobile ? l.mobile || '' : '',
       email: pf.show_email ? l.email || '' : '',
       website: pf.show_website ? l.website || '' : '',
@@ -107,7 +108,7 @@ export function buildPdf(rows, { note, referredBy } = {}) {
       if (r.areas.length) doc.moveDown(0.1).fontSize(12).fillColor(COLORS.muted).text(r.areas.join(' · '));
       doc.moveDown(0.5);
       line('Address', r.address);
-      line('Phone', r.phone, r.phone ? `tel:${r.phone.replace(/[^\d+]/g, '')}` : null);
+      line('Phone', r.phone, r.phone ? `tel:${r.phoneDial}` : null);
       line('Mobile', r.mobile, r.mobile ? `tel:${r.mobile.replace(/[^\d+]/g, '')}` : null);
       line('Email', r.email, r.email ? `mailto:${r.email}` : null);
       line('Website', r.website, r.website || null);

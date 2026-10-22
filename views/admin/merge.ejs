@@ -1,0 +1,71 @@
+<%- include('../partials/header') %>
+<%
+  const FIELDS = [['name','Name'],['firm','Firm'],['email','Listing email'],['login_email','Login'],['phone','Phone'],['phone_ext','Ext.'],['mobile','Mobile'],
+    ['city','City'],['state','State'],['address','Address'],['zip','ZIP'],['bar_number','Bar number'],['bar_admissions','Bar admissions'],['title','Title'],['education','Education'],['years_experience','Years of experience'],
+    ['website','Website'],['languages','Languages'],['bio','Bio'],['photo','Photo'],['status','Status'],['created_at','Added']];
+  const fields = FIELDS.filter(([k]) => k in keep || k in other);
+  const show = (v) => (v == null || v === '' ? '—' : String(v).length > 160 ? String(v).slice(0, 160) + '…' : String(v));
+  const both = keep.user_id && other.user_id;
+%>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <p class="small"><a href="/admin/duplicates">← Possible duplicates</a></p>
+    <h1>Compare and merge</h1>
+    <p class="muted small"><%= c.strength === 'definite' ? 'Very likely the same lawyer' : c.strength === 'likely' ? 'Possibly the same lawyer' : 'These listings don\'t match on any duplicate check' %><%= c.reasons.length ? ': ' + c.reasons.join(', ') : '' %>.</p>
+
+    <div class="card table-wrap">
+      <table class="table merge-table">
+        <thead><tr><th></th>
+          <% [keep, other].forEach((l, i) => { %>
+            <th class="<%= i === 0 ? 'merge-keep' : 'merge-remove' %>">
+              <%= i === 0 ? 'Keep' : 'Merge in and delete' %> · #<%= l.id %>
+              <div><a class="tiny" href="/admin/lawyers/<%= l.id %>" target="_blank">Open ↗</a><% if (i === 1) { %> · <a class="tiny" href="/admin/merge?a=<%= c.a.id %>&b=<%= c.b.id %>&keep=<%= l.id %>">Keep this one instead</a><% } %></div>
+            </th>
+          <% }) %>
+        </tr></thead>
+        <tbody>
+          <% fields.forEach(([k, label]) => { %>
+            <tr class="<%= fills.includes(k) ? 'merge-fill' : '' %>">
+              <th class="small"><%= label %></th>
+              <td class="small"><%= show(keep[k]) %><% if (fills.includes(k)) { %> <span class="tiny">← will be filled in</span><% } %></td>
+              <td class="small"><%= show(other[k]) %></td>
+            </tr>
+          <% }) %>
+          <tr><th class="small">Practice areas</th><td class="small"><%= keep.areas.join(', ') || '—' %></td><td class="small"><%= other.areas.join(', ') || '—' %></td></tr>
+          <tr><th class="small">Inquiries / referrals</th><td class="small"><%= keep.inquiries %> / <%= keep.referrals %></td><td class="small"><%= other.inquiries %> / <%= other.referrals %></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <form method="post" action="/admin/merge" class="card" data-confirm="Merge #<%= other.id %> into #<%= keep.id %>? Listing #<%= other.id %> will be deleted. This can't be undone (except from a nightly backup).">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="keep" value="<%= keep.id %>">
+      <input type="hidden" name="remove" value="<%= other.id %>">
+      <h2>What happens</h2>
+      <ul class="small">
+        <li>Listing #<%= keep.id %> (<strong><%= keep.name %></strong>) is kept with its details. <%= fills.length ? `Blank details are filled in from #${other.id} (${fills.length} highlighted above).` : 'Nothing needs filling in.' %></li>
+        <li>Practice areas are combined; inquiries, referrals and history move to #<%= keep.id %>; sponsored and verified badges carry over.</li>
+        <li>Listing #<%= other.id %> is deleted, and its web address <code>/lawyers/<%= other.slug %></code> leads to the kept listing.</li>
+        <% if (other.user_id && !keep.user_id) { %><li>The login <strong><%= other.login_email %></strong> moves to the kept listing, so the lawyer signs in as before.</li><% } %>
+      </ul>
+      <div class="form-grid">
+        <label>Status after merging
+          <select name="status">
+            <% ['active','pending','suspended'].forEach(s => { %><option <%= (keep.status === 'active' || other.status === 'active' ? 'active' : keep.status) === s ? 'selected' : '' %>><%= s %></option><% }) %>
+          </select>
+        </label>
+        <% if (both) { %>
+          <fieldset><legend class="small">Both listings have a login. Keep which?</legend>
+            <label class="check"><input type="radio" name="use_login" value="keep" checked> <%= keep.login_email %></label>
+            <label class="check"><input type="radio" name="use_login" value="remove"> <%= other.login_email %></label>
+            <p class="tiny muted">The other login is deleted and signed out.</p>
+          </fieldset>
+        <% } %>
+      </div>
+      <p><button class="btn btn-primary">Merge into #<%= keep.id %></button>
+        <a class="btn btn-ghost" href="/admin/lawyers/<%= keep.id %>">Cancel</a></p>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

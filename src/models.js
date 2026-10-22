@@ -4,7 +4,7 @@ import { LAWYER_SOCIAL_KEYS, normalizeSocial } from './social.js';
 import { normalizeLanguages } from './languages.js';
 
 export const LAWYER_FIELDS = [
-  'name', 'firm', 'title', 'bio', 'email', 'phone', 'mobile', 'website', 'address', 'city', 'state', 'zip',
+  'name', 'firm', 'title', 'bio', 'email', 'phone', 'phone_ext', 'mobile', 'website', 'address', 'city', 'state', 'zip',
   'bar_number', 'bar_admissions', 'years_experience', 'languages', 'education',
   'social_linkedin', 'social_facebook', 'social_instagram', 'social_x', 'social_youtube', 'social_tiktok',
 ];
@@ -234,7 +234,7 @@ export function cleanLawyerInput(body) {
 const NAME_EXTRAS = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v', 'esq', 'esquire', 'jd', 'phd', 'llm', 'md', 'cpa', 'dr', 'mr', 'mrs', 'ms', 'miss', 'hon', 'atty', 'attorney']);
 
 /** The meaningful words of a name: no nicknames, credentials, titles, suffixes or middle initials. */
-function nameWords(name) {
+export function nameWords(name) {
   const words = String(name || '')
     .replace(/\([^)]*\)/g, ' ')        // (nicknames)
     .split(',')[0]                      // ", Esq." and other credentials after a comma

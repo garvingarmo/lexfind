@@ -18,6 +18,7 @@ import { getLanguageOptions, saveLanguageOptions, unlistedLanguages } from '../l
 import { watchApprovals } from '../members.js';
 import { allReferrals } from '../referrals.js';
 import { listBackups, backupPath, streamFullBackup, deletedLawyers, restoreLawyer } from '../backup.js';
+import { matchesFor, duplicatePairs, dismissPair, mergeLawyers, comparison, fillsFrom } from '../duplicates.js';
 import { usageStats, PERIODS, EVENT_LABELS } from '../stats.js';
 import { EMAILS, COMMON_VARS, DEFAULT_FOOTER, getTemplate, saveTemplate, resetTemplate, getFooter, renderEmail, sampleValues } from '../emails.js';
 import { baseUrl } from '../invites.js';
@@ -59,7 +60,7 @@ router.get('/', (req, res) => {
 router.get('/lawyers', (req, res) => {
   const status = ['pending', 'active', 'suspended', 'hidden'].includes(req.query.status) ? req.query.status : '';
   const q = (req.query.q || '').toString().slice(0, 100);
-  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses(), areas: listAreas() });
+  res.render('admin/lawyers', { title: 'Lawyers', rows: listLawyers({ status, q }), status, q, inv: inviteStatuses(), areas: listAreas(), dupCount: duplicatePairs().length });
 });
 
 // Bulk actions on the lawyers ticked in the list.
@@ -160,6 +161,39 @@ router.post('/lawyers/new', upload.single('photo'), verifyCsrf, (req, res) => {
   res.redirect(`/admin/lawyers/${id}`);
 });
 
+// --- Duplicate listings ---------------------------------------------------------------
+
+router.get('/duplicates', (req, res) => {
+  res.render('admin/duplicates', { title: 'Possible duplicates', pairs: duplicatePairs() });
+});
+
+router.post('/duplicates/dismiss', (req, res) => {
+  dismissPair(req.body.a, req.body.b);
+  flash(req, 'success', 'Marked as not a duplicate. This pair won\'t be flagged again.');
+  res.redirect(req.body.back === 'lawyer' ? `/admin/lawyers/${Number(req.body.a)}` : '/admin/duplicates');
+});
+
+router.get('/merge', (req, res, next) => {
+  const c = comparison(Number(req.query.a), Number(req.query.b));
+  if (!c) { flash(req, 'error', 'One of these listings no longer exists.'); return res.redirect('/admin/duplicates'); }
+  // Suggest keeping the older listing (usually the imported, already approved one).
+  const keepId = Number(req.query.keep) || (c.a.id < c.b.id ? c.a.id : c.b.id);
+  const keep = keepId === c.a.id ? c.a : c.b;
+  const other = keepId === c.a.id ? c.b : c.a;
+  res.render('admin/merge', { title: 'Compare and merge', c, keep, other, fills: fillsFrom(keep, other) });
+});
+
+router.post('/merge', (req, res) => {
+  try {
+    const { kept, notes } = mergeLawyers(req.body.keep, req.body.remove, { status: req.body.status, useLogin: req.body.use_login });
+    flash(req, 'success', `Merged into ${kept.name}: ${notes.join('; ') || 'nothing else to move'}. The other listing was deleted and its web address now leads here.`);
+    res.redirect(`/admin/lawyers/${kept.id}`);
+  } catch (e) {
+    flash(req, 'error', `Could not merge: ${e.message}`);
+    res.redirect('/admin/duplicates');
+  }
+});
+
 router.get('/lawyers/:id', (req, res, next) => {
   const l = getLawyer('id', req.params.id);
   if (!l) return next();
@@ -168,6 +202,7 @@ router.get('/lawyers/:id', (req, res, next) => {
   res.render('admin/lawyer-edit', {
     title: `Edit ${l.name}`, l, areas: listAreas(), selected: new Set(l.areas.map((a) => a.slug)), login,
     invite, inviteLink: invite ? inviteUrl(req, invite.token) : null, mailOn: mailEnabled(),
+    duplicates: matchesFor(l.id),
   });
 });
 

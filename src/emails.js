@@ -47,7 +47,7 @@ Check their bar number, then set their listing to **Active** to approve them. Th
 
 [[Review and approve|{{review_link}}]]`,
     vars: { lawyer_name: ['Applicant\'s name', 'Nadia Yousif'], review_link: ['Link to their listing in the admin', 'https://chaldeanlaw.com/admin/lawyers/42'] },
-    blocks: { applicant_details: 'Name, firm, email, phones, location, bar number and practice areas' },
+    blocks: { applicant_details: 'Name, firm, email, phones, location, bar number, practice areas, and any existing listing it may duplicate' },
   },
   registration_received: {
     label: 'Registration received (to the lawyer)',
@@ -246,7 +246,7 @@ export function lawyerListBlock(rows) {
   const html = rows.map((r) => {
     const lines = [
       r.address && esc(r.address),
-      r.phone && `Phone: <a href="${esc(telHref(r.phone))}" style="color:${INK}">${esc(r.phone)}</a>`,
+      r.phone && `Phone: <a href="tel:${esc(r.phoneDial || String(r.phone).replace(/[^\d+]/g, ''))}" style="color:${INK}">${esc(r.phone)}</a>`,
       r.mobile && `Mobile: <a href="${esc(telHref(r.mobile))}" style="color:${INK}">${esc(r.mobile)}</a>`,
       r.email && `<a href="mailto:${esc(r.email)}" style="color:${primary}">${esc(r.email)}</a>`,
       r.website && `<a href="${esc(r.website)}" style="color:${primary}">${esc(r.website.replace(/^https?:\/\//, ''))}</a>`,

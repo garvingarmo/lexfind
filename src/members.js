@@ -4,6 +4,7 @@ import { db, getSettings } from './db.js';
 import { mailEnabled, sendMail } from './mailer.js';
 import { renderEmail, detailsBlock } from './emails.js';
 import { getLawyer } from './models.js';
+import { matchesFor } from './duplicates.js';
 
 export function membersOnly() {
   return getSettings().members_only !== '0';
@@ -51,16 +52,28 @@ export function watchApprovals(ids, siteUrl) {
  * A lawyer registered: email every admin so they can approve them, and confirm receipt to the lawyer.
  * Runs in the background; failures are logged, never shown to the person registering.
  */
-export function notifyRegistration(lawyerId, siteUrl) {
+export function notifyRegistration(lawyerId, siteUrl, { sameAs = null } = {}) {
   if (!mailEnabled()) return;
   const l = getLawyer('id', lawyerId);
   if (!l) return;
+  // Listings this may duplicate (e.g. the lawyer was imported before registering), with a link to merge.
+  const dups = matchesFor(l.id);
+  if (sameAs && !dups.some((m) => m.lawyer.id === sameAs)) {
+    const s = getLawyer('id', sameAs);
+    if (s) dups.unshift({ lawyer: s, strength: 'likely', reasons: [] });
+  }
+  const dupRows = dups.slice(0, 3).map((m) => [
+    m.lawyer.id === sameAs ? 'Says they are' : 'Possible duplicate of',
+    `${m.lawyer.name} (#${m.lawyer.id}${m.lawyer.city ? `, ${m.lawyer.city}` : ''})${m.reasons.length ? ` — ${m.reasons.join(', ')}` : ''}`,
+    `${siteUrl}/admin/merge?a=${m.lawyer.id}&b=${l.id}`,
+  ]);
   const tel = (n) => n && `tel:${n.replace(/[^\d+]/g, '')}`;
   const details = detailsBlock([
     ['Name', l.name], ['Firm', l.firm], ['Email', l.email, l.email && `mailto:${l.email}`],
-    ['Phone', l.phone, tel(l.phone)], ['Mobile', l.mobile, tel(l.mobile)],
+    ['Phone', l.phone && `${l.phone}${l.phone_ext ? ` ext. ${l.phone_ext}` : ''}`, tel(l.phone)], ['Mobile', l.mobile, tel(l.mobile)],
     ['Location', [l.city, l.state].filter(Boolean).join(', ')], ['Bar number', l.bar_number],
     ['Practice areas', (l.areas || []).map((a) => a.name).join(', ')],
+    ...dupRows,
   ]);
   const toAdmins = renderEmail('registration_admin', { lawyer_name: l.name, review_link: `${siteUrl}/admin/lawyers/${l.id}`, applicant_details: details }, { siteUrl });
   for (const { email } of db.prepare("SELECT email FROM users WHERE role = 'admin'").all()) {

@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<section class="container page-pad backoffice">
+  <%- include('../partials/side-nav') %>
+  <div>
+    <p class="small"><a href="/admin/lawyers">← Lawyers</a></p>
+    <h1>Possible duplicates</h1>
+    <p class="muted small">Listings that look like the same lawyer. <strong>Very likely</strong> means the same bar number or email; <strong>possibly</strong> means the same name in the same city or state, the same mobile, or the same office phone and last name. An office phone on its own is never treated as a match, since colleagues at a firm often share one. Compare a pair to merge it, or mark it as not a duplicate so it isn't flagged again.</p>
+    <div class="card table-wrap">
+      <% if (!pairs.length) { %>
+        <p class="muted">No possible duplicates found.</p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Listing</th><th>Looks like</th><th>Why</th><th></th></tr></thead>
+        <tbody>
+        <% pairs.forEach(p => { %>
+          <tr>
+            <% [p.a, p.b].forEach(l => { %>
+            <td><a href="/admin/lawyers/<%= l.id %>"><%= l.name %></a><div class="tiny muted"><%= [l.firm, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') %></div><span class="status status-<%= l.status %>"><%= l.status %></span><%= l.user_id ? ' · has login' : '' %></td>
+            <% }) %>
+            <td class="small"><strong><%= p.strength === 'definite' ? 'Very likely' : 'Possibly' %></strong><div class="tiny muted"><%= p.reasons.join(', ') %></div></td>
+            <td class="right nowrap">
+              <a class="btn btn-primary btn-sm" href="/admin/merge?a=<%= p.a.id %>&b=<%= p.b.id %>">Compare &amp; merge</a>
+              <form method="post" action="/admin/duplicates/dismiss" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="a" value="<%= p.a.id %>"><input type="hidden" name="b" value="<%= p.b.id %>"><button class="btn btn-ghost btn-sm">Not a duplicate</button></form>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

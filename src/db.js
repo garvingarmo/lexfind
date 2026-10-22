@@ -208,10 +208,11 @@ if (addColumn('lawyers', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
 if (addColumn('ads', 'is_sample', 'INTEGER NOT NULL DEFAULT 0')) {
   db.exec("UPDATE ads SET is_sample = 1 WHERE lawyer_id IN (SELECT id FROM lawyers WHERE is_sample = 1) OR title = 'Advertise your practice here'");
 }
-addColumn('lawyers', 'sort_name', 'TEXT');
-addColumn('lawyers', 'mobile', 'TEXT');
+addColumn('lawyers', 'sort_name', 'TEXT'); // "last first", for sorting by surname
+addColumn('lawyers', 'mobile', 'TEXT'); // mobile / cell number, alongside the office phone
+addColumn('lawyers', 'phone_ext', 'TEXT'); // office phone extension
 // Hidden from the directory (search, profiles, AI match) while the lawyer keeps their membership.
-addColumn('lawyers', 'hidden', 'INTEGER NOT NULL DEFAULT 0'); // mobile / cell number, alongside the office phone // "last first", for sorting by surname
+addColumn('lawyers', 'hidden', 'INTEGER NOT NULL DEFAULT 0');
 for (const n of ['linkedin', 'facebook', 'instagram', 'x', 'youtube', 'tiktok']) addColumn('lawyers', `social_${n}`, 'TEXT');
 addColumn('practice_areas', 'sort_order', 'INTEGER'); // admin's drag-and-drop order; unsorted areas follow alphabetically
 addColumn('practice_areas', 'parent_id', 'INTEGER REFERENCES practice_areas(id) ON DELETE SET NULL'); // sub-category of

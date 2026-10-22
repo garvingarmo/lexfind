@@ -2,7 +2,7 @@
 <section class="container page-pad backoffice">
   <%- include('../partials/side-nav') %>
   <div>
-    <div class="section-head"><h1>Lawyers</h1><div><a class="btn btn-outline btn-sm" href="/admin/import">Import from Google Sheets</a> <a class="btn btn-primary btn-sm" href="/admin/lawyers/new">+ Add lawyer</a></div></div>
+    <div class="section-head"><h1>Lawyers</h1><div><a class="btn btn-<%= dupCount ? 'accent' : 'ghost' %> btn-sm" href="/admin/duplicates">Possible duplicates<%= dupCount ? ` (${dupCount})` : '' %></a> <a class="btn btn-outline btn-sm" href="/admin/import">Import from Google Sheets</a> <a class="btn btn-primary btn-sm" href="/admin/lawyers/new">+ Add lawyer</a></div></div>
     <form class="toolbar" method="get">
       <input name="q" value="<%= q %>" placeholder="Search name, firm, email">
       <select name="status"><option value="">All statuses</option><% ['pending','active','suspended'].forEach(s => { %><option <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %><option value="hidden" <%= status === 'hidden' ? 'selected' : '' %>>hidden from directory</option></select>

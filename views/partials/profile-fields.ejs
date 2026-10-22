@@ -2,7 +2,7 @@
 <label>Professional title <input name="title" value="<%= l.title || '' %>" placeholder="e.g. Partner, Attorney at Law"></label>
 <label>Firm <input name="firm" value="<%= l.firm || '' %>"></label>
 <label>Public email <input name="email" type="email" value="<%= l.email || '' %>"></label>
-<label>Phone <input name="phone" type="tel" value="<%= l.phone || '' %>"></label>
+<div class="phone-row"><label>Phone <input name="phone" type="tel" value="<%= l.phone || '' %>"></label><label>Ext. <input name="phone_ext" inputmode="numeric" maxlength="10" value="<%= l.phone_ext || '' %>"></label></div>
 <label>Mobile <input name="mobile" type="tel" value="<%= l.mobile || '' %>"></label>
 <label>Website <input name="website" value="<%= l.website || '' %>"></label>
 <label class="span-2">Street address <input name="address" value="<%= l.address || '' %>"></label>

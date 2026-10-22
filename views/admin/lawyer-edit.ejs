@@ -6,6 +6,19 @@
       <h1><%= title %></h1>
       <% if (l.id) { %><div><a class="btn btn-ghost btn-sm" href="/lawyers/<%= l.slug %>" target="_blank">View ↗</a> <a class="btn btn-accent btn-sm" href="/admin/lawyers/<%= l.id %>/research">✦ AI research</a></div><% } %>
     </div>
+    <% if (locals.duplicates && duplicates.length) { %>
+      <div class="flash flash-error dup-banner">
+        <strong>Possible duplicate.</strong> This listing looks like:
+        <ul>
+          <% duplicates.forEach(m => { %>
+            <li><a href="/admin/lawyers/<%= m.lawyer.id %>"><%= m.lawyer.name %></a><span class="small"><%= m.lawyer.firm ? ', ' + m.lawyer.firm : '' %><%= m.lawyer.city ? ', ' + m.lawyer.city : '' %> — <%= m.strength === 'definite' ? 'very likely the same lawyer' : 'possibly the same lawyer' %> (<%= m.reasons.join(', ') %>)</span>
+              <a class="btn btn-outline btn-sm" href="/admin/merge?a=<%= l.id %>&b=<%= m.lawyer.id %>">Compare &amp; merge</a>
+              <form method="post" action="/admin/duplicates/dismiss" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="a" value="<%= l.id %>"><input type="hidden" name="b" value="<%= m.lawyer.id %>"><input type="hidden" name="back" value="lawyer"><button class="btn btn-ghost btn-sm">Not a duplicate</button></form>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
     <form method="post" action="/admin/lawyers/<%= l.id || 'new' %>" enctype="multipart/form-data" class="card form-grid">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <fieldset class="span-2 admin-box"><legend>Listing controls</legend>

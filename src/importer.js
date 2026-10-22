@@ -7,6 +7,7 @@ import { parse } from 'csv-parse/sync';
 import { db, tx, DATA_DIR, uniqueSlug } from './db.js';
 import { createLawyer, updateLawyer, setAreas, setAreaParent, cleanLawyerInput, listAreas } from './models.js';
 import { STATES } from './ai/agent.js';
+import { normBar } from './duplicates.js';
 
 const importDir = path.join(DATA_DIR, 'imports');
 fs.mkdirSync(importDir, { recursive: true });
@@ -20,6 +21,7 @@ export const IMPORT_FIELDS = [
   ['title', 'Professional title', ['title', 'position', 'job title', 'role']],
   ['email', 'Email', ['email', 'e-mail', 'email address']],
   ['phone', 'Phone', ['phone', 'telephone', 'phone number', 'tel', 'office phone', 'work phone', 'office']],
+  ['phone_ext', 'Phone extension', ['ext', 'extension', 'ext.', 'phone ext', 'phone extension']],
   ['mobile', 'Mobile', ['mobile', 'cell', 'mobile phone', 'cell phone', 'mobile number', 'cell number', 'cellphone']],
   ['website', 'Website', ['website', 'web', 'url', 'site', 'web site', 'website url']],
   ['address', 'Street address', ['address', 'street', 'street address', 'address 1', 'office address']],
@@ -171,6 +173,11 @@ export function runImport(staged, mapping, { status = 'active', mode = 'update',
     return id;
   };
   const findByEmail = db.prepare('SELECT id FROM lawyers WHERE email = ? COLLATE NOCASE');
+  // Bar numbers are compared ignoring spaces, dashes and case ("P-12345" = "p12345").
+  const byBar = new Map();
+  for (const r of db.prepare("SELECT id, bar_number FROM lawyers WHERE bar_number IS NOT NULL AND bar_number <> ''").all()) {
+    if (normBar(r.bar_number) && !byBar.has(normBar(r.bar_number))) byBar.set(normBar(r.bar_number), { id: r.id });
+  }
   const findByNameCity = db.prepare('SELECT id FROM lawyers WHERE name = ? COLLATE NOCASE AND IFNULL(city, \'\') = ? COLLATE NOCASE');
 
   tx(() => {
@@ -196,7 +203,8 @@ export function runImport(staged, mapping, { status = 'active', mode = 'update',
         if (id) areaIds.push(id);
       }
 
-      const existing = (data.email && findByEmail.get(data.email)) || findByNameCity.get(data.name, data.city || '');
+      const existing = (normBar(data.bar_number) && byBar.get(normBar(data.bar_number)))
+        || (data.email && findByEmail.get(data.email)) || findByNameCity.get(data.name, data.city || '');
       if (existing) {
         if (mode === 'skip') { result.skipped++; return; }
         updateLawyer(existing.id, data);
@@ -205,6 +213,7 @@ export function runImport(staged, mapping, { status = 'active', mode = 'update',
       } else {
         const id = createLawyer({ ...data, status, verified: verified ? 1 : 0 });
         setAreas(id, areaIds);
+        if (normBar(data.bar_number)) byBar.set(normBar(data.bar_number), { id });
         result.created++;
       }
     });

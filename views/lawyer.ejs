@@ -55,7 +55,7 @@
       <% } %>
       <div class="card contact-card" id="contact">
         <h2><%- e('profile.contact') %> <%= lawyer.name.split(' ')[0] %></h2>
-        <% if (pf.show_phone && lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %>">☎ <%= lawyer.phone %></a></p><% } %>
+        <% if (pf.show_phone && lawyer.phone) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.phone.replace(/[^\d+]/g, '') %><%= lawyer.phone_ext ? ',' + lawyer.phone_ext.replace(/\D/g, '') : '' %>">☎ <%= lawyer.phone %><%= lawyer.phone_ext ? ' ext. ' + lawyer.phone_ext : '' %></a></p><% } %>
         <% if (pf.show_mobile && lawyer.mobile) { %><p><a class="btn btn-outline btn-block" href="tel:<%= lawyer.mobile.replace(/[^\d+]/g, '') %>" aria-label="<%= t('profile.mobile') %> <%= lawyer.mobile %>">📱 <%= lawyer.mobile %></a></p><% } %>
         <% if (pf.show_email && lawyer.email) { %><p><a class="btn btn-outline btn-block" href="mailto:<%= lawyer.email %>">✉ <%- e('profile.emailButton') %> <%= lawyer.email %></a></p><% } %>
         <% if (pf.show_website && lawyer.website) { %><p><a class="btn btn-outline btn-block" href="<%= lawyer.website %>" target="_blank" rel="noopener nofollow"><%- e('profile.website') %></a></p><% } %>

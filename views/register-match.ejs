@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+<section class="container narrow page-pad">
+  <div class="card">
+    <h1>Are you already listed?</h1>
+    <p class="muted">We found <%= matches.length === 1 ? 'a listing' : 'listings' %> in the directory that may be you. Claiming your existing listing keeps everything already on it, instead of creating a second one.</p>
+    <ul class="match-list">
+      <% matches.forEach(m => { %>
+        <li>
+          <strong><%= m.name %></strong><div class="small muted"><%= [m.firm, m.place].filter(Boolean).join(' · ') %></div>
+          <% if (m.claimed) { %>
+            <p class="small">This listing already has an account. If it's yours, <a href="/login">sign in</a> or <a href="/forgot-password">reset your password</a>.</p>
+          <% } else { %>
+            <form method="post" action="/register/match" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="lawyer_id" value="<%= m.id %>">
+              <% if (m.email) { %>
+                <p class="small">We'll email a link to claim it to the address on the listing, <strong><%= m.email %></strong>.</p>
+                <button class="btn btn-primary btn-sm" name="action" value="claim">Yes, this is me — email me the link</button>
+                <button class="btn btn-ghost btn-sm" name="action" value="mine">This is me, but I can't use that email</button>
+              <% } else { %>
+                <button class="btn btn-primary btn-sm" name="action" value="mine">Yes, this is me</button>
+                <p class="tiny muted">We'll create your account and our team will connect it to this listing when they approve you.</p>
+              <% } %>
+            </form>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+    <form method="post" action="/register/match">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-outline" name="action" value="new">No, I'm a different lawyer — continue registering</button>
+    </form>
+  </div>
+</section>
+<%- include('partials/footer') %>
