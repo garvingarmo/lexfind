@@ -18,6 +18,7 @@ import adminRoutes from './routes/admin.js';
 import { aiEnabled, MODEL } from './ai/client.js';
 import { scheduleBackups } from './backup.js';
 import { pruneEvents } from './stats.js';
+import { STATES } from './ai/agent.js';
 
 bootstrapIfEmpty();
 scheduleBackups();
@@ -80,6 +81,10 @@ app.get('/vendor/sortable.min.js', (req, res) => res.set('Cache-Control', 'publi
 // The installed app's name on phones (iPhone reads it from the apple-mobile-web-app-title tag).
 const APP_SHORT_NAME = 'Chaldean Law';
 app.locals.appShortName = APP_SHORT_NAME;
+// US states (and DC) for state drop-downs: [[code, name], ...] sorted by name.
+app.locals.usStates = Object.entries({ ...STATES, 'district of columbia': 'DC' })
+  .map(([n, code]) => [code, n.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/\bOf\b/, 'of')])
+  .sort((a, b) => a[1].localeCompare(b[1]));
 // Install as an app (progressive web app): the manifest names the app after the site and uses its colours.
 app.get('/manifest.webmanifest', (req, res) => {
   const s = getSettings();

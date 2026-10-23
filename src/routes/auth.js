@@ -51,6 +51,7 @@ router.post('/register', authLimit, (req, res) => {
   if ((b.password || '').length < 8) errors.push('Password must be at least 8 characters.');
   if (b.password !== b.password2) errors.push('Passwords do not match.');
   if (!b.city?.trim() || !b.state?.trim()) errors.push('City and state are required.');
+  else if (!/^[A-Za-z]{2}$/.test(b.state.trim())) errors.push('Please choose a state.');
   if (!b.bar_number?.trim()) errors.push('Bar number is required so we can verify your listing.');
   if (db.prepare('SELECT 1 FROM users WHERE email = ?').get((b.email || '').trim())) errors.push('An account with this email already exists.');
   if (errors.length) {

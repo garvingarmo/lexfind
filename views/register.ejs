@@ -12,7 +12,9 @@
       <label>Mobile <input name="mobile" type="tel" value="<%= form.mobile || '' %>"></label>
       <label class="span-2">Street address <input name="address" value="<%= form.address || '' %>" autocomplete="street-address"></label>
       <label>City* <input name="city" required value="<%= form.city || '' %>" autocomplete="address-level2"></label>
-      <label>State (2 letters)* <input name="state" required maxlength="2" value="<%= form.state || '' %>" autocomplete="address-level1"></label>
+      <label>State* <select name="state" required autocomplete="address-level1">
+        <% const st = String(form.state || 'CA').toUpperCase(); usStates.forEach(([code, name]) => { %><option value="<%= code %>" <%= code === st ? 'selected' : '' %>><%= name %></option><% }) %>
+      </select></label>
       <label>ZIP code <input name="zip" inputmode="numeric" maxlength="10" value="<%= form.zip || '' %>" autocomplete="postal-code"></label>
       <label>Bar number* <input name="bar_number" required value="<%= form.bar_number || '' %>"></label>
       <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
