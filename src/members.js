@@ -71,7 +71,7 @@ export function notifyRegistration(lawyerId, siteUrl, { sameAs = null } = {}) {
   const details = detailsBlock([
     ['Name', l.name], ['Firm', l.firm], ['Email', l.email, l.email && `mailto:${l.email}`],
     ['Phone', l.phone && `${l.phone}${l.phone_ext ? ` ext. ${l.phone_ext}` : ''}`, tel(l.phone)], ['Mobile', l.mobile, tel(l.mobile)],
-    ['Location', [l.city, l.state].filter(Boolean).join(', ')], ['Bar number', l.bar_number],
+    ['Address', [l.address, l.city, [l.state, l.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')], ['Bar number', l.bar_number],
     ['Practice areas', (l.areas || []).map((a) => a.name).join(', ')],
     ...dupRows,
   ]);

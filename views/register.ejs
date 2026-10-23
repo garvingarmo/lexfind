@@ -7,12 +7,14 @@
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <label>Full name* <input name="name" required value="<%= form.name || '' %>"></label>
       <label>Firm <input name="firm" value="<%= form.firm || '' %>"></label>
-      <label>Email* <input name="email" type="email" required value="<%= form.email || '' %>" autocomplete="username"></label>
+      <label class="span-2">Email* <input name="email" type="email" required value="<%= form.email || '' %>" autocomplete="username"></label>
       <div class="phone-row"><label>Phone <input name="phone" type="tel" value="<%= form.phone || '' %>"></label><label>Ext. <input name="phone_ext" inputmode="numeric" maxlength="10" value="<%= form.phone_ext || '' %>"></label></div>
       <label>Mobile <input name="mobile" type="tel" value="<%= form.mobile || '' %>"></label>
-      <label>City* <input name="city" required value="<%= form.city || '' %>"></label>
-      <label>State (2 letters)* <input name="state" required maxlength="2" value="<%= form.state || '' %>"></label>
-      <label class="span-2">Bar number* <input name="bar_number" required value="<%= form.bar_number || '' %>"></label>
+      <label class="span-2">Street address <input name="address" value="<%= form.address || '' %>" autocomplete="street-address"></label>
+      <label>City* <input name="city" required value="<%= form.city || '' %>" autocomplete="address-level2"></label>
+      <label>State (2 letters)* <input name="state" required maxlength="2" value="<%= form.state || '' %>" autocomplete="address-level1"></label>
+      <label>ZIP code <input name="zip" inputmode="numeric" maxlength="10" value="<%= form.zip || '' %>" autocomplete="postal-code"></label>
+      <label>Bar number* <input name="bar_number" required value="<%= form.bar_number || '' %>"></label>
       <fieldset class="span-2 area-checks"><legend>Practice areas</legend>
         <% const sel = [].concat(form.areas || []).map(String); %>
         <%- include('partials/area-checks', { areas, isChecked: (a) => sel.includes(String(a.id)) }) %>

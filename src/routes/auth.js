@@ -115,6 +115,7 @@ function completeRegistration(req, res, b, passwordHash, { sameAs = null } = {})
     const lid = createLawyer({
       name: b.name.trim().slice(0, 120), firm: (b.firm || '').trim().slice(0, 160) || null, email: b.email.trim(),
       phone: (b.phone || '').trim().slice(0, 40) || null, phone_ext: (b.phone_ext || '').trim().slice(0, 10) || null, mobile: (b.mobile || '').trim().slice(0, 40) || null, city: b.city.trim().slice(0, 80), state: b.state.trim().toUpperCase().slice(0, 2),
+      address: (b.address || '').trim().slice(0, 200) || null, zip: (b.zip || '').trim().slice(0, 10) || null,
       bar_number: b.bar_number.trim().slice(0, 60),
     });
     db.prepare('UPDATE lawyers SET user_id = ? WHERE id = ?').run(uid, lid);

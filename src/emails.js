@@ -385,7 +385,7 @@ export function sampleValues(key) {
   const blocks = {
     sender_details: detailsBlock([['Name', 'John Smith'], ['Email', 'john.smith@example.com', 'mailto:john.smith@example.com'], ['Phone', '(313) 555-0142', 'tel:3135550142']]),
     message: quoteBlock('Hello, I was referred to you about a custody matter. Could we set up a consultation this week?', 'Message'),
-    applicant_details: detailsBlock([['Name', 'Nadia Yousif'], ['Firm', 'Yousif Law PLLC'], ['Email', 'nadia@example.com', 'mailto:nadia@example.com'], ['Phone', '(248) 555-0123'], ['Location', 'Troy, MI'], ['Bar number', 'P81234'], ['Practice areas', 'Immigration, Family Law']]),
+    applicant_details: detailsBlock([['Name', 'Nadia Yousif'], ['Firm', 'Yousif Law PLLC'], ['Email', 'nadia@example.com', 'mailto:nadia@example.com'], ['Phone', '(248) 555-0123'], ['Address', '100 W Big Beaver Rd, Troy, MI 48084'], ['Bar number', 'P81234'], ['Practice areas', 'Immigration, Family Law']]),
     client_details: detailsBlock([['Client', 'Sarah Johnson'], ['Email', 'sarah.j@example.com', 'mailto:sarah.j@example.com'], ['Phone', '(248) 555-0187', 'tel:2485550187']]),
     matter: quoteBlock('Needs help with a contested divorce in Oakland County.', 'About the matter'),
     member_details: detailsBlock([['Referred by', 'James Whitaker, Whitaker Defense Group'], ['Email', 'james@example.com', 'mailto:james@example.com'], ['Phone', '(555) 010-6962']]),
